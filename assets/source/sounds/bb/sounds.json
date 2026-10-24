@@ -1,0 +1,14 @@
+{
+  "format": "blipblop-sounds",
+  "version": 1,
+  "sounds": [
+    {"file": "00.wav", "voices": 1, "name": "smg_shot"},
+    {"file": "01.wav", "voices": 1, "name": "shotgun_shot"},
+    {"file": "02.wav", "voices": 1, "name": "flamethrower_loop"},
+    {"file": "03.wav", "voices": 1, "name": "rifle_shot"},
+    {"file": "04.wav", "voices": 1, "name": "laser_loop"},
+    {"file": "05.wav", "voices": 1, "name": "cow_bomb_drop"},
+    {"file": "06.wav", "voices": 1},
+    {"file": "07.wav", "voices": 1}
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "format": "blipblop-playlist",
+  "version": 1,
+  "tracks": [
+    {"file": "data/endlevel.zik", "name": "end_level"},
+    {"file": "data/gameover.zik", "name": "game_over"},
+    {"file": "data/tambour.zik", "name": "drum_roll"}
+  ]
+}

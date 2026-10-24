@@ -1,0 +1,33 @@
+{
+  "format": "blipblop-sounds",
+  "version": 1,
+  "sounds": [
+    {"file": "00.wav", "voices": 1, "name": "bear_death"},
+    {"file": "01.wav", "voices": 1},
+    {"file": "02.wav", "voices": 1},
+    {"file": "03.wav", "voices": 1},
+    {"file": "04.wav", "voices": 1},
+    {"file": "05.wav", "voices": 1},
+    {"file": "06.wav", "voices": 1},
+    {"file": "07.wav", "voices": 1},
+    {"file": "08.wav", "voices": 1},
+    {"file": "09.wav", "voices": 1, "name": "rainbow"},
+    {"file": "10.wav", "voices": 1, "name": "zombie_moan"},
+    {"file": "11.wav", "voices": 1},
+    {"file": "12.wav", "voices": 1},
+    {"file": "13.wav", "voices": 1, "name": "lightsaber"},
+    {"file": "14.wav", "voices": 1},
+    {"file": "15.wav", "voices": 1},
+    {"file": "16.wav", "voices": 1, "name": "shaman_teleport"},
+    {"file": "17.wav", "voices": 1},
+    {"file": "18.wav", "voices": 1},
+    {"file": "19.wav", "voices": 1, "name": "shaman_death"},
+    {"file": "20.wav", "voices": 1},
+    {"file": "21.wav", "voices": 1},
+    {"file": "22.wav", "voices": 1},
+    {"file": "23.wav", "voices": 1},
+    {"file": "24.wav", "voices": 1, "name": "thunder"},
+    {"file": "25.wav", "voices": 1},
+    {"file": "26.wav", "voices": 1}
+  ]
+}

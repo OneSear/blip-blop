@@ -1,0 +1,18 @@
+{
+  "format": "blipblop-sounds",
+  "version": 1,
+  "sounds": [
+    {"file": "00.wav", "voices": 1, "name": "pickup_shotgun"},
+    {"file": "01.wav", "voices": 1, "name": "pickup_cow_bomb"},
+    {"file": "02.wav", "voices": 1, "name": "pickup_flamethrower"},
+    {"file": "03.wav", "voices": 1, "name": "pickup_laser"},
+    {"file": "04.wav", "voices": 1, "name": "pickup_smg"},
+    {"file": "05.wav", "voices": 1, "name": "pickup_health"},
+    {"file": "06.wav", "voices": 1, "name": "gore_splat"},
+    {"file": "07.wav", "voices": 1, "name": "lemming_death"},
+    {"file": "08.wav", "voices": 1, "name": "death_cry"},
+    {"file": "09.wav", "voices": 1, "name": "death_cry_2"},
+    {"file": "10.wav", "voices": 1, "name": "death_cry_3"},
+    {"file": "11.wav", "voices": 1, "name": "explosion"}
+  ]
+}

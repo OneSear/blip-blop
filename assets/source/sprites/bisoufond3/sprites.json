@@ -1,0 +1,17 @@
+{
+  "format": "blipblop-sprites",
+  "version": 1,
+  "images": [
+    {"file": "000.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "001.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "002.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "003.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "004.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "005.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "006.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "007.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "008.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "009.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "010.png", "hotspot": [0, 0], "layout": "rgb555"}
+  ]
+}

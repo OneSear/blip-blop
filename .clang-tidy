@@ -1,0 +1,35 @@
+# Checks for all the code (src/, tests/, tools/). Left out: [[nodiscard]] on
+# every accessor (noise), the C arrays of the 2002 tables (constant data,
+# kept as they were for comparison), and smaller enums (the enums of the
+# file formats and of the hashed world state are 32-bit on purpose); and,
+# as matters of taste, auto for casts, braced returns, and the temporary
+# strings of the error and log messages.
+Checks: >
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  cppcoreguidelines-init-variables,
+  cppcoreguidelines-pro-type-cstyle-cast,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard,
+  -modernize-avoid-c-arrays,
+  -modernize-use-auto,
+  -modernize-return-braced-init-list,
+  performance-*,
+  -performance-enum-size,
+  -performance-inefficient-string-concatenation,
+  readability-identifier-naming
+CheckOptions:
+  - { key: readability-identifier-naming.NamespaceCase,        value: lower_case }
+  - { key: readability-identifier-naming.ClassCase,            value: CamelCase }
+  - { key: readability-identifier-naming.StructCase,           value: CamelCase }
+  - { key: readability-identifier-naming.EnumCase,             value: CamelCase }
+  - { key: readability-identifier-naming.FunctionCase,         value: camelBack }
+  - { key: readability-identifier-naming.MethodCase,           value: camelBack }
+  - { key: readability-identifier-naming.VariableCase,         value: camelBack }
+  - { key: readability-identifier-naming.MemberCase,           value: camelBack }
+  - { key: readability-identifier-naming.PrivateMemberSuffix,  value: _ }
+  - { key: readability-identifier-naming.ProtectedMemberSuffix, value: _ }
+  - { key: readability-identifier-naming.ConstexprVariableCase, value: CamelCase }
+  - { key: readability-identifier-naming.ConstexprVariablePrefix, value: k }
+HeaderFilterRegex: '(src|tests|tools)/'

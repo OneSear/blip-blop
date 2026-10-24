@@ -1,0 +1,7 @@
+{
+  "format": "blipblop-playlist",
+  "version": 1,
+  "tracks": [
+    {"file": "data/lem.zik"}
+  ]
+}

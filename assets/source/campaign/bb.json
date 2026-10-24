@@ -1,0 +1,28 @@
+{
+  "format": "blipblop-campaign",
+  "version": 1,
+  "entries": [
+    {"briefing": "data/brief1.gfx"},
+    {"level": "data/snuf1.lvl", "kind": "first"},
+    {"briefing": "data/brief1_1.gfx"},
+    {"level": "data/snuf2.lvl", "kind": "last"},
+    {"briefing": "data/brief2.gfx"},
+    {"level": "data/dork.lvl", "kind": "bonus"},
+    {"briefing": "data/brief3.gfx"},
+    {"level": "data/bisous1.lvl", "kind": "first"},
+    {"briefing": "data/brief3_1.gfx"},
+    {"level": "data/bisous2.lvl", "kind": "intermediate"},
+    {"level": "data/bisous3.lvl", "kind": "last"},
+    {"briefing": "data/brief4.gfx"},
+    {"level": "data/snorkniv.lvl", "kind": "first"},
+    {"level": "data/snorkniv2.lvl", "kind": "last"},
+    {"briefing": "data/brief5.gfx"},
+    {"level": "data/lem.lvl", "kind": "bonus"},
+    {"briefing": "data/brief6.gfx"},
+    {"level": "data/video.lvl", "kind": "complete"},
+    {"briefing": "data/brief6_1.gfx"},
+    {"level": "data/videoboss.lvl", "kind": "complete"},
+    {"briefing": "data/brief7.gfx"},
+    {"level": "data/finalboss.lvl", "kind": "end"}
+  ]
+}

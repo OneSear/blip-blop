@@ -1,0 +1,8 @@
+{
+  "format": "blipblop-playlist",
+  "version": 1,
+  "tracks": [
+    {"file": "data/snork.zik", "name": "level"},
+    {"file": "data/boss.zik", "name": "boss"}
+  ]
+}

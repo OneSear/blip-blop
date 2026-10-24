@@ -1,0 +1,24 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{cpp,hpp,h,cmake,py,json,md,yml}]
+indent_style = space
+indent_size = 4
+
+[{CMakeLists.txt,*.yml}]
+indent_size = 4
+
+# Legacy code keeps its tabs until it is rewritten.
+[vc-projects/**]
+indent_style = tab
+tab_width = 4
+trim_trailing_whitespace = false
+
+# The MFC editors are Latin-1 encoded (migration.md, section 2.1).
+[vc-projects/{BB3_level_editor,GFX Editor,FNT Editor,SFX Editor}/**]
+charset = latin1

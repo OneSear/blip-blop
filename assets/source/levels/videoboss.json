@@ -1,0 +1,107 @@
+{
+  "format": "blipblop-level",
+  "version": 1,
+  "assets": {
+    "decor": "videofondboss.gfx",
+    "props": "videofondaboss.gfx",
+    "enemies": "videobossenn.gfx",
+    "sounds": "boss.sfx",
+    "music": "videoboss.mbk",
+    "dialogue": "videoboss.rpg",
+    "portraits": "bossrpg.gfx"
+  },
+  "screens": [0, 1, 2, 3],
+  "start": [[83, 421], [133, 426]],
+  "victory": {"x": 1279, "flag1": 0, "value1": 7, "flag2": 0, "value2": 7},
+  "platforms": [
+    [
+      [0, 1171, 445], [1171, 1, 447], [1172, 13, 448], [1185, 13, 449], [1198, 7, 450], [1205, 5, 451], [1210, 4, 452],
+      [1214, 8, 453], [1222, 11, 455], [1233, 11, 456], [1244, 34, 457], [1278, 12, 458], [1290, 6, 459], [1296, 1, 460],
+      [1297, 6, 461], [1303, 5, 463], [1308, 3, 464], [1311, 3, 467], [1314, 656, 469], [1970, 48, 468], [2018, 13, 469],
+      [2031, 13, 470], [2044, 7, 472], [2051, 19, 473], [2070, 3, 472], [2073, 3, 471], [2076, 6, 470], [2082, 27, 469]
+    ],
+    [
+      [133, 346, 322], [1325, 11, 315], [1336, 19, 314], [1355, 10, 384], [1365, 16, 385], [1381, 7, 386],
+      [1388, 19, 387], [1440, 6, 397], [1446, 7, 399], [1453, 7, 400], [1460, 8, 401], [1468, 7, 400], [1475, 35, 399],
+      [1510, 89, 398], [1599, 17, 397], [1616, 50, 398], [1666, 10, 399], [1676, 10, 398], [1686, 11, 397],
+      [1697, 19, 396], [1716, 29, 397], [1772, 14, 388], [1786, 3, 387], [1789, 8, 388], [1797, 10, 387], [1807, 1, 388],
+      [1808, 17, 389], [1825, 1, 317], [1826, 7, 316], [1833, 19, 317]
+    ],
+    [
+      [214, 54, 218], [268, 14, 217], [282, 167, 218], [449, 18, 219], [467, 9, 218], [1366, 30, 277], [1559, 1, 273],
+      [1560, 19, 277], [1579, 3, 276], [1582, 10, 277], [1592, 7, 276], [1599, 15, 277], [1614, 8, 276], [1622, 2, 275],
+      [1624, 9, 274], [1793, 2, 278], [1795, 7, 277], [1802, 7, 276], [1809, 19, 275]
+    ],
+    [
+      [241, 36, 103], [277, 106, 104], [383, 19, 103], [402, 4, 104], [406, 77, 105], [1280, 20, 215], [1300, 5, 213],
+      [1305, 6, 212], [1311, 5, 211], [1316, 4, 210], [1320, 2, 209], [1322, 1, 208], [1323, 2, 207], [1325, 1, 206],
+      [1326, 1, 205], [1327, 2, 203], [1329, 1, 201], [1330, 1, 200], [1331, 1, 199], [1332, 1, 198], [1333, 1, 196],
+      [1334, 1, 195], [1335, 1, 194], [1336, 1, 193], [1337, 1, 192], [1338, 2, 190], [1340, 1, 188], [1341, 1, 187],
+      [1342, 2, 186], [1344, 1, 185], [1345, 1, 184], [1346, 1, 183], [1347, 2, 182], [1349, 1, 181], [1350, 2, 180],
+      [1352, 2, 179], [1354, 3, 178], [1357, 7, 177], [1364, 3, 176], [1367, 4, 175], [1371, 13, 174], [1384, 3, 173],
+      [1387, 6, 172], [1393, 6, 171], [1399, 21, 170], [1420, 20, 171], [1440, 6, 170], [1446, 27, 169], [1716, 1, 172],
+      [1717, 20, 171], [1737, 38, 172], [1775, 6, 173], [1781, 14, 174], [1795, 54, 173], [1849, 35, 172],
+      [1884, 16, 173], [1900, 3, 172], [1903, 2, 171], [1905, 7, 170], [1912, 9, 169], [1921, 5, 170], [1926, 8, 171],
+      [1934, 4, 172], [1938, 4, 173], [1942, 5, 174], [1947, 4, 175], [1951, 12, 176], [1963, 7, 175], [1970, 5, 174],
+      [1975, 5, 173], [1980, 31, 172]
+    ],
+    [
+      [1318, 1, 115], [1319, 18, 114], [1337, 3, 116], [1340, 11, 117], [1351, 3, 116], [1354, 13, 115], [1367, 20, 114],
+      [1818, 7, 120], [1825, 4, 119], [1829, 8, 120], [1837, 18, 121], [1855, 18, 122], [1873, 29, 123], [1902, 13, 122],
+      [1915, 7, 123], [1922, 4, 125], [1926, 15, 126], [1941, 15, 125], [1956, 28, 124]
+    ],
+    [],
+    [],
+    []
+  ],
+  "solidWalls": [
+    [0, 102, 15], [28, 108, 1], [29, 108, 1], [30, 108, 1], [31, 108, 1], [32, 108, 1], [33, 108, 1], [34, 108, 1],
+    [35, 108, 1], [36, 108, 1], [37, 108, 1], [38, 108, 1], [39, 108, 1], [40, 108, 1], [41, 108, 1], [42, 108, 1],
+    [43, 108, 1], [44, 108, 1], [45, 108, 1], [46, 108, 1], [47, 108, 1], [48, 108, 1], [49, 108, 1], [50, 108, 1],
+    [51, 108, 1], [52, 108, 1], [53, 108, 1], [54, 108, 1], [55, 108, 1], [56, 0, 146], [57, 0, 152], [58, 0, 162],
+    [59, 0, 252]
+  ],
+  "bloodWalls": [],
+  "events": [
+    {"type": "pickupGenerator", "activationX": 1279, "pickup": 0, "period": 300},
+    {"type": "dialogue", "activationX": 1279, "scene": 1, "condition": 0, "flag": null, "value": null},
+    {"type": "forceScroll", "activationX": 1279, "speed": 0},
+    {"type": "scrollLock", "activationX": 1279, "condition": 2, "flag": 0, "value": 666},
+    {"type": "animatedProp", "activationX": 1151, "prop": "videoboss.electronics_4", "x": 1891, "y": 280},
+    {"type": "animatedProp", "activationX": 1145, "prop": "videoboss.dos", "x": 1885, "y": 186},
+    {"type": "dialogue", "activationX": 1097, "scene": 4, "condition": 1, "flag": 0, "value": 6},
+    {"type": "animatedProp", "activationX": 1069, "prop": "videoboss.electronics_3", "x": 1809, "y": 281},
+    {"type": "animatedProp", "activationX": 1062, "prop": "videoboss.windows", "x": 1802, "y": 183},
+    {"type": "enemy", "activationX": 1055, "enemy": "videoboss.small_mario", "x": 1805, "y": 469, "facing": 0},
+    {"type": "animatedProp", "activationX": 984, "prop": "videoboss.electronics_2", "x": 1724, "y": 280},
+    {"type": "animatedProp", "activationX": 978, "prop": "videoboss.assembler", "x": 1718, "y": 182},
+    {"type": "dialogue", "activationX": 966, "scene": 3, "condition": 1, "flag": 0, "value": 4},
+    {"type": "dialogue", "activationX": 820, "scene": 2, "condition": 1, "flag": 0, "value": 2},
+    {"type": "animatedProp", "activationX": 786, "prop": "videoboss.world_map", "x": 1526, "y": 174},
+    {"type": "forceScroll", "activationX": 770, "speed": 1},
+    {"type": "holdFire", "activationX": 770, "flag": 0, "value": 1},
+    {"type": "animatedProp", "activationX": 659, "prop": "videoboss.electronics_1", "x": 1399, "y": 278},
+    {"type": "animatedProp", "activationX": 652, "prop": "videoboss.camera_screen", "x": 1392, "y": 181},
+    {"type": "animatedProp", "activationX": 615, "prop": "videoboss.lcd", "x": 1355, "y": 33},
+    {"type": "animatedProp", "activationX": 605, "prop": "videoboss.snow_screen", "x": 1345, "y": 183},
+    {"type": "animatedProp", "activationX": 548, "prop": "videoboss.fan", "x": 1288, "y": 228},
+    {"type": "setFlag", "activationX": 535, "flag": 0, "value": 0},
+    {"type": "pickup", "activationX": 467, "pickup": "pickup.smg", "x": 1207, "y": 442},
+    {"type": "dialogue", "activationX": 416, "scene": 0, "condition": 0, "flag": null, "value": null},
+    {"type": "forceScroll", "activationX": 416, "speed": 0},
+    {"type": "scrollLock", "activationX": 416, "condition": 0, "flag": null, "value": null},
+    {"type": "music", "activationX": 407, "track": 0, "play": 1},
+    {"type": "enemy", "activationX": 183, "enemy": "videoboss.lara", "x": 933, "y": 440, "facing": 0},
+    {"type": "forceScroll", "activationX": 117, "speed": 2},
+    {"type": "music", "activationX": 0, "track": 1, "play": 1},
+    {"type": "holdFire", "activationX": 0, "flag": 0, "value": 1},
+    {"type": "enemy", "activationX": -86, "enemy": "videoboss.weight", "x": 664, "y": 55, "facing": 0}
+  ],
+  "markers": {
+    "videoboss.arenaX": [1280],
+    "videoboss.laraExitX": [950],
+    "videoboss.laraSpikes": [515, 547, 429, 449, 471],
+    "videoboss.laraWall": [108, 28, 55],
+    "videoboss.laraWeightX": [565]
+  }
+}

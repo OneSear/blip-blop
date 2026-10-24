@@ -1,0 +1,31 @@
+{
+  "format": "blipblop-sounds",
+  "version": 1,
+  "sounds": [
+    {"file": "00.wav", "voices": 1, "name": "boss_intro"},
+    {"file": "01.wav", "voices": 1},
+    {"file": "02.wav", "voices": 1, "name": "boss_spines"},
+    {"file": "03.wav", "voices": 1, "name": "boss_big_spine"},
+    {"file": "04.wav", "voices": 1, "name": "governor_death"},
+    {"file": "05.wav", "voices": 1},
+    {"file": "06.wav", "voices": 1, "name": "governor_shoot"},
+    {"file": "07.wav", "voices": 1, "name": "rider_death"},
+    {"file": "08.wav", "voices": 1, "name": "rider_body"},
+    {"file": "09.wav", "voices": 1},
+    {"file": "10.wav", "voices": 1, "name": "mage_death"},
+    {"file": "11.wav", "voices": 1},
+    {"file": "12.wav", "voices": 1, "name": "mage_cast"},
+    {"file": "13.wav", "voices": 1, "name": "mage_fall"},
+    {"file": "14.wav", "voices": 1, "name": "grunt_death"},
+    {"file": "15.wav", "voices": 1},
+    {"file": "16.wav", "voices": 1},
+    {"file": "17.wav", "voices": 1, "name": "grunt_shoot"},
+    {"file": "18.wav", "voices": 1, "name": "gunner_death"},
+    {"file": "19.wav", "voices": 1},
+    {"file": "20.wav", "voices": 1},
+    {"file": "21.wav", "voices": 1, "name": "black_death"},
+    {"file": "22.wav", "voices": 1},
+    {"file": "23.wav", "voices": 1},
+    {"file": "24.wav", "voices": 1, "name": "black_shoot"}
+  ]
+}
