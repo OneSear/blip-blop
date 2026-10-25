@@ -441,8 +441,14 @@ bool Session::load(const bb::core::FileReader& reader, GameFiles& files) {
     g.rng.seed(g.seed);
 
     if (g.deterministic) {
-        // Milestones must reach logs even if the run crashes.
+        // Milestones must reach logs even if the run crashes. Microsoft's
+        // C library has no line buffering (_IOLBF is full buffering there)
+        // and stops the process on a size of 0, so Windows is unbuffered.
+#ifdef _WIN32
+        std::setvbuf(stdout, nullptr, _IONBF, 0);
+#else
         std::setvbuf(stdout, nullptr, _IOLBF, 0);
+#endif
     }
 
     return true;
