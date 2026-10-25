@@ -949,11 +949,11 @@ void Fireball::update() {
 }
 
 void FireballUp::drop() {
-    static const int kGravityDelay = 10;  // LATENCE_FIREBALL
-    static const int kMaxSpeed = 15;      // GRAVITE_FIREBALL
+    static const int kFireballGravityDelay = 10;  // LATENCE_FIREBALL
+    static const int kMaxSpeed = 15;              // GRAVITE_FIREBALL
 
     gravityDelay += 1;
-    gravityDelay %= kGravityDelay;
+    gravityDelay %= kFireballGravityDelay;
     if (gravityDelay == 0 && dy < kMaxSpeed) {
         dy += 1;
     }
