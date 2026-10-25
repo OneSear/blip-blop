@@ -13,7 +13,8 @@ namespace bb::platform {
 class FileSystem : public core::FileReader {
 public:
     // Replaces the file's contents with `size` bytes (creating the file);
-    // false when they could not all be written.
+    // false when they could not all be written. On Windows this fails while
+    // the file is open for reading (SDL shares it for reading only).
     virtual bool writeAll(const std::string& path, const void* data, std::size_t size) = 0;
 
     // Directory of the executable, with a trailing separator ("" if unknown).

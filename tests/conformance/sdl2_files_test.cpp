@@ -59,7 +59,7 @@ TEST_CASE("the SDL 2 file system writes, lists and reads files with UTF-8 names"
     CHECK(names.size() == 2);
     CHECK(std::find(names.begin(), names.end(), name) != names.end());
 
-    const auto file = files.open(dir.path(name));
+    auto file = files.open(dir.path(name));
     REQUIRE(file != nullptr);
     CHECK(file->size() == 256);
     std::uint8_t part[4] = {};
@@ -78,7 +78,9 @@ TEST_CASE("the SDL 2 file system writes, lists and reads files with UTF-8 names"
     const bb::core::Vfs vfs(dir.root.u8string(), files);
     CHECK(vfs.readAll(u8"data/éCRAN 1.BIN") == bytes);
 
-    // Rewriting replaces the contents.
+    // Rewriting replaces the contents, once the file is closed (Windows
+    // refuses to write a file open for reading).
+    file.reset();
     REQUIRE(files.writeAll(dir.path(name), "ab", 2));
     CHECK(files.readAll(dir.path(name)) == std::vector<std::uint8_t>{'a', 'b'});
 
