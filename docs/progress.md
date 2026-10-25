@@ -65,9 +65,16 @@ build, 13/13 identical; Linux in Docker, GCC, 34/34 tests).
 
   The streaming texture was the fastest in each of the six runs. These
   are software-rendering numbers; real Linux and Windows hardware is a
-  line of docs/release-checklist.md. On Windows CI runs the benchmark
-  once as an informative step (a VM without a GPU). Under Wine the
-  numbers would measure Wine, so none were taken there.
+  line of docs/release-checklist.md. Under Wine the numbers would
+  measure Wine, so none were taken there.
+* **Present paths on Windows**: CI's Windows job runs the benchmark once
+  (informative step) on the hosted VM, no GPU: SDL 2.32.10 (vcpkg),
+  Direct3D renderer, window surface RGB888, 600 frames per path, one run
+  (CI run 40212003833). Medians: new texture every frame 2.00 ms,
+  streaming texture 1.10 ms, window surface 0.32 ms. The window surface
+  is the fastest there but cannot scale (fullscreen, resized window,
+  high DPI); the streaming texture stays, at about 7 % of a 60 Hz frame
+  on this machine.
 * **First CI run** (`c0dd29f`, run 40137765992, read through GitHub's
   public API; the job logs need a login): Linux (GCC), Linux ASan + UBSan
   and the static analysis passed. Windows failed installing its
@@ -83,6 +90,34 @@ build, 13/13 identical; Linux in Docker, GCC, 34/34 tests).
   build Debug), and `cpack` gets `-C RelWithDebInfo`.
   `actions/checkout@v5` and `actions/upload-artifact@v6` run on Node 24
   (the v4 ones were flagged as deprecated Node 20).
+* **The first MSVC build, fixed in three CI rounds** (logs read with
+  `gh`):
+  * `8ab0f9e`: `FireballUp::drop()` (`mario.cpp`) declared a local
+    `kGravityDelay` hiding the one of `actor.hpp`: C4459, an error under
+    `/WX`. GCC and Clang do not report it, even with `-Wshadow-all`; a
+    search of the sources for other local constants named as a visible
+    namespace constant found none.
+  * `2fb4a4d`: the new `FileSystem` conformance test rewrote a file it
+    still had open for reading. SDL 2 opens a file for reading with
+    `FILE_SHARE_READ` only and for writing with no sharing, so Windows
+    refuses the write (`SDL_rwops.c`). The game never does it (only the
+    pack stays open, and it is never written); the test closes the file
+    first and `FileSystem::writeAll` documents the rule.
+  * `9932475`: every replay ended at once with `0xc0000409`.
+    `std::setvbuf(stdout, nullptr, _IOLBF, 0)` (deterministic runs) has
+    a size below Microsoft's minimum of 2, and their C library stops the
+    process on an invalid parameter; `_IOLBF` is full buffering there
+    anyway. Windows now uses `_IONBF`. MinGW's C library accepted it,
+    which is why the Wine runs passed.
+* **CI green on the three platforms** (run 40212003833, `9932475`):
+  Linux (GCC), Linux (Clang, ASan + UBSan), macOS (arm64) and Windows
+  (MSVC, SDL 2.32.10 and SDL2_mixer 2.8.2 from vcpkg): every test and the
+  26 replay runs with the same fingerprints, and the packages (Linux
+  .tar.gz, macOS disk image, Windows NSIS installer and zip) as
+  artifacts. The Windows job is no longer allowed to fail. Risk R6 is
+  closed. macOS packaging, which failed in the first run, has passed in
+  every run since; its cause is unknown (no log), and CI prints CPack's
+  logs if it fails again.
 
 ## Completing the plan (24 October 2026)
 
@@ -379,9 +414,10 @@ the official SDL2 2.30.8 and SDL2_mixer 2.8.0 MinGW packages,
   to run the cross-compiled game and `bbassets`.
 * Wine fact: a prefix created while `WINEPATH` is set fails ("could not
   load kernel32.dll"); the image creates the prefix first.
-* Still open: the MSVC build (CI's Windows job), the NSIS installer (not
-  built here), and the MinGW runtime DLLs, which a MinGW-built package
-  would have to ship (the release builds with MSVC).
+* The MSVC build and the NSIS installer passed in CI on 25 October
+  ("Completing the plan, continued"). Not needed: the MinGW runtime DLLs
+  a MinGW-built package would have to ship (the release builds with
+  MSVC).
 
 ### Display (24 October 2026)
 
@@ -1445,7 +1481,7 @@ fingerprints from `data/` and from a pack built from `assets/source/`.
   plan §3.8) could convert at load.
 * **One tool, `bbassets`**, instead of five programs.
 
-## Phase 1 — Platform layer (done; Windows build not yet verified)
+## Phase 1 — Platform layer (done; Windows verified on 25 October 2026)
 
 The legacy game now talks to `bb::platform` interfaces
 (`src/platform/include/bb/platform/`) implemented on SDL 2

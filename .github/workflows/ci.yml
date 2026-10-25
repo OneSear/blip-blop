@@ -8,23 +8,16 @@ jobs:
   build:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    # The Windows leg stays informative until a Windows build has passed:
-    # Phase 1 removed the Win32 shim (Engine/) that could not coexist with
-    # MSVC's headers, but no Windows build has been made since.
-    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: Linux (GCC)
             os: ubuntu-24.04
-            experimental: false
           - name: macOS (Apple Clang)
             os: macos-14
-            experimental: false
           - name: Windows (MSVC)
             os: windows-2022
-            experimental: true
     steps:
       - uses: actions/checkout@v5
 
