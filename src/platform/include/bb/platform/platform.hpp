@@ -6,6 +6,7 @@
 #include "bb/platform/audio.hpp"
 #include "bb/platform/clock.hpp"
 #include "bb/platform/display.hpp"
+#include "bb/platform/file_system.hpp"
 #include "bb/platform/input_source.hpp"
 #include "bb/platform/system.hpp"
 
@@ -25,6 +26,7 @@ public:
     virtual Clock& clock() = 0;
     virtual InputSource& input() = 0;
     virtual Audio& audio() = 0;
+    virtual FileSystem& files() = 0;
     virtual System& system() = 0;
 };
 

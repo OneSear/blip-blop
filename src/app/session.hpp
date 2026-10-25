@@ -6,14 +6,16 @@
 #include <string>
 
 namespace bb::core {
+class FileReader;
 class Rng;
-}
+}  // namespace bb::core
 
 namespace bb::core::gfx {
 class Pixmap;
 }
 namespace bb::platform {
 class Clock;
+class FileSystem;
 class System;
 }  // namespace bb::platform
 
@@ -34,11 +36,16 @@ public:
     // Parses the command line (both the new --options and the 2002
     // /safe /cheat /quiet switches). Returns false and prints a message on
     // error; the caller should then exit with status 2.
-    bool init(int argc, const char* argv[], GameFiles& files);
+    bool init(int argc, const char* argv[]);
+
+    // Reads what the options name (--data, --pack, --replay) once the
+    // platform is up. Same errors as init().
+    bool load(const bb::core::FileReader& reader, GameFiles& files);
 
     // Called once the platform is up and the game is about to start; real
-    // (non-virtual) time is read from this clock.
-    void start(bb::platform::Clock& clock, const bb::platform::System& system);
+    // (non-virtual) time is read from this clock, the recording is written
+    // to these files.
+    void start(bb::platform::Clock& clock, const bb::platform::System& system, bb::platform::FileSystem& files);
 
     // Flushes outputs; returns the process exit status.
     int finish();

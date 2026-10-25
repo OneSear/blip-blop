@@ -7,6 +7,9 @@
 namespace bb::core {
 class Vfs;
 }
+namespace bb::platform {
+class FileSystem;
+}
 
 namespace bb::app {
 
@@ -18,9 +21,10 @@ namespace bb::app {
 void applyDefaultSettings(game::Options& options, game::Input& input);
 // The settings of settingsPath, else those imported from legacyFile (a data
 // file), else the defaults (load_BB3_config()).
-void loadSettings(const std::string& settingsPath, const core::Vfs& dataFiles, const std::string& legacyFile,
-                  game::Options& options, game::Input& input);
+void loadSettings(const std::string& settingsPath, const platform::FileSystem& fileSystem, const core::Vfs& dataFiles,
+                  const std::string& legacyFile, game::Options& options, game::Input& input);
 // Writes the settings to settingsPath (nothing without one).
-void saveSettings(const std::string& settingsPath, const game::Options& options, const game::Input& input);
+void saveSettings(const std::string& settingsPath, platform::FileSystem& fileSystem, const game::Options& options,
+                  const game::Input& input);
 
 }  // namespace bb::app

@@ -455,46 +455,19 @@ std::optional<std::vector<std::uint8_t>> PackWriter::finish(std::string& error) 
 // ---------------------------------------------------------------------------
 // Reader
 
-namespace {
+PackFile::~PackFile() = default;
 
-bool readAt(std::FILE* file, std::uint64_t offset, void* out, std::size_t size) {
-    if (size == 0) {
-        return true;
-    }
-    if (offset > 0x7FFFFFFFu || std::fseek(file, static_cast<long>(offset), SEEK_SET) != 0) {
-        return false;
-    }
-    return std::fread(out, 1, size, file) == size;
-}
-
-}  // namespace
-
-PackFile::~PackFile() {
-    if (file_ != nullptr) {
-        std::fclose(file_);
-    }
-}
-
-std::unique_ptr<PackFile> PackFile::open(const std::string& path, std::string& error) {
+std::unique_ptr<PackFile> PackFile::open(const std::string& path, std::string& error, const FileReader& files) {
     std::unique_ptr<PackFile> pack(new PackFile());
-    pack->file_ = std::fopen(path.c_str(), "rb");
-    if (pack->file_ == nullptr) {
+    pack->file_ = files.open(path);
+    if (!pack->file_) {
         error = "cannot open " + path;
         return nullptr;
     }
-    if (std::fseek(pack->file_, 0, SEEK_END) != 0) {
-        error = "cannot seek in " + path;
-        return nullptr;
-    }
-    const long end = std::ftell(pack->file_);
-    if (end < 0) {
-        error = "cannot size " + path;
-        return nullptr;
-    }
-    const std::uint64_t fileSize = static_cast<std::uint64_t>(end);
+    const std::uint64_t fileSize = pack->file_->size();
 
     std::uint8_t header[kHeaderSize];
-    if (!readAt(pack->file_, 0, header, kHeaderSize)) {
+    if (!pack->file_->readAt(0, header, kHeaderSize)) {
         error = path + ": truncated header";
         return nullptr;
     }
@@ -528,9 +501,9 @@ std::unique_ptr<PackFile> PackFile::open(const std::string& path, std::string& e
     std::vector<std::uint8_t> names(namesSize);
     std::vector<std::uint8_t> assetRecords(std::size_t{assetCount} * kAssetRecordSize);
     std::vector<std::uint8_t> chunkRecords(std::size_t{chunkCount} * kChunkRecordSize);
-    if (!readAt(pack->file_, namesOffset, names.data(), names.size()) ||
-        !readAt(pack->file_, assetTable, assetRecords.data(), assetRecords.size()) ||
-        !readAt(pack->file_, chunkTable, chunkRecords.data(), chunkRecords.size())) {
+    if (!pack->file_->readAt(namesOffset, names.data(), names.size()) ||
+        !pack->file_->readAt(assetTable, assetRecords.data(), assetRecords.size()) ||
+        !pack->file_->readAt(chunkTable, chunkRecords.data(), chunkRecords.size())) {
         error = path + ": cannot read the index";
         return nullptr;
     }
@@ -592,7 +565,7 @@ const PackFile::Asset* PackFile::find(std::string_view name) const {
 
 std::optional<std::vector<std::uint8_t>> PackFile::read(const Chunk& chunk, std::string& error) const {
     std::vector<std::uint8_t> bytes(chunk.size);
-    if (!readAt(file_, chunk.offset, bytes.data(), bytes.size())) {
+    if (!file_->readAt(chunk.offset, bytes.data(), bytes.size())) {
         error = "cannot read a pack chunk";
         return std::nullopt;
     }

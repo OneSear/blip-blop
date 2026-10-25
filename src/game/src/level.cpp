@@ -72,10 +72,11 @@ void hashList(core::Fnv1a64& h, const EntityList<Entity>& list, bool characters,
         const EntityState s = e->state();
 
         if (trace != nullptr) {
-            std::fprintf(
-                trace, "    %-28s x=%d y=%d dy=%d etape=%d ss=%d dir=%d del=%d col=%d box=%d,%d,%d,%d",
-                typeid(*e).name(), e->x, e->y, s.dy, s.frame, s.subFrame, s.direction,
-                static_cast<int>(e->dead), static_cast<int>(e->collides), e->x1, e->y1, e->x2, e->y2);
+            std::fprintf(trace,
+                         "    %-28s x=%d y=%d dy=%d etape=%d ss=%d dir=%d del=%d col=%d box=%d,%d,%d,%d",
+                         typeid(*e).name(), e->x, e->y, s.dy, s.frame, s.subFrame, s.direction,
+                         static_cast<int>(e->dead), static_cast<int>(e->hitbox.active), e->hitbox.x1,
+                         e->hitbox.y1, e->hitbox.x2, e->hitbox.y2);
             if (characters) {
                 std::fprintf(trace, " pv=%d etat=%d", s.hitPoints, s.state);
             }
@@ -89,11 +90,11 @@ void hashList(core::Fnv1a64& h, const EntityList<Entity>& list, bool characters,
         h.add(s.subFrame);
         h.add(s.direction);
         h.add(static_cast<int>(e->dead));
-        h.add(static_cast<int>(e->collides));
-        h.add(e->x1);
-        h.add(e->y1);
-        h.add(e->x2);
-        h.add(e->y2);
+        h.add(static_cast<int>(e->hitbox.active));
+        h.add(e->hitbox.x1);
+        h.add(e->hitbox.y1);
+        h.add(e->hitbox.x2);
+        h.add(e->hitbox.y2);
 
         if (characters) {
             h.add(s.hitPoints);

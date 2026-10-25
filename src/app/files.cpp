@@ -2,9 +2,7 @@
 
 #include "files.hpp"
 
-#include <filesystem>
-#include <system_error>
-
+#include "bb/core/file_reader.hpp"
 #include "bb/core/assets/asset_source.hpp"
 #include "bb/core/assets/pack.hpp"
 #include "bb/core/log.hpp"
@@ -19,7 +17,8 @@ constexpr const char* kProbeFile = "data/uk.dat";
 
 }  // namespace
 
-GameFiles::GameFiles() : vfs_(std::make_unique<core::Vfs>("data")) {}
+GameFiles::GameFiles(const core::FileReader& reader)
+    : reader_(reader), vfs_(std::make_unique<core::Vfs>("data", reader)) {}
 
 GameFiles::~GameFiles() {
     // The default asset source reads through the files: it goes first.
@@ -29,7 +28,7 @@ GameFiles::~GameFiles() {
 void GameFiles::setDataRoot(const std::string& dataRoot) {
     // The default asset source reads through the files: drop it first.
     assetSource_.reset();
-    vfs_ = std::make_unique<core::Vfs>(dataRoot);
+    vfs_ = std::make_unique<core::Vfs>(dataRoot, reader_);
     chosen_ = true;
 }
 
@@ -46,10 +45,9 @@ void GameFiles::locateGameData(const std::string& baseDirectory) {
         return;
     }
     const std::string packPath = baseDirectory + "blipblop.bbpack";
-    std::error_code ec;
-    if (std::filesystem::is_regular_file(packPath, ec)) {
+    if (reader_.kind(packPath) == core::FileReader::Kind::File) {
         std::string error;
-        std::shared_ptr<const core::assets::PackFile> pack = core::assets::PackFile::open(packPath, error);
+        std::shared_ptr<const core::assets::PackFile> pack = core::assets::PackFile::open(packPath, error, reader_);
         if (pack) {
             core::Log::info("Game data: " + packPath);
             setAssetSource(std::make_unique<core::assets::PackSource>(pack));
@@ -58,7 +56,7 @@ void GameFiles::locateGameData(const std::string& baseDirectory) {
         core::Log::warning(error);
     }
     const std::string dataRoot = baseDirectory + "data";
-    if (core::Vfs(dataRoot).resolve(kProbeFile)) {
+    if (core::Vfs(dataRoot, reader_).resolve(kProbeFile)) {
         core::Log::info("Game data: " + dataRoot);
         setDataRoot(dataRoot);
     }

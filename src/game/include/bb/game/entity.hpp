@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include "bb/game/components.hpp"
+
 namespace bb::game {
 
 // The part of an entity's state that is not in Entity itself, for the
@@ -124,12 +126,8 @@ public:
     int x = 0;
     int y = 0;
 
-    // Hitbox corners in level coordinates (inclusive), used when collides.
-    int x1 = -1000;
-    int y1 = -1000;
-    int x2 = -2000;
-    int y2 = -2000;
-    bool collides = false;
+    // What it hits and is hit with.
+    Hitbox hitbox;
 
     // Set when the entity is finished: the world drops it at the end of
     // the tick.
@@ -138,13 +136,8 @@ public:
     // Ticks until the next bubble in underwater levels (Flag::Bubbles).
     int bubbleDelay = 0;
 
-    // Box overlap of two colliding entities (the 2002 Sprite::collision).
-    bool overlaps(const Entity& other) const noexcept {
-        if (!collides || !other.collides) {
-            return false;
-        }
-        return !(other.x2 < x1 || other.x1 > x2 || other.y2 < y1 || other.y1 > y2);
-    }
+    // Whether the two hitboxes overlap.
+    bool overlaps(const Entity& other) const noexcept { return hitbox.overlaps(other.hitbox); }
 
     // Shared with the handles to this entity; cleared by the destructor.
     const std::shared_ptr<Entity*>& lifeToken() {
@@ -158,11 +151,7 @@ private:
     void copyFields(const Entity& other) noexcept {
         x = other.x;
         y = other.y;
-        x1 = other.x1;
-        y1 = other.y1;
-        x2 = other.x2;
-        y2 = other.y2;
-        collides = other.collides;
+        hitbox = other.hitbox;
         dead = other.dead;
         bubbleDelay = other.bubbleDelay;
     }

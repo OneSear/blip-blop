@@ -87,7 +87,7 @@ private:
 // The boom bear (202): runs at the target player and blows up.
 class BoomBear : public Enemy {
 public:
-    explicit BoomBear(World& world) : Enemy(world) { hitPoints = 200; }
+    explicit BoomBear(World& world) : Enemy(world) { health.points = 200; }
     void update() override;
     void hitBy(Shot& shot) override;
 
@@ -117,7 +117,7 @@ private:
 class ZombieBear : public Enemy {
 public:
     explicit ZombieBear(World& world) : Enemy(world) {
-        hitPoints = 1000;
+        health.points = 1000;
         treasure = 10;  // (unused: its kills skip the shared pipeline)
     }
     void update() override;
@@ -194,7 +194,7 @@ private:
 // (the dialogue) and turns the generators on; killed, register 1 = 2.
 class JediHero : public Jedi {
 public:
-    explicit JediHero(World& world) : Jedi(world) { hitPoints = 6000; }
+    explicit JediHero(World& world) : Jedi(world) { health.points = 6000; }
     void update() override;
     void hitBy(Shot& shot) override;
 

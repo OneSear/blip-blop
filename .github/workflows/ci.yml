@@ -26,7 +26,7 @@ jobs:
             os: windows-2022
             experimental: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
@@ -40,7 +40,9 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg" install sdl2 "sdl2-mixer[libvorbis,mpg123]" --triplet x64-windows
+          # Ogg Vorbis is always built into vcpkg's sdl2-mixer (it is a
+          # dependency, not a feature: "[libvorbis]" made vcpkg fail).
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg" install sdl2 "sdl2-mixer[mpg123]" --triplet x64-windows
           "CMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" >> $env:GITHUB_ENV
 
       - name: Configure
@@ -57,17 +59,34 @@ jobs:
 
       # Windows: NSIS installer and zip; macOS: disk image; Linux: .tar.gz
       # (cmake/BBPackaging.cmake).
+      # -C: the Visual Studio generator builds every configuration in one tree.
       - name: Package
-        run: cpack --config build/release/CPackConfig.cmake -B build/release/packages
+        run: cpack --config build/release/CPackConfig.cmake -C RelWithDebInfo -B build/release/packages
 
-      - uses: actions/upload-artifact@v4
+      # The first macOS run failed here; the same command works on an Intel
+      # Mac, so show CPack's logs (install, bundle fix-up, hdiutil).
+      - name: Show packaging logs on failure
+        if: failure()
+        shell: bash
+        run: find build/release/packages/_CPack_Packages -name '*.log' -exec sh -c 'echo "== $1"; cat "$1"' sh {} \; || true
+
+      # The present paths (D-08) on a hosted Windows VM: no GPU, so the
+      # numbers only show that the paths work; real hardware is measured
+      # with docs/release-checklist.md.
+      - name: Present benchmark (Windows, informative)
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        shell: bash
+        run: build/release/tests/RelWithDebInfo/bb_present_bench.exe 600
+
+      - uses: actions/upload-artifact@v6
         with:
           name: package-${{ runner.os }}
           path: build/release/packages/BlipBlop-*
 
       - name: Keep fingerprints on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: replay-fingerprints-${{ runner.os }}
           path: build/release/tests/replays/out/
@@ -76,7 +95,7 @@ jobs:
     name: Linux (Clang, ASan + UBSan)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y clang libsdl2-dev libsdl2-mixer-dev
       - name: Configure
@@ -94,7 +113,7 @@ jobs:
     runs-on: ubuntu-24.04
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y clang-tidy cppcheck libsdl2-dev libsdl2-mixer-dev
       - name: Configure
@@ -109,7 +128,7 @@ jobs:
           cppcheck --enable=warning,portability --inline-suppr --quiet \
             -I src/core/include -I src/game/include -I src/platform/include src 2> cppcheck.txt || true
           wc -l cppcheck.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: static-analysis-reports
           path: |

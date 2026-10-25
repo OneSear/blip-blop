@@ -19,7 +19,7 @@ constexpr Flag kJediHeroState = Flag::User1;  // 1 arrived (dialogue), 2 dead
 //-----------------------------------------------------------------------------
 
 Jedi::Jedi(World& world) : Enemy(world) {
-    hitPoints = 250;
+    health.points = 250;
     shotDelay_ = 200 + world.random() % 250;
 }
 
@@ -55,12 +55,7 @@ void Jedi::walkAbout() {
 
     fall();
 
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 8;
-    }
+    animation.cycle(6, 8);
 
     if (x - kSpeed < camera + 20 || solidWall(x - kSpeed, y)) {
         direction = kFacingRight;
@@ -69,10 +64,10 @@ void Jedi::walkAbout() {
     }
     if (direction == kFacingRight) {
         walk(kSpeed);
-        image = enemyImage(img::kJediWalkRight + frame);
+        image = enemyImage(img::kJediWalkRight + animation.frame);
     } else {
         walk(-kSpeed);
-        image = enemyImage(img::kJediWalkLeft + frame);
+        image = enemyImage(img::kJediWalkLeft + animation.frame);
     }
 
     if (shotWait_ > shotDelay_ && w.target != nullptr) {
@@ -107,11 +102,8 @@ void Jedi::die() {
         throwSword(world().target != nullptr);
     }
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        if (frame > 20) {
+    if (animation.tick(4)) {
+        if (animation.frame > 20) {
             if (platformAt(x, y) != 0) {
                 world().media.effects->engrave(x, y, image);
             }
@@ -119,7 +111,8 @@ void Jedi::die() {
             return;
         }
     }
-    image = enemyImage((direction == kFacingRight ? img::kJediDieRight : img::kJediDieLeft) + frame);
+    image =
+        enemyImage((direction == kFacingRight ? img::kJediDieRight : img::kJediDieLeft) + animation.frame);
 }
 
 void Jedi::burnUp() {
@@ -127,16 +120,14 @@ void Jedi::burnUp() {
         throwSword(world().target != nullptr);
     }
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        if (frame > 7) {
+    if (animation.tick(4)) {
+        if (animation.frame > 7) {
             dead = true;
             return;
         }
     }
-    image = enemyImage((direction == kFacingRight ? img::kJediBurnRight : img::kJediBurnLeft) + frame);
+    image =
+        enemyImage((direction == kFacingRight ? img::kJediBurnRight : img::kJediBurnLeft) + animation.frame);
 }
 
 void Jedi::hitBy(Shot& shot) {
@@ -153,11 +144,11 @@ void Jedi::draw() {
     Actor::draw();
     if (holdsSword) {
         if (direction == kFacingRight) {
-            drawAt(x + kSwordX[frame], y + kSwordY[frame],
-                   enemyImage(img::kJediSwordRight + kSwordStep[frame]));
+            drawAt(x + kSwordX[animation.frame], y + kSwordY[animation.frame],
+                   enemyImage(img::kJediSwordRight + kSwordStep[animation.frame]));
         } else {
-            drawAt(x - kSwordX[frame], y + kSwordY[frame],
-                   enemyImage(img::kJediSwordLeft + kSwordStep[frame]));
+            drawAt(x - kSwordX[animation.frame], y + kSwordY[animation.frame],
+                   enemyImage(img::kJediSwordLeft + kSwordStep[animation.frame]));
         }
     }
 }
@@ -171,7 +162,7 @@ void JediHero::update() {
     if (entering_) {
         if (x > w.camera.x + 450) {
             walkAbout();
-            collides = false;
+            hitbox.active = false;
         } else {
             entering_ = false;
             w.flags[kJediHeroState] = 1;
@@ -184,7 +175,7 @@ void JediHero::update() {
 
 void JediHero::hitBy(Shot& shot) {
     Jedi::hitBy(shot);
-    if (hitPoints <= 0) {
+    if (health.points <= 0) {
         world().flags[kJediHeroState] = 2;
         world().flags[Flag::GeneratorsOff] = 1;
     }
@@ -226,21 +217,18 @@ void SnorkCameo::update() {
             }
             break;
         case kGoingIn:
-            subFrame += 1;
-            subFrame %= 9;
-            if (subFrame == 0) {
-                frame += 1;
-                if (frame == 5) {
-                    frame = subFrame = 0;
+            if (animation.tick(9)) {
+                if (animation.frame == 5) {
+                    animation.restart();
                     mode = kRunning;
                 } else {
-                    image = enemyImage(img::kSnorkHurt + frame);
+                    image = enemyImage(img::kSnorkHurt + animation.frame);
                 }
             }
             noHitbox();
             break;
         case kRunning:
-            image = enemyImage(img::kSnorkRun + animate(kRun, 4, 5));
+            image = enemyImage(img::kSnorkRun + animation.loop(kRun, 4, 5));
             walk(3);
             noHitbox();
             break;

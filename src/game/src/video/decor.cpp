@@ -25,13 +25,8 @@ void SyncedProp::update() {
 }
 
 void LoopProp::update() {
-    subFrame += 1;
-    subFrame %= delay_;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= steps_;
-    }
-    image = levelImage(first_ + frame);
+    animation.cycle(delay_, steps_);
+    image = levelImage(first_ + animation.frame);
 }
 
 }  // namespace bb::game::video

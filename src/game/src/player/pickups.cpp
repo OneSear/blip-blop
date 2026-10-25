@@ -34,7 +34,7 @@ class Pickup : public Actor, public Collectable {
 public:
     Pickup(World& world, int picture) : Actor(world) {
         image = world.media.misc->image(picture);
-        collides = true;
+        hitbox.active = true;
     }
 
     Collectable* asCollectable() override { return this; }
@@ -44,9 +44,9 @@ public:
         phase_ += 12;
         phase_ %= 360;
 
-        frame += 1;
-        frame %= 10;
-        if (frame == 0) {
+        animation.frame += 1;
+        animation.frame %= 10;
+        if (animation.frame == 0) {
             sparkle_ = !sparkle_;
         }
 
@@ -57,10 +57,10 @@ public:
         // Drawn 15 pixels up, with a wider hitbox.
         y -= 15;
         hitboxFromImage();
-        x1 -= 10;
-        y1 -= 10;
-        x2 += 10;
-        y2 += 10;
+        hitbox.x1 -= 10;
+        hitbox.y1 -= 10;
+        hitbox.x2 += 10;
+        hitbox.y2 += 10;
         y += 15;
     }
 
@@ -85,7 +85,7 @@ protected:
 
     void taken() {
         dead = true;
-        collides = false;
+        hitbox.active = false;
     }
 
     void play(int sound) const { world().media.miscSounds->play(sound); }
@@ -149,14 +149,11 @@ public:
 
 protected:
     void take(Player& player) override {
-        if (player.hitPoints == kFullHealth) {
+        if (player.health.points == kFullHealth) {
             return;
         }
         play(snd::kPickupHealth);
-        player.hitPoints += 2;
-        if (player.hitPoints > kFullHealth) {
-            player.hitPoints = kFullHealth;
-        }
+        player.health.heal(2, kFullHealth);
         taken();
     }
 };
@@ -169,7 +166,7 @@ public:
 protected:
     void take(Player& player) override {
         play(snd::kPickupHealth);
-        player.hitPoints = kFullHealth;
+        player.health.points = kFullHealth;
         taken();
     }
 };

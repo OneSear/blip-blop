@@ -35,7 +35,7 @@ const int kSuperSaiyan[] = {0, 1, 2, 1, 0, 1, 2, 3, 2, 1, 2, 3, 4, 3, 2, 3, 4, 5
 
 Sonic::Sonic(World& world) : Enemy(world) {
     attackDelay_ = 50 + world.random() % 250;
-    hitPoints = 10000;
+    health.points = 10000;
     minX = world.marker("videoboss.arenaX");
 }
 
@@ -89,18 +89,13 @@ void Sonic::update() {
 }
 
 void Sonic::runStep() {
-    subFrame += 1;
-    subFrame %= 10 - speed_;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 8;
-    }
+    animation.cycle(10 - speed_, 8);
     if (direction == kFacingRight) {
         walk(speed_);
-        image = enemyImage(img::kSonicRunRight + frame);
+        image = enemyImage(img::kSonicRunRight + animation.frame);
     } else {
         walk(-speed_);
-        image = enemyImage(img::kSonicRunLeft + frame);
+        image = enemyImage(img::kSonicRunLeft + animation.frame);
     }
 }
 
@@ -139,8 +134,7 @@ void Sonic::run() {
                     goalY_ = target.y;
                     shots_ = 0;
                     attackPhase_ = -1;
-                    subFrame = 0;
-                    frame = 0;
+                    animation.restart();
                     horizontal();
                     return;
                 case 1:
@@ -151,14 +145,12 @@ void Sonic::run() {
                     goalX_ = target.x;
                     goalY_ = target.y;
                     shots_ = 0;
-                    subFrame = 0;
-                    frame = 0;
+                    animation.restart();
                     vertical();
                     return;
                 default:
                     attackType_ = 3;
-                    subFrame = 0;
-                    frame = 0;
+                    animation.restart();
                     shots_ = 0;
                     mode = kShooting;
                     lightning();
@@ -168,7 +160,7 @@ void Sonic::run() {
     }
 
     // Below 9000 HP, loses his rings: three throws, 30 ticks apart.
-    if (rings_ > 0 && hitPoints < 9000) {
+    if (rings_ > 0 && health.points < 9000) {
         if (rings_ % 30 == 0) {
             throwRings();
         }
@@ -210,23 +202,22 @@ void Sonic::die() {
         const int arena = w.marker("videoboss.arenaX");
         if (w.collision.platformLayerAt(x, y) == 0 && x > arena + kSuperLeft && x < arena + kSuperRight) {
             w.flags[kSonicState] = 1;
-            frame = 0;
-            subFrame = 0;
+            animation.restart();
             direction = kFacingLeft;
         }
     } else if (w.flags[kSonicState] == 1) {
         // Super saiyan: rises, the screen shakes harder and harder.
         y -= 1;
-        subFrame += 1;
-        subFrame %= 5;
-        if (subFrame == 0) {
-            w.shake.start(frame / 5 + 2);
-            frame += 1;
-            if (frame >= 43) {
+        animation.subFrame += 1;
+        animation.subFrame %= 5;
+        if (animation.subFrame == 0) {
+            w.shake.start(animation.frame / 5 + 2);
+            animation.frame += 1;
+            if (animation.frame >= 43) {
                 w.flags[kSonicState] = 2;
                 dead = true;
             } else {
-                image = enemyImage(img::kSonicCallLeft + kSuperSaiyan[frame]);
+                image = enemyImage(img::kSonicCallLeft + kSuperSaiyan[animation.frame]);
             }
         }
     }
@@ -240,8 +231,7 @@ void Sonic::jump() {
         mode = kNormal;
         dy = 0;
         y = ground;
-        subFrame = 0;
-        frame = 0;
+        animation.restart();
         run();
         return;
     }
@@ -261,7 +251,7 @@ void Sonic::jump() {
 }
 
 void Sonic::tickSpines(int belowHp) {
-    if (hitPoints < belowHp) {
+    if (health.points < belowHp) {
         spineStep_ += 1;
         spineStep_ %= 2;
         if (spineStep_ == 0) {
@@ -275,8 +265,7 @@ void Sonic::backToRun() {
     mode = kWalking;
     attackWait_ = 0;
     attackDelay_ = 50 + world().random() % 250;
-    subFrame = 0;
-    frame = 0;
+    animation.restart();
     run();
 }
 
@@ -290,14 +279,9 @@ void Sonic::horizontal() {
         if (shots_ == 50) {
             attackPhase_ = 0;
         } else {
-            subFrame += 1;
-            subFrame %= 2;
-            if (subFrame == 0) {
-                frame += 1;
-                frame %= 5;
-            }
+            animation.cycle(2, 5);
             image = enemyImage((direction == kFacingRight ? img::kSonicCrouchRight : img::kSonicCrouchLeft) +
-                               frame);
+                               animation.frame);
         }
         hitboxFromImage();
         return;
@@ -345,10 +329,10 @@ void Sonic::horizontal() {
 
     if (direction == kFacingRight) {
         x += speed_;
-        image = enemyImage(img::kSonicBallRight + animate(kBall, 6, 3));
+        image = enemyImage(img::kSonicBallRight + animation.loop(kBall, 6, 3));
     } else {
         x -= speed_;
-        image = enemyImage(img::kSonicBallLeft + animate(kBall, 6, 3));
+        image = enemyImage(img::kSonicBallLeft + animation.loop(kBall, 6, 3));
     }
     hitboxFromImage();
 }
@@ -362,14 +346,9 @@ void Sonic::vertical() {
         if (shots_ == 50) {
             attackPhase_ = 0;
         } else {
-            subFrame += 1;
-            subFrame %= 2;
-            if (subFrame == 0) {
-                frame += 1;
-                frame %= 5;
-            }
+            animation.cycle(2, 5);
             image = enemyImage((direction == kFacingRight ? img::kSonicCrouchRight : img::kSonicCrouchLeft) +
-                               frame);
+                               animation.frame);
         }
         hitboxFromImage();
         return;
@@ -409,8 +388,7 @@ void Sonic::vertical() {
             fall();
             y = floor;
             dy = 0;
-            subFrame = 0;
-            frame = 0;
+            animation.restart();
             speed_ = 1;
             backToRun();
             return;
@@ -420,10 +398,10 @@ void Sonic::vertical() {
 
     if (direction == kFacingRight) {
         x += speed_;
-        image = enemyImage(img::kSonicBallRight + animate(kBall, 6, 3));
+        image = enemyImage(img::kSonicBallRight + animation.loop(kBall, 6, 3));
     } else {
         x -= speed_;
-        image = enemyImage(img::kSonicBallLeft + animate(kBall, 6, 3));
+        image = enemyImage(img::kSonicBallLeft + animation.loop(kBall, 6, 3));
     }
     hitboxFromImage();
 }
@@ -431,27 +409,23 @@ void Sonic::vertical() {
 void Sonic::lightning() {
     World& w = world();
 
-    subFrame += 1;
-    subFrame %= 5;
-    if (subFrame == 0) {
-        frame += 1;
-    }
-    if (frame == 23) {
+    animation.tick(5);
+    if (animation.frame == 23) {
         speed_ = 1;
         backToRun();
         return;
     }
 
     // More bolts as his HP drop: the call starts again.
-    if (frame == 5 && subFrame == 0) {
-        if ((shots_ <= 1 && hitPoints < kLow) || (shots_ <= 2 && hitPoints < kCritical) ||
-            (shots_ <= 3 && hitPoints < kVeryLow)) {
-            frame = 0;
-            subFrame = 1;
+    if (animation.frame == 5 && animation.subFrame == 0) {
+        if ((shots_ <= 1 && health.points < kLow) || (shots_ <= 2 && health.points < kCritical) ||
+            (shots_ <= 3 && health.points < kVeryLow)) {
+            animation.frame = 0;
+            animation.subFrame = 1;
         }
     }
 
-    if (frame == 0 && subFrame == 1 && w.target != nullptr) {
+    if (animation.frame == 0 && animation.subFrame == 1 && w.target != nullptr) {
         auto* bolt = new SonicLightning(w);
         bolt->direction = direction;
         bolt->x = w.target->x;
@@ -461,7 +435,8 @@ void Sonic::lightning() {
     }
 
     y -= 1;
-    image = enemyImage((direction == kFacingRight ? img::kSonicCallRight : img::kSonicCallLeft) + subFrame);
+    image = enemyImage((direction == kFacingRight ? img::kSonicCallRight : img::kSonicCallLeft) +
+                       animation.subFrame);
     hitboxFromImage();
 }
 
@@ -494,26 +469,22 @@ void Sonic::hitBy(Shot& shot) {
 //-----------------------------------------------------------------------------
 
 void SonicLightning::update() {
-    subFrame += 1;
-    subFrame %= 3;
-    if (subFrame == 0) {
-        frame += 1;
-    }
-    image = enemyImage(img::kSonicLightning + subFrame);
+    animation.tick(3);
+    image = enemyImage(img::kSonicLightning + animation.subFrame);
 
-    if (frame > 30) {
+    if (animation.frame > 30) {
         hitboxFromImage();
-        if (frame > 36) {
+        if (animation.frame > 36) {
             dead = true;
         }
     }
-    if (frame == 0 || frame > 30) {
+    if (animation.frame == 0 || animation.frame > 30) {
         world().shake.start(7);
     }
 }
 
 void SonicLightning::draw() {
-    if (frame == 0 || frame > 30) {
+    if (animation.frame == 0 || animation.frame > 30) {
         Actor::draw();
     }
 }
@@ -530,13 +501,8 @@ void SonicRing::update() {
         }
     }
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 4;
-    }
-    image = enemyImage(img::kSonicRing + frame);
+    animation.cycle(4, 4);
+    image = enemyImage(img::kSonicRing + animation.frame);
     dieWhenOffscreen();
 }
 
@@ -552,7 +518,7 @@ constexpr int kCarMaxFallSpeed = 8;
 }  // namespace
 
 PacManCar::PacManCar(World& world) : Enemy(world) {
-    hitPoints = 1000;
+    health.points = 1000;
     image = enemyImage(img::kPacmanCar);
 }
 
@@ -580,8 +546,8 @@ void PacManCar::update() {
 
     if (state == 1 || state == 2) {
         // After 160 ticks, drives in (slowing down) and lands on layer 1
-        frame += 1;
-        if (frame > 160) {
+        animation.frame += 1;
+        if (animation.frame > 160) {
             drop();
             const int landing = w.marker("videoboss.arenaX") + kCarLanding;
             if (x < landing - 250) {
@@ -595,8 +561,7 @@ void PacManCar::update() {
             } else if (w.collision.platformLayerAt(x, y + dy) == 1) {
                 y = platformAt(x, y + dy);
                 w.flags[kSonicState] = 3;
-                frame = 0;
-                subFrame = 0;
+                animation.restart();
             }
         }
     } else if (state == 3) {
@@ -614,7 +579,7 @@ void PacManCar::draw() {
     // Pac-Man getting out (register 2 >= 4: the steps that set it are
     // commented out in 2002, so never drawn).
     if (world().flags[kSonicState] >= 4) {
-        drawAt(x + 48, y - 82, enemyImage(img::kPacmanCar + 1 + frame));
+        drawAt(x + 48, y - 82, enemyImage(img::kPacmanCar + 1 + animation.frame));
     }
     Actor::draw();
 }

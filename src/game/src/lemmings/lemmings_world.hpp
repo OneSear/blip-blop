@@ -24,7 +24,7 @@ namespace miscsnd = bb::assets::sounds::misc;
 // drops a cow bomb pickup and sets register 0 to 1 (the level's dialogue).
 class Lemming : public Enemy {
 public:
-    explicit Lemming(World& world) : Enemy(world) { hitPoints = 100; }
+    explicit Lemming(World& world) : Enemy(world) { health.points = 100; }
     void update() override;
     void hitBy(Shot& shot) override;
 

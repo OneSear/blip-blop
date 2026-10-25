@@ -16,6 +16,8 @@ add_executable(bb_unit_tests
     unit/entity_registry_test.cpp
     unit/level_event_test.cpp
     unit/trig_test.cpp
+    unit/components_test.cpp
+    unit/actor_test.cpp
     unit/fixed_clock_test.cpp
     unit/sprite_font_test.cpp
     unit/audio_test.cpp
@@ -32,6 +34,7 @@ add_executable(bb_conformance_tests
     conformance/sdl2_display_test.cpp
     conformance/sdl2_audio_test.cpp
     conformance/sdl2_input_test.cpp
+    conformance/sdl2_files_test.cpp
 )
 target_link_libraries(bb_conformance_tests PRIVATE bb::core bb::platform_sdl2 bb_doctest SDL2::SDL2 SDL2_mixer::SDL2_mixer)
 # The audio test decodes every shipped sound and music.

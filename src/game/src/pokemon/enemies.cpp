@@ -98,12 +98,7 @@ void Walker::update() {
 void Walker::walkAbout() {
     fall();
 
-    subFrame += 1;
-    subFrame %= 8;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 2;
-    }
+    animation.cycle(8, 2);
 
     // Charmander looks one pixel ahead but walks two.
     const int ahead = spec_.turnSpeed;
@@ -115,10 +110,10 @@ void Walker::walkAbout() {
 
     if (direction == kFacingRight) {
         walk(spec_.walkSpeed);
-        image = enemyImage(spec_.walkRight + frame);
+        image = enemyImage(spec_.walkRight + animation.frame);
     } else {
         walk(-spec_.walkSpeed);
-        image = enemyImage(spec_.walkLeft + frame);
+        image = enemyImage(spec_.walkLeft + animation.frame);
     }
     hitboxFromImage();
 }
@@ -126,13 +121,9 @@ void Walker::walkAbout() {
 void Walker::die() {
     fall();
 
-    subFrame += 1;
-    subFrame %= spec_.dieDelay;
-    if (subFrame == 0 && frame < spec_.dieSteps) {
-        frame += 1;
-    }
+    animation.tickUpTo(spec_.dieDelay, spec_.dieSteps);
 
-    if (frame >= spec_.dieSteps) {
+    if (animation.frame >= spec_.dieSteps) {
         // Engraved where it lies, unless that is a moving platform (whose
         // heights are on layer 4).
         if (spec_.engraves) {
@@ -143,7 +134,7 @@ void Walker::die() {
         }
         dead = true;
     } else {
-        image = enemyImage((direction == kFacingLeft ? spec_.dieLeft : spec_.dieRight) + frame);
+        image = enemyImage((direction == kFacingLeft ? spec_.dieLeft : spec_.dieRight) + animation.frame);
     }
 }
 
@@ -164,12 +155,7 @@ void Com::update() {
     switch (mode) {
         case kNormal:
         case kWalking:
-            subFrame += 1;
-            subFrame %= 8;
-            if (subFrame == 0) {
-                frame += 1;
-                frame %= 2;
-            }
+            animation.cycle(8, 2);
 
             if (x - 1 < world().camera.x || solidWall(x - 1, y)) {
                 direction = kFacingRight;
@@ -178,7 +164,7 @@ void Com::update() {
             }
             x += direction == kFacingRight ? 1 : -1;
 
-            image = enemyImage(img::kComFly + frame);
+            image = enemyImage(img::kComFly + animation.frame);
             hitboxFromImage();
             break;
         case kDying:
@@ -192,20 +178,16 @@ void Com::update() {
 }
 
 void Com::die() {
-    if (subFrame == 0 && frame == 0) {
+    if (animation.subFrame == 0 && animation.frame == 0) {
         world().media.levelSounds->play(snd::kComDeath);
     }
 
-    subFrame += 1;
-    subFrame %= 3;
-    if (subFrame == 0 && frame < 22) {
-        frame += 1;
-    }
+    animation.tickUpTo(3, 22);
 
-    if (frame >= 22) {
+    if (animation.frame >= 22) {
         dead = true;
     } else {
-        image = enemyImage(img::kComDie + frame);
+        image = enemyImage(img::kComDie + animation.frame);
     }
 }
 
@@ -241,12 +223,7 @@ void FlyingCom::update() {
 void FlyingCom::fly() {
     const int camera = world().camera.x;
 
-    subFrame += 1;
-    subFrame %= 8;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 2;
-    }
+    animation.cycle(8, 2);
 
     // At a wall or a screen edge: turn, climb back and aim again.
     if (direction == kFacingLeft && (x - speed_ < camera || solidWall(x - speed_, y))) {
@@ -292,7 +269,7 @@ void FlyingCom::fly() {
 
     x += direction == kFacingRight ? speed_ : -speed_;
 
-    image = enemyImage(img::kComFly + frame);
+    image = enemyImage(img::kComFly + animation.frame);
     hitboxFromImage();
 }
 

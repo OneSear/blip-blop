@@ -165,8 +165,7 @@ bool Plumber::jumpAt(int targetX, int targetY, int delayBase, int delayRange) {
     } else {
         return false;
     }
-    frame = 0;
-    subFrame = 0;
+    animation.restart();
     attackWait_ = 0;
     attackDelay_ = delayBase + w.random() % delayRange;
     speed_ = speed;
@@ -198,7 +197,7 @@ const int kShrinkLeft[] = {img::kMarioWalkLeft, img::kSmallMarioLeft};
 
 SmallMario::SmallMario(World& world) : Plumber(world) {
     attackDelay_ = 50 + world.random() % 250;
-    hitPoints = 10000;
+    health.points = 10000;
     minX = world.marker("videoboss.arenaX");
     image = enemyImage(img::kMarioWalkLeft);
 }
@@ -259,8 +258,7 @@ void SmallMario::walkAbout() {
         const Entity& target = *w.target;
         if (sameLayer(w, target, *this) &&
             ((direction == kFacingRight && x < target.x) || (direction == kFacingLeft && x > target.x))) {
-            frame = 0;
-            subFrame = 0;
+            animation.restart();
             chargeStep_ = 0;
             speed_ = 0;
             dy = 0;
@@ -276,10 +274,10 @@ void SmallMario::walkAbout() {
 
     if (direction == kFacingRight) {
         walk(speed_);
-        image = enemyImage(img::kMarioWalkRight + animate(kMarioWalk, 4, 16 - 3 * speed_));
+        image = enemyImage(img::kMarioWalkRight + animation.loop(kMarioWalk, 4, 16 - 3 * speed_));
     } else {
         walk(-speed_);
-        image = enemyImage(img::kMarioWalkLeft + animate(kMarioWalk, 4, 16 - 3 * speed_));
+        image = enemyImage(img::kMarioWalkLeft + animation.loop(kMarioWalk, 4, 16 - 3 * speed_));
     }
     groundPush(kMarioTopSpeed);
     groundRecoil(w.camera.x + 640);
@@ -306,9 +304,9 @@ void SmallMario::die() {
             speed_ = 1;
             small_ = true;
         } else if (direction == kFacingRight) {
-            image = enemyImage(kShrinkRight[animate(kSmallWalk, 2, 6)]);
+            image = enemyImage(kShrinkRight[animation.loop(kSmallWalk, 2, 6)]);
         } else {
-            image = enemyImage(kShrinkLeft[animate(kSmallWalk, 2, 6)]);
+            image = enemyImage(kShrinkLeft[animation.loop(kSmallWalk, 2, 6)]);
         }
     } else if (w.flags[kStage] >= 3) {
         // Walks about, small and harmless.
@@ -323,10 +321,10 @@ void SmallMario::die() {
         }
         if (direction == kFacingRight) {
             walk(speed_);
-            image = enemyImage(img::kSmallMarioRight + animate(kSmallWalk, 2, 16 - 3 * speed_));
+            image = enemyImage(img::kSmallMarioRight + animation.loop(kSmallWalk, 2, 16 - 3 * speed_));
         } else {
             walk(-speed_);
-            image = enemyImage(img::kSmallMarioLeft + animate(kSmallWalk, 2, 16 - 3 * speed_));
+            image = enemyImage(img::kSmallMarioLeft + animation.loop(kSmallWalk, 2, 16 - 3 * speed_));
         }
     }
 
@@ -347,8 +345,7 @@ void SmallMario::die() {
 
 void SmallMario::endCharge() {
     speed_ = 1;
-    frame = 0;
-    subFrame = 0;
+    animation.restart();
     mode = kWalking;
     attackWait_ = 0;
     attackDelay_ = 50 + world().random() % 250;
@@ -375,14 +372,14 @@ void SmallMario::charge() {
     chargeStep_ += 1;
     const int walkImage = direction == kFacingRight ? img::kMarioWalkRight : img::kMarioWalkLeft;
     if (chargeStep_ < 40) {
-        image = enemyImage(walkImage + animate(kMarioWalk, 4, 3));
+        image = enemyImage(walkImage + animation.loop(kMarioWalk, 4, 3));
         if (push_ > 1000) {
             endCharge();
             return;
         }
     } else {
         walk(direction == kFacingRight ? speed_ : -speed_);
-        image = enemyImage(walkImage + animate(kMarioWalk, 4, 2));
+        image = enemyImage(walkImage + animation.loop(kMarioWalk, 4, 2));
     }
     hitboxFromImage();
 }
@@ -428,10 +425,10 @@ void SmallMario::jump() {
         airPush(kMarioTopSpeed);
     } else if (direction == kFacingRight) {
         x += speed_;
-        image = enemyImage(img::kSmallMarioRight + animate(kSmallWalk, 2, 16 - 3 * speed_));
+        image = enemyImage(img::kSmallMarioRight + animation.loop(kSmallWalk, 2, 16 - 3 * speed_));
     } else {
         x -= speed_;
-        image = enemyImage(img::kSmallMarioLeft + animate(kSmallWalk, 2, 16 - 3 * speed_));
+        image = enemyImage(img::kSmallMarioLeft + animation.loop(kSmallWalk, 2, 16 - 3 * speed_));
     }
 
     push_ = 0;
@@ -456,7 +453,7 @@ const int kSpread[] = {0, 1, 2, 3, 2, 1};
 
 Luigi::Luigi(World& world) : Plumber(world) {
     attackDelay_ = 50 + world.random() % 250;
-    hitPoints = 10000;
+    health.points = 10000;
     minX = world.camera.x + 20;
 }
 
@@ -531,12 +528,11 @@ void Luigi::walkAbout() {
         const int steepness = dxTarget / dyTarget;
         // A volley at a target ahead, at most about 27 degrees off the
         // horizontal (while he has 1000 HP).
-        if (hitPoints >= 1000 && (steepness <= -2 || steepness >= 2) &&
+        if (health.points >= 1000 && (steepness <= -2 || steepness >= 2) &&
             ((direction == kFacingRight && dxTarget > 0) || (direction == kFacingLeft && dxTarget < 0))) {
             attackWait_ = 0;
             attackDelay_ = 50 + w.random() % 250;
-            subFrame = 0;
-            frame = 0;
+            animation.restart();
             speed_ = 0;
             volleyStep_ = 0;
             volleyFrame_ = 0;
@@ -555,10 +551,10 @@ void Luigi::walkAbout() {
     }
     if (direction == kFacingRight) {
         walk(speed_);
-        image = enemyImage(img::kLuigiWalkRight + animate(kLuigiWalk, 4, 14 - 2 * speed_));
+        image = enemyImage(img::kLuigiWalkRight + animation.loop(kLuigiWalk, 4, 14 - 2 * speed_));
     } else {
         walk(-speed_);
-        image = enemyImage(img::kLuigiWalkLeft + animate(kLuigiWalk, 4, 14 - 2 * speed_));
+        image = enemyImage(img::kLuigiWalkLeft + animation.loop(kLuigiWalk, 4, 14 - 2 * speed_));
     }
     groundPush(kLuigiTopSpeed);
     groundRecoil(w.camera.x + 620);
@@ -588,10 +584,10 @@ void Luigi::die() {
             }
             if (direction == kFacingRight) {
                 walk(3);
-                image = enemyImage(img::kLuigiDyingRight + animate(kLuigiWalk, 4, 8));
+                image = enemyImage(img::kLuigiDyingRight + animation.loop(kLuigiWalk, 4, 8));
             } else {
                 walk(-3);
-                image = enemyImage(img::kLuigiDyingLeft + animate(kLuigiWalk, 4, 8));
+                image = enemyImage(img::kLuigiDyingLeft + animation.loop(kLuigiWalk, 4, 8));
             }
             if (w.collision.platformLayerAt(x, y) == 0 && x > w.marker("videoboss.arenaX") + kPitLeft &&
                 x < w.marker("videoboss.arenaX") + kPitRight) {
@@ -606,12 +602,12 @@ void Luigi::die() {
                 w.flags[kLuigiState] = 2;
                 direction = kFacingRight;
             } else {
-                image = enemyImage(img::kLuigiDying + animate(kLuigiDying, 8, 6));
+                image = enemyImage(img::kLuigiDying + animation.loop(kLuigiDying, 8, 6));
             }
             break;
         case 2:
             walk(3);
-            image = enemyImage(img::kLuigiDyingRight + animate(kLuigiWalk, 4, 8));
+            image = enemyImage(img::kLuigiDyingRight + animation.loop(kLuigiWalk, 4, 8));
             if (x > w.camera.x + 680) {
                 w.flags[kLuigiState] = 3;
                 attackDelay_ = 0;
@@ -657,8 +653,7 @@ void Luigi::volley() {
 
     volleyTicks_ += 1;
     if (volleyTicks_ > 275) {
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         mode = kWalking;
         walkAbout();
         return;
@@ -672,7 +667,8 @@ void Luigi::volley() {
         return;
     }
 
-    image = enemyImage((right ? img::kLuigiShootRight : img::kLuigiShootLeft) + animate(kLuigiWalk, 4, 2));
+    image =
+        enemyImage((right ? img::kLuigiShootRight : img::kLuigiShootLeft) + animation.loop(kLuigiWalk, 4, 2));
     volleyStep_ += 1;
     volleyStep_ %= 4;
     if (volleyStep_ == 0) {
@@ -751,7 +747,7 @@ void Luigi::jump() {
 
 void Luigi::hitBy(Shot& shot) {
     Plumber::hitBy(shot);
-    if (hitPoints <= 0) {
+    if (health.points <= 0) {
         // Killed: the players hold fire until stage 5.
         HoldFireEvent(static_cast<int>(kStage), 5).run(world());
     }

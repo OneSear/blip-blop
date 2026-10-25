@@ -37,6 +37,11 @@ the release notes.
       normal speed (the log's exit line: about 60 frames presented per
       second) and the character choice does not scroll faster on a 120 Hz
       or 144 Hz screen.
+- [ ] On an idle machine, from a build of the release tree:
+      `tests/bb_present_bench 600` and `tests/bb_present_bench 600 reverse`
+      (three runs each). The streaming texture (the game's path) should
+      stay under 1 ms a frame; write the medians in docs/progress.md
+      ("Present paths") with the GPU and the renderer it prints.
 
 ## Audio
 

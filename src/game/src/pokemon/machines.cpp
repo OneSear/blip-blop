@@ -64,15 +64,10 @@ void Switch::update() {
 
     World& w = world();
 
-    subFrame += 1;
-    subFrame %= 8;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 4;
-    }
+    animation.cycle(8, 4);
 
     if (on_) {
-        image = levelImage(prop::kSwitchOn + kOn[frame]);
+        image = levelImage(prop::kSwitchOn + kOn[animation.frame]);
     } else {
         Entity* target = w.target;
         if (target != nullptr && target->x > x - 10 && target->x < x + 33 && target->y > y - 10 &&
@@ -81,7 +76,7 @@ void Switch::update() {
             on_ = true;
             w.media.levelSounds->play(snd::kSwitch);
         }
-        image = levelImage(prop::kSwitchOff + kOff[frame]);
+        image = levelImage(prop::kSwitchOff + kOff[animation.frame]);
     }
 
     if (x < w.camera.x - 100) {
@@ -134,20 +129,16 @@ void LockedCrate::update() {
     }
 
     // Comes down, then unlocks.
-    if (y < 100 && frame <= kUnlockDelay) {
+    if (y < 100 && animation.frame <= kUnlockDelay) {
         y += 2;
         return;
     }
 
-    subFrame += 1;
-    subFrame %= 5;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(5);
 
     // Two platforms come down on the left (frame 0 is reached on the first
     // tick after the descent).
-    if (frame == 0 && subFrame == 1) {
+    if (animation.frame == 0 && animation.subFrame == 1) {
         auto* platform = new CratePlatform(w, 180);
         platform->x = x - 250;
         platform->y = -150;
@@ -158,13 +149,13 @@ void LockedCrate::update() {
         w.movingPlatforms.add(platform);
     }
 
-    if (frame > kUnlockDelay + 4) {
+    if (animation.frame > kUnlockDelay + 4) {
         // Open: goes back up, drops its contents and a swinging platform.
         y -= 3;
         if (y < -160) {
             dead = true;
         }
-        if (frame == kUnlockDelay + 5 && subFrame == 0) {
+        if (animation.frame == kUnlockDelay + 5 && animation.subFrame == 0) {
             image = levelImage(prop::kCrateEmpty);
             auto* contents = new FallingCrate(w);
             contents->x = x;
@@ -182,14 +173,14 @@ void LockedCrate::draw() {
     static const int kLock[] = {0, 1, 2, 3, 4, 5, 4, 3, 2, 1};
 
     Actor::draw();
-    if (frame > kUnlockDelay + 4) {
+    if (animation.frame > kUnlockDelay + 4) {
         drawAt(x, y, levelImage(prop::kCrateOpenTop));
         drawAt(x, y + 63, levelImage(prop::kCrateOpenBottom));
-    } else if (frame > kUnlockDelay - 1) {
-        drawAt(x, y + 63, levelImage(prop::kCrateUnlock + frame - kUnlockDelay));
-    } else if (frame > 0) {
-        drawAt(x, y, levelImage(prop::kCrateLock + kLock[frame % 10]));
-        drawAt(x, y + 63, levelImage(prop::kCrateCounter + frame % 16));
+    } else if (animation.frame > kUnlockDelay - 1) {
+        drawAt(x, y + 63, levelImage(prop::kCrateUnlock + animation.frame - kUnlockDelay));
+    } else if (animation.frame > 0) {
+        drawAt(x, y, levelImage(prop::kCrateLock + kLock[animation.frame % 10]));
+        drawAt(x, y + 63, levelImage(prop::kCrateCounter + animation.frame % 16));
     }
 }
 
@@ -223,9 +214,9 @@ void SwingingPlatform::update() {
         y += 3;  // comes down first
         return;
     }
-    frame += 2;
-    frame %= 360;
-    y = 80 - ((60 * cosine1024(frame)) >> kTrigShift);
+    animation.frame += 2;
+    animation.frame %= 360;
+    y = 80 - ((60 * cosine1024(animation.frame)) >> kTrigShift);
     setPlatform(3, x - 90, x + 140, y + 28 != 0 ? y + 28 : y + 29);
 }
 
@@ -311,12 +302,7 @@ void Bomb::update() {
         w.media.levelSounds->play(snd::kBombDefused);
     }
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 9;
-    }
+    animation.cycle(4, 9);
 
     nukeSubFrame_ += 1;
     nukeSubFrame_ %= 3;
@@ -367,7 +353,7 @@ void Bomb::draw() {
         return;
     }
 
-    drawAt(x, y, levelImage(prop::kBombRing + frame));
+    drawAt(x, y, levelImage(prop::kBombRing + animation.frame));
     drawAt(x, y, levelImage(prop::kBombNuke + kNuke[nukeFrame_]));
     if (timer >= 100) {
         for (int dx = 6; dx <= 21; dx += 5) {

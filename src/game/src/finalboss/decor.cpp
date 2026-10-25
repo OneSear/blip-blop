@@ -31,7 +31,7 @@ void BattleCruiser::update() {
     // The two cruisers pass each other; while close, they exchange fire.
     x += 1;
     enemyX_ -= 1;
-    image = levelImage(prop::kCruiserRight + animate(kCruiserSway, 4, 12));
+    image = levelImage(prop::kCruiserRight + animation.loop(kCruiserSway, 4, 12));
 
     const int dyEnemy = enemyY_ - y;
     const int dxEnemy = enemyX_ - x;
@@ -84,7 +84,7 @@ void BattleCruiser::update() {
 void BattleCruiser::draw() {
     Actor::draw();
     if (attackStep_ == -3) {
-        drawAt(enemyX_, enemyY_, levelImage(prop::kCruiserLeft + kCruiserSway[frame]));
+        drawAt(enemyX_, enemyY_, levelImage(prop::kCruiserLeft + kCruiserSway[animation.frame]));
     } else {
         drawAt(enemyX_, enemyY_, levelImage(prop::kEnemyCruiserFiring + 1 - attackStep_));
     }
@@ -105,26 +105,20 @@ void CruiserShot::update() {
     if (dy >= 0 && y + dy > 43) {
         // Bursts at the lower cruiser's height.
         y = 43;
-        subFrame += 1;
-        subFrame %= 4;
-        if (subFrame == 0) {
-            frame += 1;
-            if (frame == 3) {
+        if (animation.tick(4)) {
+            if (animation.frame == 3) {
                 dead = true;
             } else {
-                image = levelImage(prop::kCruiserSparkRight + frame);
+                image = levelImage(prop::kCruiserSparkRight + animation.frame);
             }
         }
     } else if (dy <= 0 && y - dy < 20) {
         y = 18;
-        subFrame += 1;
-        subFrame %= 4;
-        if (subFrame == 0) {
-            frame += 1;
-            if (frame == 3) {
+        if (animation.tick(4)) {
+            if (animation.frame == 3) {
                 dead = true;
             } else {
-                image = levelImage(prop::kCruiserSparkLeft + frame);
+                image = levelImage(prop::kCruiserSparkLeft + animation.frame);
             }
         }
     } else {
@@ -135,16 +129,12 @@ void CruiserShot::update() {
 }
 
 void CruiserLaser::update() {
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-    }
-    if (frame == 4) {
+    animation.tick(4);
+    if (animation.frame == 4) {
         dead = true;
         return;
     }
-    if (frame == 1 && subFrame == 0) {
+    if (animation.frame == 1 && animation.subFrame == 0) {
         // The beam images 10 to 17: down-right steep to flat, then up-left.
         static const int kJumpX[] = {36, 19, 10, 0, -36, -19, -10, 0};
         static const int kJumpY[] = {19, 19, 19, 19, -19, -19, -19, -19};
@@ -154,8 +144,9 @@ void CruiserLaser::update() {
             y += kJumpY[beam];
         }
     }
-    if (frame > 0) {
-        image = levelImage((toRight_ ? prop::kCruiserSparkRight - 1 : prop::kCruiserSparkLeft - 1) + frame);
+    if (animation.frame > 0) {
+        image = levelImage((toRight_ ? prop::kCruiserSparkRight - 1 : prop::kCruiserSparkLeft - 1) +
+                           animation.frame);
     }
 }
 
@@ -208,8 +199,8 @@ void HyperspaceRock::update() {
         y = w.random() % 380;
         placing_ = false;
     }
-    subFrame += 1;
-    subFrame %= xSpeed_;
+    animation.subFrame += 1;
+    animation.subFrame %= xSpeed_;
     x += xSpeed_;
 
     static const int kBobDivisor[] = {92, 128, 192};
@@ -296,7 +287,8 @@ void Floater::carry(EntityList<Entity>& list, int width, int step) {
 void Floater::update() {
     World& w = world();
 
-    image = levelImage(spec_.first + animate(spec_.animation, spec_.animationSteps, spec_.animationDelay));
+    image =
+        levelImage(spec_.first + animation.loop(spec_.animation, spec_.animationSteps, spec_.animationDelay));
 
     bobSub_ += 1;
     bobSub_ %= spec_.bobDelay;

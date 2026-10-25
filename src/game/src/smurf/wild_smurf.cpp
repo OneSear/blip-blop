@@ -19,8 +19,8 @@ const int kShotSpeedY[] = {4, 5, 6, 6, 5, 4};
 }  // namespace
 
 WildSmurf::WildSmurf(World& world) : Enemy(world) {
-    hitPoints = 150;
-    frame = 1;
+    health.points = 150;
+    animation.frame = 1;
     target_ = world.target;
 
     hideDelay_ = 100 + world.random() % 100;
@@ -88,7 +88,7 @@ void WildSmurf::update() {
     }
 
     if (mode != kDying) {
-        image = enemyImage(firstImage_ + frame);
+        image = enemyImage(firstImage_ + animation.frame);
     }
 
     if (bleeding != 0) {
@@ -168,13 +168,9 @@ void WildSmurf::comeDown() {
 void WildSmurf::shoot() {
     shooting_ = true;
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-    }
-    if (frame > 2) {
-        frame = 1;
+    animation.tick(4);
+    if (animation.frame > 2) {
+        animation.frame = 1;
     }
 
     shotStep_ += 1;
@@ -209,14 +205,11 @@ void WildSmurf::hitBy(Shot& shot) {
 }
 
 void WildSmurf::die() {
-    if (frame < 5) {
-        subFrame += 1;
-        subFrame %= 4;
-        if (subFrame == 0) {
-            frame += 1;
+    if (animation.frame < 5) {
+        if (animation.tick(4)) {
             // (frame is 1 to 5 here)
-            image =
-                enemyImage((direction == kFacingRight ? img::kWildDieRight : img::kWildDieLeft) + frame - 1);
+            image = enemyImage((direction == kFacingRight ? img::kWildDieRight : img::kWildDieLeft) +
+                               animation.frame - 1);
         }
         return;
     }
@@ -224,12 +217,12 @@ void WildSmurf::die() {
     // Engraved in the decor with his rope, unless he hangs over a
     // midground decal (hitbox stretched to the top of the screen).
     hitboxFromImage();
-    y1 = 0;
+    hitbox.y1 = 0;
 
     bool clear = true;
     world().midground.forEach([&](const Entity* decal) { clear = clear && !hits(*decal); });
 
-    collides = false;
+    hitbox.active = false;
 
     if (clear) {
         LevelEffects& effects = *world().media.effects;
@@ -242,7 +235,7 @@ void WildSmurf::die() {
 }
 
 void WildSmurf::burn() {
-    y = ropeEnd_ + 50 - frame;
+    y = ropeEnd_ + 50 - animation.frame;
     Enemy::burn(img::kSmurfBurnLeft, img::kSmurfBurnRight, 6);
 }
 
@@ -253,7 +246,7 @@ void WildSmurf::draw() {
 
     Actor::draw();
 
-    if (hitPoints <= 0) {
+    if (health.points <= 0) {
         return;
     }
 
@@ -266,7 +259,7 @@ void WildSmurf::draw() {
                                    img::kWildGunSteepRight,   img::kWildGunDiagonalRight};
     const int gunX = aim_ <= DownLeft ? x + 8 : x - 5;
     if (shooting_) {
-        drawAt(gunX, y + 38, enemyImage(kShootingGun[aim_] + frame));
+        drawAt(gunX, y + 38, enemyImage(kShootingGun[aim_] + animation.frame));
     } else {
         drawAt(gunX, y + 38, enemyImage(kIdleGun[aim_]));
     }

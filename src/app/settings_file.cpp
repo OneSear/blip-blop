@@ -2,13 +2,13 @@
 
 #include "settings_file.hpp"
 
-#include <fstream>
-#include <sstream>
+#include <optional>
 #include <vector>
 
 #include "bb/core/log.hpp"
 #include "bb/core/settings.hpp"
 #include "bb/core/vfs.hpp"
+#include "bb/platform/file_system.hpp"
 #include "files.hpp"
 
 namespace bb::app {
@@ -48,17 +48,6 @@ core::Settings current(const game::Options& options, const game::Input& in) {
     return settings;
 }
 
-bool readTextFile(const std::string& path, std::string& text) {
-    std::ifstream f(path, std::ios::binary);
-    if (!f) {
-        return false;
-    }
-    std::ostringstream ss;
-    ss << f.rdbuf();
-    text = ss.str();
-    return true;
-}
-
 }  // namespace
 
 void applyDefaultSettings(game::Options& options, game::Input& in) {
@@ -67,12 +56,13 @@ void applyDefaultSettings(game::Options& options, game::Input& in) {
     apply(defaults, options, in);
 }
 
-void loadSettings(const std::string& settingsPath, const core::Vfs& dataFiles, const std::string& legacyFile,
-                  game::Options& options, game::Input& in) {
+void loadSettings(const std::string& settingsPath, const platform::FileSystem& fileSystem, const core::Vfs& dataFiles,
+                  const std::string& legacyFile, game::Options& options, game::Input& in) {
     applyDefaultSettings(options, in);
 
-    std::string text;
-    if (!settingsPath.empty() && readTextFile(settingsPath, text)) {
+    const auto bytes = settingsPath.empty() ? std::nullopt : fileSystem.readAll(settingsPath);
+    if (bytes) {
+        const std::string text(bytes->begin(), bytes->end());
         std::string error;
         std::vector<std::string> warnings;
         const auto settings = core::Settings::parse(text, error, warnings);
@@ -85,9 +75,9 @@ void loadSettings(const std::string& settingsPath, const core::Vfs& dataFiles, c
         } else {
             core::Log::info(settingsPath + ": " + error + " - default settings used");
         }
-    } else if (const auto bytes = dataFiles.readAll(legacyFile)) {
+    } else if (const auto legacy = dataFiles.readAll(legacyFile)) {
         std::vector<std::string> notes;
-        const auto settings = core::Settings::importLegacyCfg(*bytes, notes);
+        const auto settings = core::Settings::importLegacyCfg(*legacy, notes);
         for (const std::string& n : notes) {
             core::Log::info(legacyFile + ": " + n);
         }
@@ -100,14 +90,14 @@ void loadSettings(const std::string& settingsPath, const core::Vfs& dataFiles, c
     }
 }
 
-void saveSettings(const std::string& settingsPath, const game::Options& options, const game::Input& in) {
+void saveSettings(const std::string& settingsPath, platform::FileSystem& fileSystem, const game::Options& options,
+                  const game::Input& in) {
     if (settingsPath.empty()) {
         core::Log::info("No settings directory: settings not saved.");
         return;
     }
-    std::ofstream f(settingsPath, std::ios::binary);
-    f << current(options, in).serialize();
-    if (f) {
+    const std::string text = current(options, in).serialize();
+    if (fileSystem.writeAll(settingsPath, text.data(), text.size())) {
         core::Log::info("Saving " + settingsPath + " as settings file.");
     } else {
         core::Log::warning("Cannot save " + settingsPath);

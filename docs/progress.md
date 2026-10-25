@@ -14,6 +14,76 @@ format), DEC-06 (SDL2_mixer; in-house mixer optional) and DEC-10
 (exceptions only for programming errors) are revised, DEC-09 and R7
 withdrawn. Nothing done so far depended on the dropped targets.
 
+## Completing the plan, continued (25 October 2026)
+
+The four items left open on 24 October that needed no hardware, then the
+first CI results. The replays kept their fingerprints throughout (release
+build, 13/13 identical; Linux in Docker, GCC, 34/34 tests).
+
+* **DEC-08 helpers** (`src/game/include/bb/game/components.hpp`):
+  `AnimationPlayer` (the step `frame` and its tick counter `subFrame`;
+  `tick()`, `cycle()`, `tickUpTo()`, `loop()` over a table, `restart()`),
+  `Hitbox` (corners, `active`, `overlaps()`, which is the 2002
+  `Sprite::collision`) and `Health` (`points`, `take()`, `heal()`,
+  `left()`). `Entity::hitbox`, `Actor::animation` and `Character::health`
+  replace the loose fields, and the animation and damage code each class
+  repeated calls the helpers. Unit tests: `tests/unit/components_test.cpp`
+  (6 cases). docs/architecture/world.md and docs/legacy_map.md updated.
+* **Platform `FileSystem`** (`bb/platform/file_system.hpp`, §3.5): read
+  access by UTF-8 path is `core::FileReader` (open and read at an offset,
+  a file's kind, a directory's entries), which `Vfs` and `PackFile` now
+  read through; the platform's `FileSystem` adds whole-file writing and
+  the game and preferences directories (moved out of `System`). The SDL
+  backend uses `SDL_RWops`, so Windows paths are UTF-8; the tools and
+  tests use `core::hostFiles()` (the C++ library). Settings, hi-scores,
+  recordings, the data lookup and the pack go through it. Still written
+  with `fopen`: the log and the `--hash` and `--trace-ticks` outputs.
+  Conformance test `tests/conformance/sdl2_files_test.cpp` (writes, lists
+  and reads back files with UTF-8 names). docs/architecture/platform.md
+  updated.
+* **D-55, the rest**: the seven debris classes that end only when they
+  land (Rayman's limbs and head, the Care Bears' walking and dancing legs,
+  the Snork boss world's grunt head and trunk and the rider's body) now
+  also end once below the screen (`Actor::dieWhenFallenOut()`, y > 600:
+  the screen is 480 pixels high and no platform is under it, so nothing
+  that has fallen there would land). In 2002 a piece that fell into a
+  hole fell for the rest of the level. No replay drops a piece into a
+  hole (fingerprints unchanged); `tests/unit/actor_test.cpp` does, and
+  fails with the check disabled. D-55 is closed; no defect of Appendix D
+  is open.
+* **Present paths on Linux (D-08)**: `tools/docker/linux-bench.sh` runs
+  `bb_present_bench` in the Ubuntu 24.04 container on Xvfb: SDL 2.30.0,
+  X11, OpenGL renderer over Mesa's software rasteriser (no GPU), window
+  surface RGB888, 4 CPUs of this Mac (Intel). 600 frames per path, three
+  runs in each measuring order; medians per frame:
+
+  | Path | Medians (6 runs) |
+  |------|-----------------:|
+  | new texture every frame (2014 port) | 3.85–5.29 ms |
+  | streaming texture (the game's) | 2.80–4.05 ms |
+  | window surface | 3.66–5.83 ms |
+
+  The streaming texture was the fastest in each of the six runs. These
+  are software-rendering numbers; real Linux and Windows hardware is a
+  line of docs/release-checklist.md. On Windows CI runs the benchmark
+  once as an informative step (a VM without a GPU). Under Wine the
+  numbers would measure Wine, so none were taken there.
+* **First CI run** (`c0dd29f`, run 40137765992, read through GitHub's
+  public API; the job logs need a login): Linux (GCC), Linux ASan + UBSan
+  and the static analysis passed. Windows failed installing its
+  dependencies: vcpkg's `sdl2-mixer` has no `libvorbis` feature (Ogg
+  Vorbis is a plain dependency of the port, checked in its
+  `vcpkg.json`, version 2.8.2), so `sdl2-mixer[libvorbis,mpg123]` is
+  refused; now `sdl2-mixer[mpg123]`. macOS (arm64 runner) passed the
+  build, the tests and the replays and failed at `cpack`; the same
+  command makes the disk image on this Intel Mac, so the cause is in the
+  runner's log. A step now prints CPack's logs when packaging fails.
+  Also for the first MSVC build: the build and test presets name their
+  configuration (the Visual Studio generator is multi-config and would
+  build Debug), and `cpack` gets `-C RelWithDebInfo`.
+  `actions/checkout@v5` and `actions/upload-artifact@v6` run on Node 24
+  (the v4 ones were flagged as deprecated Node 20).
+
 ## Completing the plan (24 October 2026)
 
 An audit of migration.md against the code (its definition of done, §4.5,

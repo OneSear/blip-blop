@@ -15,9 +15,8 @@
 int bbMain(int argc, char* argv[]) {
     // The run's state: everything the program keeps lives here, in the
     // objects of this function (no global objects).
-    bb::app::GameFiles files;
     bb::app::Session session;
-    if (!session.init(argc, const_cast<const char**>(argv), files)) {
+    if (!session.init(argc, const_cast<const char**>(argv))) {
         return 2;
     }
 
@@ -30,13 +29,18 @@ int bbMain(int argc, char* argv[]) {
         std::fprintf(stderr, "blipblop: cannot initialise SDL: %s\n", error.c_str());
         return 1;
     }
+    bb::platform::FileSystem& fileSystem = platform->files();
+    bb::app::GameFiles files(fileSystem);
+    if (!session.load(fileSystem, files)) {
+        return 2;
+    }
 
     // Log: everything to a file, warnings and errors also to stderr.
     // Deterministic runs (tests, replays) keep the log in the working
     // directory, next to their other outputs.
     std::string logPath = session.logPath();
     if (logPath.empty()) {
-        const std::string preferences = platform->system().preferencesDirectory();
+        const std::string preferences = fileSystem.preferencesDirectory();
         logPath =
             (session.deterministic() || preferences.empty() ? std::string() : preferences) + "BlipBlop.log";
     }
@@ -48,9 +52,9 @@ int bbMain(int argc, char* argv[]) {
     const bb::core::ScopedLogSink fileRegistration(logFile);
     const bb::core::ScopedLogSink consoleRegistration(console);
 
-    files.locateGameData(platform->system().baseDirectory());
+    files.locateGameData(fileSystem.baseDirectory());
 
-    session.start(platform->clock(), platform->system());
+    session.start(platform->clock(), platform->system(), fileSystem);
 
     // The platform outlives the application.
     bb::app::App app(*platform, session, files);

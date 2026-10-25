@@ -64,59 +64,48 @@ void HalvedBear::walkImage(int step) {
 void HalvedBear::dieWhole() {
     fall();
 
-    subFrame += 1;
-    subFrame %= 5;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(5);
 
-    if (frame == 4) {
+    if (animation.frame == 4) {
         // Cut in two: the legs stay, the top falls.
         dropLegs();
         y -= 19;
         dy = 0;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         mode = kDying2;
         topFalls();
     } else {
-        image = enemyImage((direction == kFacingRight ? images_.dieRight : images_.dieLeft) + frame);
+        image =
+            enemyImage((direction == kFacingRight ? images_.dieRight : images_.dieLeft) + animation.frame);
     }
 }
 
 void HalvedBear::topFalls() {
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0 && frame < 3) {
-        frame += 1;
-    }
+    animation.tickUpTo(6, 3);
 
     if (direction == kFacingRight) {
-        image = enemyImage(images_.topFallRight + frame);
+        image = enemyImage(images_.topFallRight + animation.frame);
         x += 1;
     } else {
-        image = enemyImage(images_.topFallLeft + frame);
+        image = enemyImage(images_.topFallLeft + animation.frame);
         x -= 1;
     }
 
     fall();
-    if (platformAt(x, y) != 0 && frame >= 3) {
-        frame = subFrame = 0;
+    if (platformAt(x, y) != 0 && animation.frame >= 3) {
+        animation.restart();
         mode = kDying3;
         topLands();
     }
 }
 
 void HalvedBear::topLands() {
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0 && frame < 3) {
-        frame += 1;
-    }
+    animation.tickUpTo(6, 3);
 
-    image = enemyImage((direction == kFacingRight ? images_.topEndRight : images_.topEndLeft) + frame);
+    image =
+        enemyImage((direction == kFacingRight ? images_.topEndRight : images_.topEndLeft) + animation.frame);
 
-    if (frame >= 3) {
+    if (animation.frame >= 3) {
         world().media.effects->engrave(x, y, image);
         dead = true;
     }
@@ -140,7 +129,7 @@ void HalvedBear::hitBy(Shot& shot) {
 //-----------------------------------------------------------------------------
 
 SkyBear::SkyBear(World& world) : HalvedBear(world, kSkyImages) {
-    hitPoints = 175;
+    health.points = 175;
 }
 
 void SkyBear::beforeUpdate() {
@@ -155,12 +144,7 @@ void SkyBear::walkAbout() {
 
     fall();
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 8;
-    }
+    animation.cycle(4, 8);
 
     if (x - kSpeed < minX || solidWall(x - kSpeed, y)) {
         direction = kFacingRight;
@@ -168,11 +152,11 @@ void SkyBear::walkAbout() {
         direction = kFacingLeft;
     }
     walk(direction == kFacingRight ? kSpeed : -kSpeed);
-    walkImage(frame);
+    walkImage(animation.frame);
 
     // Pees a rainbow on a player in front of it, on the ground only
     // (step 4 of the walk "looks nicer").
-    if (peeWait_ == 0 && frame == 4 && w.target != nullptr && platformAt(x, y) != 0) {
+    if (peeWait_ == 0 && animation.frame == 4 && w.target != nullptr && platformAt(x, y) != 0) {
         const int dx = x - w.target->x;
         const int dy2 = y - w.target->y;
         if (dy2 > -10 && dy2 < 20) {
@@ -184,7 +168,7 @@ void SkyBear::walkAbout() {
                 rainbow->y = y - 25;
                 rainbow->direction = direction;
                 w.enemyShots.add(rainbow);
-                subFrame = 0;
+                animation.subFrame = 0;
                 mode = kShooting;
             }
         }
@@ -193,9 +177,9 @@ void SkyBear::walkAbout() {
 }
 
 void SkyBear::afterShot() {
-    subFrame += 1;
-    if (subFrame >= 60) {
-        subFrame = 0;
+    animation.subFrame += 1;
+    if (animation.subFrame >= 60) {
+        animation.subFrame = 0;
         mode = kWalking;
         peeWait_ = 150;
     }
@@ -214,7 +198,7 @@ void SkyBear::dropLegs() {
 //-----------------------------------------------------------------------------
 
 StarBear::StarBear(World& world) : HalvedBear(world, kStarImages) {
-    hitPoints = 200;
+    health.points = 200;
     shotDelay_ = 200 + world.random() % 250;
 }
 
@@ -229,12 +213,7 @@ void StarBear::walkAbout() {
 
     fall();
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 8;
-    }
+    animation.cycle(4, 8);
 
     // Stays on its platform (and looks 40 pixels beyond the right edge).
     if (x - kSpeed < minX || solidWall(x - kSpeed, y) ||
@@ -245,26 +224,26 @@ void StarBear::walkAbout() {
         direction = kFacingLeft;
     }
     walk(direction == kFacingRight ? kSpeed : -kSpeed);
-    walkImage(frame);
+    walkImage(animation.frame);
 
     // 2002: the shot counter also advances here, so twice per tick.
     shotWait_ += 1;
-    if (frame == 4 && shotWait_ >= shotDelay_ && x > camera) {
+    if (animation.frame == 4 && shotWait_ >= shotDelay_ && x > camera) {
         auto* star = new BouncingStar(w);
         star->x = x;
         star->y = y - 30;
         star->direction = direction;
         w.enemyShots.add(star);
-        subFrame = 0;
+        animation.subFrame = 0;
         mode = kShooting;
     }
     hitboxFromImage();
 }
 
 void StarBear::afterShot() {
-    subFrame += 1;
-    if (subFrame >= 60) {
-        subFrame = 0;
+    animation.subFrame += 1;
+    if (animation.subFrame >= 60) {
+        animation.subFrame = 0;
         mode = kWalking;
         shotDelay_ = 200 + world().random() % 500;
         shotWait_ = 0;
@@ -308,12 +287,7 @@ void BoomBear::walkAbout() {
 
     fall();
 
-    subFrame += 1;
-    subFrame %= 3;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 8;
-    }
+    animation.cycle(3, 8);
 
     if (x - kSpeed < minX || solidWall(x - kSpeed, y)) {
         direction = kFacingRight;
@@ -322,10 +296,10 @@ void BoomBear::walkAbout() {
     }
     if (direction == kFacingRight) {
         walk(kSpeed);
-        image = enemyImage(img::kBoomWalkRight + frame);
+        image = enemyImage(img::kBoomWalkRight + animation.frame);
     } else {
         walk(-kSpeed);
-        image = enemyImage(img::kBoomWalkLeft + frame);
+        image = enemyImage(img::kBoomWalkLeft + animation.frame);
     }
 
     // Close enough to the target: kamikaze!
@@ -333,7 +307,7 @@ void BoomBear::walkAbout() {
         const int dx = x - w.target->x;
         const int dy2 = y - w.target->y;
         if (dx > -60 && dx < 60 && dy2 > -40 && dy2 < 20) {
-            subFrame = frame = 0;
+            animation.restart();
             mode = kDying;
             w.media.miscSounds->play(miscsnd::kExplosion);
             explode();
@@ -346,13 +320,9 @@ void BoomBear::explode() {
     World& w = world();
     const bool right = direction == kFacingRight;
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(4);
 
-    if (frame == 7 && subFrame == 0) {
+    if (animation.frame == 7 && animation.subFrame == 0) {
         auto* foot = new BoomPiece(w, img::kBoomFootRight, img::kBoomFootLeft, -2);
         foot->x = right ? x - 60 : x + 60;
         foot->y = right ? y - 22 : y - 26;
@@ -365,17 +335,17 @@ void BoomBear::explode() {
         head->direction = direction;
         head->dy = -1;
         w.gore.add(head);
-    } else if (frame == 8 && subFrame == 0) {
+    } else if (animation.frame == 8 && animation.subFrame == 0) {
         auto* belly = new BoomPiece(w, img::kBoomBellyRight, img::kBoomBellyLeft, 1);
         belly->x = right ? x + 59 : x - 58;
         belly->y = right ? y - 3 : y - 7;
         belly->direction = direction;
         belly->dy = 0;
         w.gore.add(belly);
-    } else if (frame >= 10) {
+    } else if (animation.frame >= 10) {
         dead = true;
     } else {
-        image = enemyImage((right ? img::kBoomExplodeRight : img::kBoomExplodeLeft) + frame);
+        image = enemyImage((right ? img::kBoomExplodeRight : img::kBoomExplodeLeft) + animation.frame);
         hitboxFromImage();
     }
 }
@@ -396,7 +366,7 @@ void BoomBear::hitBy(Shot& shot) {
 //-----------------------------------------------------------------------------
 
 CloudBear::CloudBear(World& world) : Enemy(world) {
-    hitPoints = 250;
+    health.points = 250;
     shotDelay_ = 150 + world.random() % 150;
 }
 
@@ -434,10 +404,10 @@ void CloudBear::sit() {
     // Faces the middle of the screen.
     if (x > w.camera.x + 320) {
         direction = kFacingLeft;
-        image = enemyImage(img::kCloudLeft + animate(kBob, 4, 10));
+        image = enemyImage(img::kCloudLeft + animation.loop(kBob, 4, 10));
     } else {
         direction = kFacingRight;
-        image = enemyImage(img::kCloudRight + animate(kBob, 4, 10));
+        image = enemyImage(img::kCloudRight + animation.loop(kBob, 4, 10));
     }
 
     if (shotWait_ >= shotDelay_ && x <= w.camera.x + 640) {
@@ -453,10 +423,10 @@ void CloudBear::sit() {
 }
 
 void CloudBear::hitWait() {
-    frame += 1;
+    animation.frame += 1;
     image = enemyImage(direction == kFacingLeft ? img::kCloudHitLeft : img::kCloudHitRight);
-    if (frame >= 30) {
-        frame = subFrame = 0;
+    if (animation.frame >= 30) {
+        animation.restart();
         mode = kDying2;
     }
 }
@@ -464,28 +434,21 @@ void CloudBear::hitWait() {
 void CloudBear::fallDown() {
     fall();
 
-    subFrame += 1;
-    subFrame %= 8;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 2;
-    }
-    image = enemyImage((direction == kFacingLeft ? img::kCloudFallLeft : img::kCloudFallRight) + frame);
+    animation.cycle(8, 2);
+    image =
+        enemyImage((direction == kFacingLeft ? img::kCloudFallLeft : img::kCloudFallRight) + animation.frame);
 
     if (platformAt(x, y) != 0) {
-        frame = subFrame = 0;
+        animation.restart();
         mode = kDying4;
     }
 }
 
 void CloudBear::finish() {
-    if (frame < 6) {
-        subFrame += 1;
-        subFrame %= 3;
-        if (subFrame == 0) {
-            frame += 1;
-        }
-        image = enemyImage((direction == kFacingRight ? img::kCloudEndRight : img::kCloudEndLeft) + frame);
+    if (animation.frame < 6) {
+        animation.tick(3);
+        image = enemyImage((direction == kFacingRight ? img::kCloudEndRight : img::kCloudEndLeft) +
+                           animation.frame);
     } else {
         world().media.effects->engrave(x, y, image);
         dead = true;
@@ -499,26 +462,23 @@ void CloudBear::finish() {
 void WalkingLegs::update() {
     fall();
 
-    if (frame < 3) {
-        subFrame += 1;
-        subFrame %= 6;
-        if (subFrame == 0) {
-            frame += 1;
-        }
+    if (animation.frame < 3) {
+        animation.tick(6);
     }
 
     if (direction == kFacingRight) {
         walk(-1);
-        image = enemyImage(firstRight_ + frame);
+        image = enemyImage(firstRight_ + animation.frame);
     } else {
         walk(1);
-        image = enemyImage(firstLeft_ + frame);
+        image = enemyImage(firstLeft_ + animation.frame);
     }
 
-    if (frame == 3 && platformAt(x, y) != 0) {
+    if (animation.frame == 3 && platformAt(x, y) != 0) {
         world().media.effects->engrave(x, y, image);
         dead = true;
     }
+    dieWhenFallenOut();
 }
 
 void DancingLegs::update() {
@@ -527,32 +487,29 @@ void DancingLegs::update() {
     if (!dancing_) {
         fall();
 
-        if (frame < 3) {
-            subFrame += 1;
-            subFrame %= 6;
-            if (subFrame == 0) {
-                frame += 1;
-            }
+        if (animation.frame < 3) {
+            animation.tick(6);
         }
 
         if (direction == kFacingRight) {
             walk(-1);
-            image = enemyImage(img::kStarLegsRight + frame);
+            image = enemyImage(img::kStarLegsRight + animation.frame);
         } else {
             walk(1);
-            image = enemyImage(img::kStarLegsLeft + frame);
+            image = enemyImage(img::kStarLegsLeft + animation.frame);
         }
 
-        if (frame == 3 && platformAt(x, y) != 0) {
+        if (animation.frame == 3 && platformAt(x, y) != 0) {
             dancing_ = true;
-            subFrame = frame = 0;
+            animation.restart();
         }
+        dieWhenFallenOut();
         return;
     }
 
     ticks_ += 1;
     image = enemyImage((direction == kFacingRight ? img::kStarLegsDanceRight : img::kStarLegsDanceLeft) +
-                       animate(kDance, 4, 5));
+                       animation.loop(kDance, 4, 5));
     if (ticks_ >= 100) {
         world().media.effects->engrave(x, y, image);
         dead = true;
@@ -563,16 +520,12 @@ void BoomPiece::update() {
     World& w = world();
     fall();
 
-    if (frame < 5) {
-        subFrame += 1;
-        subFrame %= 8;
-        if (subFrame == 0) {
-            frame += 1;
-        }
-        image = enemyImage((direction == kFacingRight ? firstRight_ : firstLeft_) + frame);
+    if (animation.frame < 5) {
+        animation.tick(8);
+        image = enemyImage((direction == kFacingRight ? firstRight_ : firstLeft_) + animation.frame);
     }
 
-    if ((platformAt(x, y) != 0 && frame >= 5) || solidWall(x, y)) {
+    if ((platformAt(x, y) != 0 && animation.frame >= 5) || solidWall(x, y)) {
         w.media.effects->engrave(x, y, image);
         dead = true;
         w.media.miscSounds->play(miscsnd::kGoreSplat + w.random() % 2);  // one of 2

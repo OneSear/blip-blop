@@ -51,7 +51,7 @@ Toad::Toad(World& world) : Enemy(world) {
     chargeDelay_ = 50 + world.random() % 250;
     convulsions_ = world.random() % 5;
     treasure = 7;
-    hitPoints = 300;
+    health.points = 300;
 }
 
 void Toad::update() {
@@ -99,8 +99,7 @@ void Toad::walkAbout() {
     if (platformAt(x, y) == 0) {
         mode = kFalling;
         dy = 0;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         gravityDelay = 0;
         jump();
         return;
@@ -121,8 +120,7 @@ void Toad::walkAbout() {
             ((direction == kFacingRight && x < target.x) || (direction == kFacingLeft && x > target.x))) {
             chargeStep_ = 0;
             speed_ = 0;
-            frame = 0;
-            subFrame = 0;
+            animation.restart();
             dy = 0;
             mode = kShooting;
             w.media.levelSounds->play(snd::kToadCharge);
@@ -131,8 +129,7 @@ void Toad::walkAbout() {
         }
         chargeWait_ = 0;
         chargeDelay_ = 50 + w.random() % 250;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         mode = kJumping;
         dy = -7;
         gravityDelay = 0;  // otherwise the jumps differ in height
@@ -142,10 +139,10 @@ void Toad::walkAbout() {
 
     if (direction == kFacingRight) {
         walk(speed_);
-        image = enemyImage(img::kToadWalkRight + animate(kToadWalk, 4, 12 - 3 * speed_));
+        image = enemyImage(img::kToadWalkRight + animation.loop(kToadWalk, 4, 12 - 3 * speed_));
     } else {
         walk(-speed_);
-        image = enemyImage(img::kToadWalkLeft + animate(kToadWalk, 4, 12 - 3 * speed_));
+        image = enemyImage(img::kToadWalkLeft + animation.loop(kToadWalk, 4, 12 - 3 * speed_));
     }
     if (speed_ < kToadTopSpeed) {
         speedStep_ += 1;
@@ -162,21 +159,17 @@ void Toad::die() {
 
     fall();
 
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0 && frame < 10) {
-        frame += 1;
-    }
+    animation.tickUpTo(6, 10);
     // Convulsions: steps 1 to 4 again.
-    if (frame > 4 && convulsions_ > 0) {
+    if (animation.frame > 4 && convulsions_ > 0) {
         convulsions_ -= 1;
-        frame -= 4;
+        animation.frame -= 4;
     }
-    if (frame == 5 && subFrame == 0) {
+    if (animation.frame == 5 && animation.subFrame == 0) {
         w.media.miscSounds->play(miscsnd::kDeathCry2 + w.random() % 2);  // one of 2
     }
 
-    if (frame >= 10) {
+    if (animation.frame >= 10) {
         if (onEngravingGround(w, x, y)) {
             w.media.effects->engrave(x, y, image);
             dead = true;
@@ -185,12 +178,12 @@ void Toad::die() {
         if (!solidWall(x - speed_, y) && platformAt(x, y) == 0) {
             x -= speed_;
         }
-        image = enemyImage(img::kToadDieLeft + frame);
+        image = enemyImage(img::kToadDieLeft + animation.frame);
     } else {
         if (!solidWall(x + speed_, y) && platformAt(x, y) == 0) {
             x += speed_;
         }
-        image = enemyImage(img::kToadDieRight + frame);
+        image = enemyImage(img::kToadDieRight + animation.frame);
     }
 }
 
@@ -200,8 +193,7 @@ void Toad::endCharge(int newDirection) {
     mode = kWalking;
     chargeWait_ = 0;
     chargeDelay_ = 50 + world().random() % 250;
-    frame = 0;
-    subFrame = 0;
+    animation.restart();
     walkAbout();
 }
 
@@ -222,10 +214,10 @@ void Toad::charge() {
     chargeStep_ += 1;
     const int walkImage = direction == kFacingRight ? img::kToadWalkRight : img::kToadWalkLeft;
     if (chargeStep_ < 80) {
-        image = enemyImage(walkImage + animate(kToadWalk, 4, 3));
+        image = enemyImage(walkImage + animation.loop(kToadWalk, 4, 3));
     } else {
         walk(direction == kFacingRight ? speed_ : -speed_);
-        image = enemyImage(walkImage + animate(kToadWalk, 4, 2));
+        image = enemyImage(walkImage + animation.loop(kToadWalk, 4, 2));
     }
     hitboxFromImage();
 }
@@ -238,8 +230,7 @@ void Toad::jump() {
         mode = kNormal;
         dy = 0;
         y = ground;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         walkAbout();
         return;
     }
@@ -305,7 +296,7 @@ void throwShellFrom(World& w, int x, int y, int direction) {
 Yoshi::Yoshi(World& world) : Enemy(world) {
     attackDelay_ = 50 + world.random() % 250;
     treasure = 10;
-    hitPoints = 500;
+    health.points = 500;
 }
 
 void Yoshi::update() {
@@ -348,8 +339,7 @@ void Yoshi::walkAbout() {
         mode = kFalling;
         dy = 0;
         gravityDelay = 0;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         fallDown();
         return;
     }
@@ -360,8 +350,7 @@ void Yoshi::walkAbout() {
         attackDelay_ = 50 + w.random() % 250;
         mode = kShooting;
         throwing_ = true;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         w.media.levelSounds->play(snd::kYoshiShell);
         throwShell();
         return;
@@ -373,8 +362,7 @@ void Yoshi::walkAbout() {
                                         (direction == kFacingLeft && x < target.x + 150 && target.x < x))) {
         mode = kShooting;
         throwing_ = false;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         w.media.levelSounds->play(snd::kYoshiTongue);
         tongue();
         return;
@@ -389,10 +377,10 @@ void Yoshi::walkAbout() {
     // (3 of the 4 walk steps, as in 2002.)
     if (direction == kFacingRight) {
         walk(kYoshiSpeed);
-        image = enemyImage(img::kYoshiWalkRight + animate(kYoshiWalk, 3, 3));
+        image = enemyImage(img::kYoshiWalkRight + animation.loop(kYoshiWalk, 3, 3));
     } else {
         walk(-kYoshiSpeed);
-        image = enemyImage(img::kYoshiWalkLeft + animate(kYoshiWalk, 3, 3));
+        image = enemyImage(img::kYoshiWalkLeft + animation.loop(kYoshiWalk, 3, 3));
     }
     hitboxFromImage();
 }
@@ -405,8 +393,7 @@ void Yoshi::fallDown() {
         mode = kNormal;
         dy = 0;
         y = ground;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         walkAbout();
         return;
     }
@@ -426,19 +413,16 @@ void Yoshi::die() {
 
     fall();
 
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0 && frame < 9) {
-        frame += 1;
-    }
+    animation.tickUpTo(6, 9);
 
-    if (frame >= 9) {
+    if (animation.frame >= 9) {
         if (onEngravingGround(w, x, y)) {
             w.media.effects->engrave(x, y, image);
         }
         dead = true;
     } else {
-        image = enemyImage((direction == kFacingLeft ? img::kYoshiDieLeft : img::kYoshiDieRight) + frame);
+        image = enemyImage((direction == kFacingLeft ? img::kYoshiDieLeft : img::kYoshiDieRight) +
+                           animation.frame);
     }
 }
 
@@ -446,14 +430,13 @@ void Yoshi::tongue() {
     // One step every 2 ticks both ways (D-81 fixed: 2002 ran the left one
     // every tick, so a Yoshi facing left attacked twice as fast).
     if (direction == kFacingRight) {
-        image = enemyImage(img::kYoshiTongueRight + animate(kYoshiTongue, 18, 2));
+        image = enemyImage(img::kYoshiTongueRight + animation.loop(kYoshiTongue, 18, 2));
     } else {
-        image = enemyImage(img::kYoshiTongueLeft + animate(kYoshiTongue, 18, 2));
+        image = enemyImage(img::kYoshiTongueLeft + animation.loop(kYoshiTongue, 18, 2));
     }
-    if (frame >= 17) {
+    if (animation.frame >= 17) {
         mode = kWalking;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         walkAbout();
         return;
     }
@@ -461,22 +444,18 @@ void Yoshi::tongue() {
 }
 
 void Yoshi::throwShell() {
-    subFrame += 1;
-    subFrame %= 15;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(15);
 
-    if (frame >= 2) {
+    if (animation.frame >= 2) {
         throwShellFrom(world(), x, y, direction);
         mode = kWalking;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         walkAbout();
         return;
     }
 
-    image = enemyImage((direction == kFacingRight ? img::kYoshiThrowRight : img::kYoshiThrowLeft) + frame);
+    image = enemyImage((direction == kFacingRight ? img::kYoshiThrowRight : img::kYoshiThrowLeft) +
+                       animation.frame);
     hitboxFromImage();
 }
 
@@ -496,7 +475,7 @@ void Yoshi::hitBy(Shot& shot) {
 YoshiTurret::YoshiTurret(World& world) : Enemy(world) {
     attackDelay_ = 50 + world.random() % 150;
     treasure = 12;
-    hitPoints = 400;
+    health.points = 400;
 }
 
 void YoshiTurret::update() {
@@ -535,7 +514,7 @@ void YoshiTurret::stand() {
         attackWait_ = 0;
         attackDelay_ = 50 + w.random() % 150;
         direction = w.target->x > x ? kFacingRight : kFacingLeft;
-        frame = 0;
+        animation.frame = 0;
         mode = kShooting;
         w.media.levelSounds->play(snd::kYoshiShell);
         throwShell();
@@ -551,38 +530,32 @@ void YoshiTurret::die() {
 
     fall();
 
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0 && frame < 9) {
-        frame += 1;
-    }
+    animation.tickUpTo(6, 9);
 
-    if (frame >= 9) {
+    if (animation.frame >= 9) {
         if (onEngravingGround(w, x, y)) {
             w.media.effects->engrave(x, y, image);
         }
         dead = true;
     } else {
-        image = enemyImage((direction == kFacingLeft ? img::kYoshiDieLeft : img::kYoshiDieRight) + frame);
+        image = enemyImage((direction == kFacingLeft ? img::kYoshiDieLeft : img::kYoshiDieRight) +
+                           animation.frame);
     }
 }
 
 void YoshiTurret::throwShell() {
-    subFrame += 1;
-    subFrame %= 15;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(15);
 
-    if (frame >= 2) {
+    if (animation.frame >= 2) {
         // (Back to standing from the next tick; subFrame is not reset.)
         throwShellFrom(world(), x, y, direction);
-        frame = 0;
+        animation.frame = 0;
         mode = kWalking;
         return;
     }
 
-    image = enemyImage((direction == kFacingRight ? img::kYoshiThrowRight : img::kYoshiThrowLeft) + frame);
+    image = enemyImage((direction == kFacingRight ? img::kYoshiThrowRight : img::kYoshiThrowLeft) +
+                       animation.frame);
     hitboxFromImage();
 }
 
@@ -605,13 +578,8 @@ void Shell::update() {
 
     fall();
 
-    subFrame += 1;
-    subFrame %= 3;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 4;
-    }
-    image = enemyImage(img::kShell + frame);
+    animation.cycle(3, 4);
+    image = enemyImage(img::kShell + animation.frame);
 
     if (solidWall(x - kSpeed, y)) {
         if (bounced_) {
@@ -650,7 +618,7 @@ constexpr int kTailsFlySpeed = 6;
 Tails::Tails(World& world, bool entersFlying) : Enemy(world), entersFlying_(entersFlying) {
     flyDelay_ = 100 + world.random() % 350;
     treasure = 8;
-    hitPoints = 150;
+    health.points = 150;
 }
 
 void Tails::aimAt(int targetX) {
@@ -672,8 +640,7 @@ void Tails::update() {
         mode = kShooting;
         swooping_ = false;
         speed_ = 0;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         placed_ = true;
 
         flying_ = true;
@@ -724,8 +691,7 @@ void Tails::walkAbout() {
         dy = 0;
         gravityDelay = 0;
         flying_ = true;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         fallDown();
         return;
     }
@@ -743,8 +709,7 @@ void Tails::walkAbout() {
         mode = kShooting;
         swooping_ = false;
         speed_ = 0;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         flying_ = true;
         goalX_ = w.target->x;
         goalY_ = w.target->y;
@@ -753,19 +718,14 @@ void Tails::walkAbout() {
         return;
     }
 
-    subFrame += 1;
-    subFrame %= 10 - 2 * speed_;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 8;
-    }
+    animation.cycle(10 - 2 * speed_, 8);
 
     if (direction == kFacingRight) {
         walk(speed_);
-        image = enemyImage(img::kTailsWalkRight + frame);
+        image = enemyImage(img::kTailsWalkRight + animation.frame);
     } else {
         walk(-speed_);
-        image = enemyImage(img::kTailsWalkLeft + frame);
+        image = enemyImage(img::kTailsWalkLeft + animation.frame);
     }
     if (speed_ < kTailsTopSpeed) {
         speedStep_ += 1;
@@ -784,40 +744,31 @@ void Tails::die() {
 
     if (flying_) {
         // Falls out of the sky first.
-        subFrame += 1;
-        subFrame %= 4;
-        if (subFrame == 0) {
-            frame += 1;
-            frame %= 2;
-        }
+        animation.cycle(4, 2);
         if (direction == kFacingRight) {
             if (!solidWall(x + speed_, y)) {
                 walk(speed_);
             }
-            image = enemyImage(img::kTailsFallRight + frame);
+            image = enemyImage(img::kTailsFallRight + animation.frame);
         } else {
             if (!solidWall(x - speed_, y)) {
                 walk(-speed_);
             }
-            image = enemyImage(img::kTailsFallLeft + frame);
+            image = enemyImage(img::kTailsFallLeft + animation.frame);
         }
         const int ground = dy > 0 ? platformAt(x, y + dy) : 0;
         if (ground != 0) {
             dy = 0;
             y = ground;
             flying_ = false;
-            frame = 7;
+            animation.frame = 7;
         }
         return;
     }
 
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0 && frame < 11) {
-        frame += 1;
-    }
+    animation.tickUpTo(6, 11);
 
-    if (frame >= 11) {
+    if (animation.frame >= 11) {
         if (onEngravingGround(w, x, y)) {
             w.media.effects->engrave(x, y, image);
             dead = true;
@@ -839,12 +790,12 @@ void Tails::die() {
         if (!solidWall(x - speed_, y)) {
             walk(-speed_);
         }
-        image = enemyImage(img::kTailsDieLeft + frame);
+        image = enemyImage(img::kTailsDieLeft + animation.frame);
     } else {
         if (!solidWall(x + speed_, y)) {
             walk(speed_);
         }
-        image = enemyImage(img::kTailsDieRight + frame);
+        image = enemyImage(img::kTailsDieRight + animation.frame);
     }
 }
 
@@ -855,8 +806,7 @@ void Tails::land(int newDirection) {
     flyWait_ = 0;
     flyDelay_ = 100 + world().random() % 350;
     flying_ = false;
-    frame = 0;
-    subFrame = 0;
+    animation.restart();
     walkAbout();
 }
 
@@ -887,9 +837,10 @@ void Tails::fly() {
         }
     }
 
-    frame += 1;
-    frame %= 2;
-    image = enemyImage((direction == kFacingRight ? img::kTailsFlyRight : img::kTailsFlyLeft) + frame);
+    animation.frame += 1;
+    animation.frame %= 2;
+    image =
+        enemyImage((direction == kFacingRight ? img::kTailsFlyRight : img::kTailsFlyLeft) + animation.frame);
 
     if (swooping_) {
         // Swoops down on the goal, faster as it gets closer.
@@ -928,12 +879,7 @@ void Tails::fly() {
 void Tails::fallDown() {
     fall();
 
-    subFrame += 1;
-    subFrame %= 3;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 2;
-    }
+    animation.cycle(3, 2);
 
     const int ground = dy > 0 ? platformAt(x, y + dy) : 0;
     if (ground != 0) {
@@ -941,18 +887,17 @@ void Tails::fallDown() {
         dy = 0;
         y = ground;
         flying_ = false;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         walkAbout();
         return;
     }
 
     if (direction == kFacingRight) {
         x += speed_;
-        image = enemyImage(img::kTailsFlyRight + frame);
+        image = enemyImage(img::kTailsFlyRight + animation.frame);
     } else {
         x -= speed_;
-        image = enemyImage(img::kTailsFlyLeft + frame);
+        image = enemyImage(img::kTailsFlyLeft + animation.frame);
     }
     hitboxFromImage();
 }
@@ -982,7 +927,7 @@ constexpr int kKnucklesMaxFallSpeed = 7;
 Knuckles::Knuckles(World& world) : Enemy(world) {
     chargeDelay_ = 100 + world.random() % 150;
     treasure = 7;
-    hitPoints = 150;
+    health.points = 150;
 }
 
 void Knuckles::update() {
@@ -1063,16 +1008,14 @@ void Knuckles::walkAbout() {
             mode = kShooting;
             w.media.levelSounds->play(snd::kKnucklesCharge);
             speed_ = kKnucklesChargeSpeed;
-            frame = 0;
-            subFrame = 0;
+            animation.restart();
             charge();
             return;
         }
         if (target.y < y && target.x > x - 30 && target.x < x + 30) {
             mode = kJumping;
             speed_ = 0;
-            frame = 0;
-            subFrame = 0;
+            animation.restart();
             gravityDelay = 0;  // otherwise the jumps differ in height
             dy = 0;
             w.media.levelSounds->play(snd::kKnucklesJump);
@@ -1083,19 +1026,14 @@ void Knuckles::walkAbout() {
         chargeDelay_ = 10 + w.random() % 10;
     }
 
-    subFrame += 1;
-    subFrame %= 10 - 2 * speed_;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 8;
-    }
+    animation.cycle(10 - 2 * speed_, 8);
 
     if (direction == kFacingRight) {
         walk(speed_);
-        image = enemyImage(img::kKnucklesWalkRight + frame);
+        image = enemyImage(img::kKnucklesWalkRight + animation.frame);
     } else {
         walk(-speed_);
-        image = enemyImage(img::kKnucklesWalkLeft + frame);
+        image = enemyImage(img::kKnucklesWalkLeft + animation.frame);
     }
     if (speed_ < kKnucklesTopSpeed) {
         speedStep_ += 1;
@@ -1110,13 +1048,9 @@ void Knuckles::walkAbout() {
 void Knuckles::die() {
     heavyFall();
 
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0 && frame < 10) {
-        frame += 1;
-    }
+    animation.tickUpTo(6, 10);
 
-    if (frame >= 10) {
+    if (animation.frame >= 10) {
         // Engraved on the ground the other enemies use, not on layer 4 (D-83
         // fixed: the 2002 test was commented out).
         if (onEngravingGround(world(), x, y)) {
@@ -1131,12 +1065,12 @@ void Knuckles::die() {
         if (!solidWall(x - speed_, y)) {
             x -= speed_;
         }
-        image = enemyImage(img::kKnucklesDieLeft + frame);
+        image = enemyImage(img::kKnucklesDieLeft + animation.frame);
     } else {
         if (!solidWall(x + speed_, y)) {
             x += speed_;
         }
-        image = enemyImage(img::kKnucklesDieRight + frame);
+        image = enemyImage(img::kKnucklesDieRight + animation.frame);
     }
 }
 
@@ -1144,37 +1078,36 @@ void Knuckles::backToWalk() {
     mode = kWalking;
     chargeWait_ = 0;
     chargeDelay_ = 50 + world().random() % 150;
-    frame = 0;
-    subFrame = 0;
+    animation.restart();
     walkAbout();
 }
 
 void Knuckles::jump() {
     // Crouches for 60 ticks, then jumps.
-    subFrame += 1;
-    subFrame %= 60;
-    if (subFrame == 0 && frame == 0) {
-        frame += 1;
+    animation.subFrame += 1;
+    animation.subFrame %= 60;
+    if (animation.subFrame == 0 && animation.frame == 0) {
+        animation.frame += 1;
         dy = -kKnucklesJumpSpeed;
     }
 
     heavyFall();
 
     const int ground = dy > 0 ? platformAt(x, y + dy) : 0;
-    if (ground != 0 && frame > 0) {
+    if (ground != 0 && animation.frame > 0) {
         mode = kNormal;
         dy = 0;
         y = ground;
         speed_ = 1;
         chargeWait_ = 0;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         chargeDelay_ = 50 + world().random() % 150;
         walkAbout();
         return;
     }
 
-    image = enemyImage((direction == kFacingLeft ? img::kKnucklesJumpLeft : img::kKnucklesJumpRight) + frame);
+    image = enemyImage((direction == kFacingLeft ? img::kKnucklesJumpLeft : img::kKnucklesJumpRight) +
+                       animation.frame);
     hitboxFromImage();
 }
 
@@ -1182,18 +1115,18 @@ void Knuckles::charge() {
     heavyFall();
 
     // Slows down by one every 10 ticks; two bursts of 40 ticks.
-    subFrame += 1;
-    subFrame %= 40;
-    if (subFrame % 10 == 0) {
+    animation.subFrame += 1;
+    animation.subFrame %= 40;
+    if (animation.subFrame % 10 == 0) {
         speed_ -= 1;
     }
-    if (frame == 2) {
+    if (animation.frame == 2) {
         speed_ = 1;
         backToWalk();
         return;
     }
-    if (subFrame == 0) {
-        frame += 1;
+    if (animation.subFrame == 0) {
+        animation.frame += 1;
         speed_ = kKnucklesChargeSpeed - 1;
     }
 
@@ -1203,14 +1136,14 @@ void Knuckles::charge() {
             return;
         }
         walk(-speed_);
-        image = enemyImage(img::kKnucklesChargeLeft + frame);
+        image = enemyImage(img::kKnucklesChargeLeft + animation.frame);
     } else {
         if (solidWall(x + speed_, y)) {
             backToWalk();
             return;
         }
         walk(speed_);
-        image = enemyImage(img::kKnucklesChargeRight + frame);
+        image = enemyImage(img::kKnucklesChargeRight + animation.frame);
     }
     hitboxFromImage();
 }

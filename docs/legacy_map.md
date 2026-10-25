@@ -67,7 +67,8 @@ Appendix B of [migration.md](../migration.md).
 | — (cutscenes ignored a closed window) | `CINEPlayer::step()` ends the scene when `app_killed` is set | 3 | Quit handled by every screen |
 | `super_liste.*` (`SuperListe`) | `bb::game::EntityList<T>` (`src/game/include/bb/game/entity_list.hpp`) | 4 | Same iteration rules; owning lists `delete` (D-01) |
 | `globals.h/.cpp` | `bb::game::World` (`world.hpp`); legacy aliases in `legacy_world.h/.cpp`, assets in `legacy_assets.h/.cpp` | 4 | The aliases go as classes are ported |
-| `Sprite` fields `x`, `y`, `x1`..`y2`, `col_on`, `a_detruire` | `bb::game::Entity` (`entity.hpp`): `collides`, `dead` | 4 | `Sprite` derives from `Entity` |
+| `Sprite` fields `x`, `y`, `x1`..`y2`, `col_on`, `a_detruire` | `bb::game::Entity` (`entity.hpp`): `hitbox` (`Hitbox`), `dead` | 4 | |
+| `Sprite` fields `etape`, `ss_etape`, `anime()`; `Personnage::pv` | `Actor::animation` (`AnimationPlayer`, `loop()`), `Character::health` (`Health`) (`components.hpp`) | 6 | DEC-08 |
 | `Sprite::collision()` | `Entity::hits()` / `overlaps()` | 4 | The laser overrides `hits()` |
 | `draw(x, y, pic)` (helper) | `drawPicture(x, y, pic)` | 4 | Renamed: the member `draw()` hid it |
 | `Game::manageCollisions()` | `World::resolveCollisions()` | 4 | Roles `Shot`, `ShotTarget`, `Hurtable`, `Collectable` |

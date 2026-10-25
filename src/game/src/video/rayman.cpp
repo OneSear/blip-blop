@@ -56,7 +56,7 @@ T* addHero(World& w, const HeroSpec& spec, int x, int y) {
 
 Rayman::Rayman(World& world) : Enemy(world) {
     attackDelay_ = 100 + world.random() % 250;
-    hitPoints = 15000;
+    health.points = 15000;
     minX = world.marker("video.raymanArena", 0);
     treasure = 0;
 }
@@ -109,21 +109,16 @@ void Rayman::walkAbout() {
         hitboxFromImage();
     } else if (x - w.camera.x > 445) {
         // Walks into the arena.
-        subFrame += 1;
-        subFrame %= 3;
-        if (subFrame == 0) {
-            frame += 1;
-            frame %= 21;
-        }
+        animation.cycle(3, 21);
         if (direction == kFacingRight) {
             walk(kSpeed);
-            image = enemyImage(img::kRaymanWalkRight + frame);
+            image = enemyImage(img::kRaymanWalkRight + animation.frame);
         } else {
             walk(-kSpeed);
-            image = enemyImage(img::kRaymanWalkLeft + frame);
+            image = enemyImage(img::kRaymanWalkLeft + animation.frame);
         }
         if (w.flags[kArena] == 1) {
-            collides = false;
+            hitbox.active = false;
         }
     }
 }
@@ -162,8 +157,7 @@ void Rayman::startPunch() {
     dy = 0;
     mode = kShooting;
     reach_ = 0;
-    frame = 0;
-    subFrame = 0;
+    animation.restart();
     attackStep_ = 0;
     punch();
 }
@@ -188,8 +182,8 @@ bool Rayman::fight() {
     World& w = world();
     const int onScreen = x - w.camera.x;
 
-    if (hitPoints > kBelowFistsHp ||
-        (hitPoints > kCriticalHp && fist1_ && (onScreen < 80 || onScreen > 600))) {
+    if (health.points > kBelowFistsHp ||
+        (health.points > kCriticalHp && fist1_ && (onScreen < 80 || onScreen > 600))) {
         // Walks and punches. No ground: falls, and no more this tick (D-54
         // fixed: 2002 also walked on this tick).
         if (platformAt(x, y) == 0) {
@@ -214,20 +208,15 @@ bool Rayman::fight() {
                 return true;
             }
         }
-        subFrame += 1;
-        subFrame %= 3;
-        if (subFrame == 0) {
-            frame += 1;
-            frame %= 21;
-        }
+        animation.cycle(3, 21);
         if (direction == kFacingRight) {
             walk(kSpeed);
-            image = enemyImage(img::kRaymanWalkRight + frame);
+            image = enemyImage(img::kRaymanWalkRight + animation.frame);
         } else {
             walk(-kSpeed);
-            image = enemyImage(img::kRaymanWalkLeft + frame);
+            image = enemyImage(img::kRaymanWalkLeft + animation.frame);
         }
-    } else if (hitPoints > kCriticalHp && onScreen >= 80 && onScreen <= 600) {
+    } else if (health.points > kCriticalHp && onScreen >= 80 && onScreen <= 600) {
         // Loses the first fist; stands and punches with the second.
         if (fist1_) {
             throwLimb(img::kRaymanFistRight);
@@ -244,7 +233,7 @@ bool Rayman::fight() {
             }
         }
         image = enemyImage(direction == kFacingRight ? img::kRaymanFistlessRight : img::kRaymanFistlessLeft);
-    } else if (hitPoints > kAboveDeathHp) {
+    } else if (health.points > kAboveDeathHp) {
         // Loses the second fist and runs.
         if (fist2_) {
             throwLimb(img::kRaymanFistLeft);
@@ -264,18 +253,13 @@ bool Rayman::fight() {
             direction = kFacingLeft;
         }
 
-        subFrame += 1;
-        subFrame %= 3;
-        if (subFrame == 0) {
-            frame += 1;
-            frame %= 8;
-        }
+        animation.cycle(3, 8);
         if (direction == kFacingRight) {
             walk(kCriticalSpeed);
-            image = enemyImage(img::kRaymanRunRight + frame);
+            image = enemyImage(img::kRaymanRunRight + animation.frame);
         } else {
             walk(-kCriticalSpeed);
-            image = enemyImage(img::kRaymanRunLeft + frame);
+            image = enemyImage(img::kRaymanRunLeft + animation.frame);
         }
     } else if (onScreen >= 80 && onScreen <= 600) {
         // Loses his feet and stands.
@@ -304,10 +288,10 @@ bool Rayman::fight() {
 void Rayman::die() {
     World& w = world();
 
-    subFrame += 1;
-    subFrame %= 6;
+    animation.subFrame += 1;
+    animation.subFrame %= 6;
 
-    if (frame == 0 && subFrame == 1) {
+    if (animation.frame == 0 && animation.subFrame == 1) {
         // The head flies off.
         int speedX = 0;
         if (x - w.camera.x > 320) {
@@ -323,14 +307,14 @@ void Rayman::die() {
         w.flags[kArena] = 2;
     }
 
-    if (subFrame == 0) {
-        frame += 1;
-        if (frame >= 6) {
+    if (animation.subFrame == 0) {
+        animation.frame += 1;
+        if (animation.frame >= 6) {
             dead = true;
-        } else if (frame < 2 && direction == kFacingRight) {
-            image = enemyImage(img::kRaymanDieRight + frame);
+        } else if (animation.frame < 2 && direction == kFacingRight) {
+            image = enemyImage(img::kRaymanDieRight + animation.frame);
         } else {
-            image = enemyImage(img::kRaymanDie + frame);
+            image = enemyImage(img::kRaymanDie + animation.frame);
         }
     }
 }
@@ -338,8 +322,7 @@ void Rayman::die() {
 void Rayman::endPunch(int delayBase, int delayRange) {
     World& w = world();
     mode = kWalking;
-    frame = 0;
-    subFrame = 0;
+    animation.restart();
     attackWait_ = 0;
     fist_->dead = true;
     attackDelay_ = delayBase + w.random() % delayRange;
@@ -349,18 +332,15 @@ void Rayman::endPunch(int delayBase, int delayRange) {
 void Rayman::punch() {
     World& w = world();
     // Above 10000 HP the fist is slower and the animation shorter.
-    const bool strong = hitPoints > kBelowFistsHp;
+    const bool strong = health.points > kBelowFistsHp;
     const int steps = strong ? 6 : 7;
     const int fistSpeed = strong ? kFist1Speed : kFist2Speed;
 
     if (attackStep_ == 0) {
         // Winds up: the reach grows by 30 every 3 ticks until it reaches
         // the goal, then the fist flies.
-        subFrame += 1;
-        subFrame %= 3;
-        if (subFrame == 0) {
-            frame += 1;
-            frame %= steps;
+        if (animation.tick(3)) {
+            animation.frame %= steps;
             reach_ += 30;
             const bool right = direction == kFacingRight;
             if ((right && goalX_ - x < reach_) || (!right && x - goalX_ < reach_)) {
@@ -372,16 +352,16 @@ void Rayman::punch() {
                 fist_ = fist;
 
                 attackStep_ = 1;
-                subFrame = 0;
-                frame = steps;
+                animation.subFrame = 0;
+                animation.frame = steps;
             }
         }
     } else if (attackStep_ == 1) {
         // Waits for the fist to come back. (Nothing destroys the fist
         // meanwhile; the 2002 code did not check, D-04.)
-        subFrame += 1;
-        if (subFrame == 20) {
-            frame = steps + 1;
+        animation.subFrame += 1;
+        if (animation.subFrame == 20) {
+            animation.frame = steps + 1;
         }
         const RaymanFist* fist = fist_.get();
         if (fist != nullptr &&
@@ -396,11 +376,11 @@ void Rayman::punch() {
     }
 
     if (strong) {
-        image =
-            enemyImage((direction == kFacingRight ? img::kRaymanPunchRight : img::kRaymanPunchLeft) + frame);
+        image = enemyImage((direction == kFacingRight ? img::kRaymanPunchRight : img::kRaymanPunchLeft) +
+                           animation.frame);
     } else {
         image = enemyImage((direction == kFacingRight ? img::kRaymanPunch2Right : img::kRaymanPunch2Left) +
-                           frame);
+                           animation.frame);
     }
     hitboxFromImage();
 }
@@ -440,10 +420,10 @@ void RaymanFist::update() {
 
     // Past the goal: slows down by 2 every |speed| ticks, then comes back.
     if (xSpeed_ != 0 && ((right && x > goalX_) || (!right && x < goalX_))) {
-        subFrame += 1;
-        subFrame %= std::abs(xSpeed_);
+        animation.subFrame += 1;
+        animation.subFrame %= std::abs(xSpeed_);
     }
-    if (subFrame == 0) {
+    if (animation.subFrame == 0) {
         xSpeed_ += right ? -2 : 2;
     }
     x += xSpeed_;
@@ -485,24 +465,23 @@ void RaymanLimb::update() {
             dead = true;
         }
     }
+    dieWhenFallenOut();
 }
 
 void RaymanHead::update() {
     x += xSpeed_;
     fall();
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 8;
-        image = enemyImage(img::kRaymanHead + frame);
+    if (animation.tick(4)) {
+        animation.frame %= 8;
+        image = enemyImage(img::kRaymanHead + animation.frame);
     }
 
     if (dy > 0 && platformAt(x, y + dy) != 0) {
         world().media.effects->engrave(x, y, image);
         dead = true;
     }
+    dieWhenFallenOut();
 }
 
 //-----------------------------------------------------------------------------
@@ -559,7 +538,7 @@ const HeroSpec PokemonHero::kCom = {
 
 PokemonHero::PokemonHero(World& world, const HeroSpec& spec)
     : Enemy(world), spec_(spec), xSpeed_(spec.startDx) {
-    hitPoints = spec.hitPoints;
+    health.points = spec.hitPoints;
     dy = spec.startDy;
     treasure = spec.treasure;
 }
@@ -579,30 +558,20 @@ void PokemonHero::update() {
             mode = kNormal;
             dy = 0;
             y = ground;
-            frame = 0;
-            subFrame = 0;
+            animation.restart();
             ball_ = 1;
             return;
         }
-        subFrame += 1;
-        subFrame %= 5;
-        if (subFrame == 0) {
-            frame += 1;
-            frame %= 4;
-        }
-        image = enemyImage(img::kPikachuHeroBall + frame);
+        animation.cycle(5, 4);
+        image = enemyImage(img::kPikachuHeroBall + animation.frame);
     } else if (ball_ == 1) {
         // The ball opens.
-        subFrame += 1;
-        subFrame %= 8;
-        if (subFrame == 0) {
-            frame += 1;
-            if (frame > 3) {
+        if (animation.tick(8)) {
+            if (animation.frame > 3) {
                 ball_ = 0;
-                frame = 0;
-                subFrame = 0;
+                animation.restart();
             } else {
-                image = enemyImage(spec_.outImage + frame);
+                image = enemyImage(spec_.outImage + animation.frame);
             }
         }
     } else {
@@ -630,12 +599,7 @@ void PokemonHero::walkAbout() {
 
     fall();
 
-    subFrame += 1;
-    subFrame %= 8;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 2;
-    }
+    animation.cycle(8, 2);
 
     if (x - 1 < minX || solidWall(x - 1, y)) {
         direction = kFacingRight;
@@ -645,9 +609,9 @@ void PokemonHero::walkAbout() {
 
     walk(direction == kFacingRight ? spec_.walkSpeed : -spec_.walkSpeed);
     if (spec_.walkLeft < 0 || direction == kFacingRight) {
-        image = enemyImage(spec_.walkRight + frame);
+        image = enemyImage(spec_.walkRight + animation.frame);
     } else {
-        image = enemyImage(spec_.walkLeft + frame);
+        image = enemyImage(spec_.walkLeft + animation.frame);
     }
     hitboxFromImage();
 }
@@ -657,22 +621,18 @@ void PokemonHero::die() {
 
     fall();
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0 && frame < spec_.dieSteps) {
-        frame += 1;
-    }
+    animation.tickUpTo(4, spec_.dieSteps);
 
-    if (frame >= spec_.dieSteps) {
+    if (animation.frame >= spec_.dieSteps) {
         if (spec_.engraves && onEngravingGround(w, x, y)) {
             w.media.effects->engrave(x, y, image);
         }
         dead = true;
         w.flags[kHeroes] -= 1;
     } else if (spec_.dieLeft < 0 || direction == kFacingRight) {
-        image = enemyImage(spec_.dieRight + frame);
+        image = enemyImage(spec_.dieRight + animation.frame);
     } else {
-        image = enemyImage(spec_.dieLeft + frame);
+        image = enemyImage(spec_.dieLeft + animation.frame);
     }
 }
 

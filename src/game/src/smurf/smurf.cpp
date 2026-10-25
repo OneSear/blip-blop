@@ -7,7 +7,7 @@
 namespace bb::game::smurf {
 
 Smurf::Smurf(World& world, Skin skin) : Enemy(world), skin_(skin) {
-    hitPoints = 100;
+    health.points = 100;
     jumpDelay_ = 50 + world.random() % 250;
 
     switch (skin_) {
@@ -16,13 +16,13 @@ Smurf::Smurf(World& world, Skin skin) : Enemy(world), skin_(skin) {
             speed_ = 1 + world.random() % 2;
             break;
         case Skin::Chilly:
-            hitPoints = 75;
+            health.points = 75;
             break;
         case Skin::Lazy:
             jumpSpeed_ = -4;
             break;
         case Skin::Peon:
-            hitPoints = 125;
+            health.points = 125;
             break;
         case Skin::Plain:
         case Skin::Brainy:
@@ -94,10 +94,10 @@ void Smurf::walkAbout() {
     }
     if (direction == kFacingRight) {
         walk(speed_);
-        image = enemyImage(img::kSmurfWalkRight + animate(kWalkCycle, kWalkSteps, 5));
+        image = enemyImage(img::kSmurfWalkRight + animation.loop(kWalkCycle, kWalkSteps, 5));
     } else {
         walk(-speed_);
-        image = enemyImage(img::kSmurfWalkLeft + animate(kWalkCycle, kWalkSteps, 5));
+        image = enemyImage(img::kSmurfWalkLeft + animation.loop(kWalkCycle, kWalkSteps, 5));
     }
     hitboxFromImage();
 }
@@ -128,12 +128,8 @@ void Smurf::jump() {
 void Smurf::die() {
     fall();
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-    }
-    if (frame > 10) {
+    animation.tick(4);
+    if (animation.frame > 10) {
         dead = true;
         return;
     }
@@ -142,12 +138,12 @@ void Smurf::die() {
         if (!solidWall(x - speed_, y) && platformAt(x, y) == 0) {
             x -= speed_;
         }
-        image = enemyImage(img::kSmurfDieLeft + frame);
+        image = enemyImage(img::kSmurfDieLeft + animation.frame);
     } else {
         if (!solidWall(x + speed_, y) && platformAt(x, y) == 0) {
             x += speed_;
         }
-        image = enemyImage(img::kSmurfDieRight + frame);
+        image = enemyImage(img::kSmurfDieRight + animation.frame);
     }
 }
 
@@ -211,7 +207,7 @@ void Smurf::draw() {
         case Skin::Peon:
             Actor::draw();
             // The helmet stays on for the first steps of the death.
-            if (alive || (mode == kDying && frame <= 2)) {
+            if (alive || (mode == kDying && animation.frame <= 2)) {
                 drawAt(x, y - 32, enemyImage(left ? img::kPeonHelmetLeft : img::kPeonHelmetRight));
             }
             break;

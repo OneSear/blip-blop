@@ -12,15 +12,12 @@ namespace bb::game::carebears {
 //-----------------------------------------------------------------------------
 
 void Rainbow::update() {
-    subFrame += 1;
-    subFrame %= 3;
-    if (subFrame == 0) {
-        frame += 1;
-    }
-    if (frame >= 15) {
+    animation.tick(3);
+    if (animation.frame >= 15) {
         dead = true;
     } else {
-        image = enemyImage((direction == kFacingRight ? img::kRainbowRight : img::kRainbowLeft) + frame);
+        image = enemyImage((direction == kFacingRight ? img::kRainbowRight : img::kRainbowLeft) +
+                           animation.frame);
         hitboxFromImage();
     }
 }
@@ -37,13 +34,8 @@ void BouncingStar::update() {
         dy = -3 - world().random() % 2;  // bounces
     }
 
-    subFrame += 1;
-    subFrame %= 3;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 24;
-    }
-    image = enemyImage(img::kStarShot + frame);
+    animation.cycle(3, 24);
+    image = enemyImage(img::kStarShot + animation.frame);
 
     // A wall turns it back, both ways (D-80 fixed: 2002 left a star going
     // right stuck against the wall).
@@ -101,8 +93,8 @@ void StormCloud::appear() {
     static const int kSpeed = 1;
     const int camera = world().camera.x;
 
-    subFrame += 1;
-    subFrame %= 10;
+    animation.subFrame += 1;
+    animation.subFrame %= 10;
     if (direction == kFacingRight) {
         x += kSpeed;
         if (x > camera + 600) {
@@ -115,13 +107,13 @@ void StormCloud::appear() {
         }
     }
 
-    if (subFrame == 0) {
-        frame += 1;
-        if (frame >= 3) {
-            subFrame = frame = 0;
+    if (animation.subFrame == 0) {
+        animation.frame += 1;
+        if (animation.frame >= 3) {
+            animation.restart();
             phase_ = 1;
         } else {
-            image = enemyImage(img::kCloudShotAppear + frame);
+            image = enemyImage(img::kCloudShotAppear + animation.frame);
         }
     }
     noHitbox();
@@ -130,16 +122,16 @@ void StormCloud::appear() {
 void StormCloud::vanish() {
     static const int kSpeed = 1;
 
-    subFrame += 1;
-    subFrame %= 6;
+    animation.subFrame += 1;
+    animation.subFrame %= 6;
     x += direction == kFacingRight ? kSpeed : -kSpeed;
 
-    if (subFrame == 0) {
-        frame += 1;
-        if (frame >= 3) {
+    if (animation.subFrame == 0) {
+        animation.frame += 1;
+        if (animation.frame >= 3) {
             dead = true;
         } else {
-            image = enemyImage(img::kCloudShotAppear + 2 - frame);
+            image = enemyImage(img::kCloudShotAppear + 2 - animation.frame);
         }
     }
     noHitbox();
@@ -153,11 +145,11 @@ void StormCloud::drift() {
 
     lifetime_ -= 1;
     if (lifetime_ <= 0) {
-        frame = subFrame = 0;
+        animation.restart();
         phase_ = 2;
     }
 
-    image = enemyImage(img::kCloudShot + animate(kPuff, 4, 9));
+    image = enemyImage(img::kCloudShot + animation.loop(kPuff, 4, 9));
 
     if (direction == kFacingRight) {
         x += kSpeed;
@@ -199,11 +191,11 @@ void StormCloud::strike() {
 
     lifetime_ -= 1;
     if (lifetime_ <= 0) {
-        frame = subFrame = 0;
+        animation.restart();
         phase_ = 2;
     }
 
-    image = enemyImage(img::kCloudShot + animate(kPuff, 4, 9));
+    image = enemyImage(img::kCloudShot + animation.loop(kPuff, 4, 9));
 
     strikeStep_ += 1;
     if (strikeStep_ == 50) {
@@ -215,11 +207,7 @@ void StormCloud::strike() {
         hitboxFromImage();
     } else if (strikeStep_ > 50) {
         // The bolt: from the cloud to the bottom of the screen.
-        x1 = x - 20;
-        x2 = x + 20;
-        y1 = y - 10;
-        y2 = 480;
-        collides = true;
+        hitbox.set(x - 20, y - 10, x + 20, 480);
     }
     dy = w.random() % 20;  // where the bolt images start (dy as in 2002)
 }
@@ -251,13 +239,8 @@ Lightsaber::~Lightsaber() {
 void Lightsaber::update() {
     World& w = world();
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 24;
-    }
-    image = enemyImage(img::kLightsaber + frame);
+    animation.cycle(4, 24);
+    image = enemyImage(img::kLightsaber + animation.frame);
 
     x += xSpeed / 10;
     y += dy / 10;
@@ -323,39 +306,41 @@ void ShamanBall::update() {
         y += dy;
     }
 
-    subFrame += 1;
-    subFrame %= 4;
+    animation.subFrame += 1;
+    animation.subFrame %= 4;
 
     const bool right = xSpeed > 0;
     if (bursting_) {
-        if (subFrame == 0) {
-            frame += 1;
-            if (frame > 4) {
+        if (animation.subFrame == 0) {
+            animation.frame += 1;
+            if (animation.frame > 4) {
                 dead = true;
                 return;
             }
         }
-        image = enemyImage((right ? img::kShamanBallBurstRight : img::kShamanBallBurstLeft) + frame);
+        image =
+            enemyImage((right ? img::kShamanBallBurstRight : img::kShamanBallBurstLeft) + animation.frame);
     } else if (flying_) {
-        if (subFrame == 0) {
-            frame += 1;
-            frame %= 5;
+        if (animation.subFrame == 0) {
+            animation.frame += 1;
+            animation.frame %= 5;
         }
         if (solidWall(x, y)) {
-            frame = subFrame = 0;
+            animation.restart();
             bursting_ = true;
         }
-        image = enemyImage((right ? img::kShamanBallRight : img::kShamanBallLeft) + frame);
+        image = enemyImage((right ? img::kShamanBallRight : img::kShamanBallLeft) + animation.frame);
     } else {
         // Grows first.
-        if (subFrame == 0) {
-            frame += 1;
-            if (frame > 4) {
+        if (animation.subFrame == 0) {
+            animation.frame += 1;
+            if (animation.frame > 4) {
                 flying_ = true;
                 return;
             }
         }
-        image = enemyImage((right ? img::kShamanBallStartRight : img::kShamanBallStartLeft) + frame);
+        image =
+            enemyImage((right ? img::kShamanBallStartRight : img::kShamanBallStartLeft) + animation.frame);
     }
     hitboxFromImage();
     dieWhenOffscreen();
@@ -372,43 +357,43 @@ ShamanColumn::ShamanColumn(World& world) : Projectile(world) {
 void ShamanColumn::update() {
     roll();
 
-    subFrame += 1;
-    subFrame %= 6;
+    animation.subFrame += 1;
+    animation.subFrame %= 6;
 
     // img::kShamanColumnRise is the lowest of the 5 rising images.
     switch (phase_) {
         case 0:  // rising
-            if (subFrame == 0) {
-                frame += 1;
-                if (frame > 4) {
+            if (animation.subFrame == 0) {
+                animation.frame += 1;
+                if (animation.frame > 4) {
                     phase_ = 1;
                     return;
                 }
             }
-            image = enemyImage(img::kShamanColumnRise + 4 - frame);
+            image = enemyImage(img::kShamanColumnRise + 4 - animation.frame);
             break;
         case 1:  // rolling
-            if (subFrame == 0) {
-                frame += 1;
-                frame %= 6;
+            if (animation.subFrame == 0) {
+                animation.frame += 1;
+                animation.frame %= 6;
             }
             lifetime_ -= 1;
             if (lifetime_ <= 0) {
                 phase_ = 2;
-                frame = subFrame = 0;
+                animation.restart();
                 return;
             }
-            image = enemyImage(img::kShamanColumn + frame);
+            image = enemyImage(img::kShamanColumn + animation.frame);
             break;
         case 2:  // sinking
-            if (subFrame == 0) {
-                frame += 1;
-                if (frame > 4) {
+            if (animation.subFrame == 0) {
+                animation.frame += 1;
+                if (animation.frame > 4) {
                     dead = true;
                     return;
                 }
             }
-            image = enemyImage(img::kShamanColumnRise + frame);
+            image = enemyImage(img::kShamanColumnRise + animation.frame);
             break;
         default:
             break;

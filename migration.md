@@ -1121,7 +1121,7 @@ Fixed deliberately; the replays were re-recorded (docs/progress.md, "Completing 
 | D-51 | Fixed: level positions are named level markers (`World::marker()`), in the source levels, the pack (version 2) and, for the 2002 files, `assets_level_markers.cpp`. |
 | D-52 | Fixed: every register is used by a per-world name. |
 | D-54 | Fixed: the `onAvance()` double move (fall, then a step on the same tick) in every class that had it. The other slips are D-80, D-89 and D-92. |
-| D-55 | Partly fixed: the never-dying "enemies" (stork, Snork in Black cameo, small Mario, Pac-Man car) are not counted in the kill percentage, Sonic is. Still open: debris removed only when they land, never off screen. |
+| D-55 | Fixed: the never-dying "enemies" (stork, Snork in Black cameo, small Mario, Pac-Man car) are not counted in the kill percentage, Sonic is; and (25 October) the debris that end only when they land (Rayman's limbs and head, the Care Bears' walking and dancing legs, the Snork boss world's grunt head and trunk and the rider's body) also end once fallen below the screen (`Actor::dieWhenFallenOut()`, y > 600), where nothing lands. No replay drops a piece into a hole, so the fingerprints did not change; a unit test does. |
 | D-76 | Fixed. |
 | D-77 | Fixed: the stork does not count. |
 | D-78 | Fixed: own timer per wild Smurf; the 5850 limit is a snuf1 marker. The constructor's facing test is kept: it has no visible effect (the first update sets the image). |
@@ -1131,7 +1131,7 @@ Fixed deliberately; the replays were re-recorded (docs/progress.md, "Completing 
 | D-56 | Fixed: no floating point left in the game. `squareRoot()` (`trig.hpp`) for the shaman's and Lara's `int(sqrt())`; the plumbers' jump and the cruisers' shots in integers. Each form gives the 2002 values (unit test: every square root up to 2^22 and a spread to `INT_MAX`, every speed and distance in ±1000); the replays kept their fingerprints. |
 | D-19 | Closed: the alpha fade was commented out in the original `cine_player.cpp` (commit d48c5bd) too, and no shipped cutscene uses `setalpha` or `setdeltaalpha`. The colours are D-95. |
 | D-95 (new) | Found and fixed: the 2002 player cleared the cutscene screen with layer 0's `setbackcolor` colour and filled the bars with its `setclipcolor` colour; the 2014 SDL port always used black, so the two white flashes ("Flash blanc", 2 renders each) of `intro.cin` and of `end.cin` were lost. Restored; the `attract`, `menus`, `finalboss` and `campaign` replays (the ones showing a cutscene past a flash) were re-recorded for it. |
-| Still open | D-55 (debris off screen). |
+| Still open | None of the defects. |
 ---
 
 ## Appendix E — Content catalogue

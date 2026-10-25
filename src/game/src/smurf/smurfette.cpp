@@ -8,7 +8,7 @@ namespace bb::game::smurf {
 
 Smurfette::Smurfette(World& world) : Enemy(world) {
     shotDelay_ = 100 + world.random() % 100;
-    hitPoints = 200;
+    health.points = 200;
 }
 
 void Smurfette::update() {
@@ -58,14 +58,14 @@ void Smurfette::walkAbout() {
 
     if (direction == kFacingRight) {
         walk(kSpeed);
-        image = enemyImage(img::kSmurfetteWalkRight + animate(kWalkCycle, kWalkSteps, 6));
+        image = enemyImage(img::kSmurfetteWalkRight + animation.loop(kWalkCycle, kWalkSteps, 6));
     } else {
         walk(-kSpeed);
-        image = enemyImage(img::kSmurfetteWalkLeft + animate(kWalkCycle, kWalkSteps, 6));
+        image = enemyImage(img::kSmurfetteWalkLeft + animation.loop(kWalkCycle, kWalkSteps, 6));
     }
 
     if (shotWait_ >= shotDelay_ && x > camera + 10 && x < camera + 630) {
-        frame = subFrame = 0;
+        animation.restart();
         mode = kShooting;
         blowKiss();
         return;
@@ -74,18 +74,15 @@ void Smurfette::walkAbout() {
 }
 
 void Smurfette::die() {
-    subFrame += 1;
-    subFrame %= 5;
-    if (subFrame == 0) {
-        frame += 1;
-        if (frame >= 11) {
+    if (animation.tick(5)) {
+        if (animation.frame >= 11) {
             dead = true;
             world().media.effects->engrave(x, y, image);
             return;
         }
     }
-    image =
-        enemyImage((direction == kFacingRight ? img::kSmurfetteDieRight : img::kSmurfetteDieLeft) + frame);
+    image = enemyImage((direction == kFacingRight ? img::kSmurfetteDieRight : img::kSmurfetteDieLeft) +
+                       animation.frame);
 }
 
 void Smurfette::blowKiss() {
@@ -93,21 +90,17 @@ void Smurfette::blowKiss() {
 
     World& w = world();
 
-    subFrame += 1;
-    subFrame %= 5;
-    if (subFrame == 0) {
-        frame += 1;
-
-        if (frame == 4 && w.target != nullptr) {
+    if (animation.tick(5)) {
+        if (animation.frame == 4 && w.target != nullptr) {
             auto* kiss = new DeadlyKiss(w);
             kiss->x = x;
             kiss->y = y - 25;
             kiss->direction = direction;
             kiss->target = w.target;
             w.enemyShots.add(kiss);
-        } else if (frame >= 9) {
+        } else if (animation.frame >= 9) {
             mode = kWalking;
-            frame = subFrame = shotWait_ = 0;
+            animation.frame = animation.subFrame = shotWait_ = 0;
             shotDelay_ = 200 + w.random() % 100;
             walkAbout();
             return;
@@ -115,7 +108,7 @@ void Smurfette::blowKiss() {
     }
 
     image = enemyImage((direction == kFacingRight ? img::kSmurfetteKissRight : img::kSmurfetteKissLeft) +
-                       kBlow[frame]);
+                       kBlow[animation.frame]);
     hitboxFromImage();
 }
 
@@ -136,15 +129,10 @@ void Smurfette::hitBy(Shot& shot) {
 void DeadlyKiss::update() {
     static const int kAcceleration = 1;
 
-    subFrame += 1;
-    subFrame %= 5;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 2;
-    }
+    animation.cycle(5, 2);
 
     direction = xSpeed > 0 ? kFacingRight : kFacingLeft;
-    image = enemyImage((direction == kFacingRight ? img::kKissRight : img::kKissLeft) + frame);
+    image = enemyImage((direction == kFacingRight ? img::kKissRight : img::kKissLeft) + animation.frame);
 
     x += xSpeed / 13;
     y += dy / 13;

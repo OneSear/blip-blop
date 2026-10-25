@@ -43,7 +43,7 @@ the end of the tick.
 ## Entity, roles and collisions
 
 `Entity` (`entity.hpp`) is the base of every entity, old or ported: the
-position, the hitbox (`x1`..`y2`, `collides`), `dead`, and the virtuals
+position, the `hitbox` (a `Hitbox`), `dead`, and the virtuals
 `update()`, `draw()`, `state()` (the animation and character state the
 world fingerprint records). The 2002 `Sprite` derives from it.
 
@@ -62,8 +62,14 @@ works until the end of the tick, as the raw pointers did.
 
 ## Base classes for ported content
 
-`actor.hpp`: `Actor` (image, animation, gravity, walking on platforms),
-`Character` (hit points and a state), `Enemy` (the shared death pipeline:
+Entities are composed of three parts (`components.hpp`, DEC-08):
+`Hitbox` (corners, `active`, `overlaps()`), `AnimationPlayer` (the step
+`frame` and its tick counter `subFrame`, with `tick()`, `cycle()`,
+`tickUpTo()`, `loop()` over a table and `restart()`) and `Health`
+(`points`, `take()`, `heal()`, `left()`).
+
+`actor.hpp`: `Actor` (image, `animation`, gravity, walking on platforms),
+`Character` (`health` and a state), `Enemy` (the shared death pipeline:
 blood on walls, weapon pickups, kill counter; blood sprays; lobbed shots;
 burning), `Projectile`. `gore.hpp`: `GoreDrop`, the generic gore drop
 that explosions and hit bosses throw (also used by the 2002 cow bomb).

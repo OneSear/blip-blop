@@ -6,19 +6,14 @@
 namespace bb::game::pokemon {
 
 void Alarm::update() {
-    subFrame += 1;
-    subFrame %= 3;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 14;
-    }
-    image = levelImage(first_ + frame);
+    animation.cycle(3, 14);
+    image = levelImage(first_ + animation.frame);
     dieWhenOffscreen();
 }
 
 void Arrow::update() {
     static const int kGo[] = {0, 1, 2, 3, 4, 5, 4, 3, 2, 1, 0};
-    image = levelImage(prop::kArrow + animate(kGo, 11, 3));
+    image = levelImage(prop::kArrow + animation.loop(kGo, 11, 3));
 }
 
 //-----------------------------------------------------------------------------
@@ -34,8 +29,8 @@ SkyWindow::SkyWindow(World& world) : Actor(world) {
 }
 
 void SkyWindow::update() {
-    frame += 4;  // the sky's scroll position
-    frame %= 384;
+    animation.frame += 4;  // the sky's scroll position
+    animation.frame %= 384;
     hitboxFromImage();
 }
 
@@ -46,19 +41,20 @@ void SkyWindow::draw() {
     // 2002 computation; at the right edge the width can go negative).
     const int camera = world().camera.x;
     const Image* sky = levelImage(prop::kSky);  // wider than the window, scrolls
-    int left = frame;
+    int left = animation.frame;
     int shift = 0;
     int width = 0;
     if (x + kSkyWidth > camera + 640) {
         width = camera + 640 - x;
     } else if (x < camera) {
         width = kSkyWidth;
-        left = camera - x + frame;
+        left = camera - x + animation.frame;
         shift = camera - x;
     } else {
         width = kSkyWidth;
     }
-    world().media.canvas->drawPart(sky, left, 0, frame + width, sky->height(), x - camera + shift, y + 50);
+    world().media.canvas->drawPart(sky, left, 0, animation.frame + width, sky->height(), x - camera + shift,
+                                   y + 50);
 
     drawAt(x, y, levelImage(prop::kSkyWindowFrame));
 }
@@ -93,21 +89,21 @@ NeonSign::NeonSign(World& world, bool levelTwo) : Actor(world), levelTwo_(levelT
 void NeonSign::update() {
     // The periods of the digit and of each letter (2002 values).
     if (levelTwo_) {
-        advance(frame, 560);
+        advance(animation.frame, 560);
         advance(letterL1_, 155);
         advance(letterE1_, 300);
         advance(letterV_, 210);
         advance(letterE2_, 190);
         advance(letterL2_, 380);
     } else {
-        advance(frame, 460);
+        advance(animation.frame, 460);
         advance(letterE1_, 120);
         advance(letterV_, 180);
         advance(letterE2_, 290);
         advance(letterL2_, 190);
     }
-    if (frame < kFlickerSteps) {
-        image = levelImage((levelTwo_ ? kNeonTwo : kNeonThree) + kFlicker[frame]);
+    if (animation.frame < kFlickerSteps) {
+        image = levelImage((levelTwo_ ? kNeonTwo : kNeonThree) + kFlicker[animation.frame]);
     }
 }
 

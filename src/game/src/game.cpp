@@ -228,8 +228,8 @@ bool Game::startLevel(const char* name, int kind) {
         p->x = startX_[i];
         p->y = startY_[i];
         p->mode = kNormal;
-        p->frame = 0;
-        p->subFrame = 0;
+        p->animation.frame = 0;
+        p->animation.subFrame = 0;
         p->direction = aim::kRight;
         p->firing = false;
 
@@ -261,7 +261,7 @@ bool Game::startLevel(const char* name, int kind) {
             }
             p->setWeapon(Weapon::Rifle);
             p->perfect = true;
-            p->hitPoints = kFullHealth;
+            p->health.points = kFullHealth;
             if (lastPerfect_[i]) {
                 p->equipSuperWeapon();
             }

@@ -4,6 +4,7 @@
 #include <string>
 
 namespace bb::core {
+class FileReader;
 class Vfs;
 namespace assets {
 class AssetSource;
@@ -17,7 +18,8 @@ namespace bb::app {
 // assets (owned by bbMain()).
 class GameFiles {
 public:
-    GameFiles();
+    // The files are read through `reader`, which must outlive this object.
+    explicit GameFiles(const core::FileReader& reader);
     ~GameFiles();
     GameFiles(const GameFiles&) = delete;
     GameFiles& operator=(const GameFiles&) = delete;
@@ -41,6 +43,7 @@ public:
     const core::assets::AssetSource& assets();
 
 private:
+    const core::FileReader& reader_;
     std::unique_ptr<core::Vfs> vfs_;
     std::unique_ptr<core::assets::AssetSource> assetSource_;
     bool chosen_ = false;  // --data or --pack was given

@@ -40,7 +40,7 @@ const JumpVector kJumps[4][4] = {
 }  // namespace
 
 SnorkBoss::SnorkBoss(World& world) : Enemy(world) {
-    hitPoints = 15000;
+    health.points = 15000;
     dy = 0;
     direction = kFacingLeft;
     image = enemyImage(img::kBossStill);
@@ -89,30 +89,25 @@ void SnorkBoss::stand() {
 
     if (w.flags[kBossState] == 1) {
         // The intro (18 images), then the fight music and a 50 s timer.
-        if (subFrame == 0 && frame == 0) {
+        if (animation.subFrame == 0 && animation.frame == 0) {
             w.media.levelSounds->play(snd::kBossIntro);
         }
-        subFrame += 1;
-        subFrame %= 8;
-        if (subFrame == 0) {
-            frame += 1;
-        }
-        if (frame >= 18) {
+        animation.tick(8);
+        if (animation.frame >= 18) {
             w.flags[kBossState] = 2;
-            frame = 0;
-            subFrame = 0;
+            animation.restart();
             w.media.levelMusic->play(bb::assets::music::snork::kBoss);
             w.flags[Flag::Timer] = 50;
         } else {
-            image = enemyImage(img::kBossIntro + frame);
+            image = enemyImage(img::kBossIntro + animation.frame);
         }
     } else if (w.flags[kBossState] == 2) {
-        frame += 1;
-        if (frame > 20) {
+        animation.frame += 1;
+        if (animation.frame > 20) {
             if (attacking_) {
                 // After an attack: jump to the perch facing the target.
                 attacking_ = false;
-                subFrame = 0;
+                animation.subFrame = 0;
                 int destination = w.random() % 4;
                 const Entity* t = w.target;
                 const int left = w.marker("snorks.bossZones", 0);
@@ -128,10 +123,10 @@ void SnorkBoss::stand() {
                     destination = 1;
                 }
                 if (destination == perch_) {
-                    frame = 15;
+                    animation.frame = 15;
                 } else {
                     aimJump(destination);
-                    frame = 0;
+                    animation.frame = 0;
                     mode = kFalling;
                     gravityDelay = 0;
                     jumping_ = true;
@@ -142,8 +137,7 @@ void SnorkBoss::stand() {
                 // Attack: a big spine at a target level with him and on his
                 // side, else a fan of six spines.
                 mode = kShooting;
-                frame = 0;
-                subFrame = 0;
+                animation.restart();
                 if (w.target != nullptr) {
                     const Entity* t = w.target;
                     const bool onHisSide = (perch_ == 0 || perch_ == 2) ? t->x > x : t->x < x;
@@ -184,8 +178,7 @@ bool SnorkBoss::landJump() {
     x += xSpeed_;
 
     if (x > px - kTolerance && x < px + kTolerance && y > py - kTolerance && y < py + kTolerance) {
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         x = px;
         y = py;
         jumping_ = false;
@@ -202,7 +195,7 @@ void SnorkBoss::jump() {
         return;
     }
     image = enemyImage((direction == kFacingRight ? img::kBossJumpRight : img::kBossJumpLeft) +
-                       animate(kJump, 4, 6));
+                       animation.loop(kJump, 4, 6));
     hitboxFromImage();
 }
 
@@ -210,7 +203,7 @@ void SnorkBoss::die() {
     static const int kJump[] = {0, 1, 2, 1};
     World& w = world();
 
-    collides = false;
+    hitbox.active = false;
     if (w.flags[kBossState] == 2 && !jumping_) {
         // Back to perch 0 first.
         if (perch_ == 0) {
@@ -219,7 +212,7 @@ void SnorkBoss::die() {
             image = enemyImage(img::kBossStandRight);
         } else {
             aimJump(0);
-            frame = 0;
+            animation.frame = 0;
             jumping_ = true;
             gravityDelay = 0;
         }
@@ -228,7 +221,7 @@ void SnorkBoss::die() {
             return;
         }
         image = enemyImage((direction == kFacingRight ? img::kBossJumpRight : img::kBossJumpLeft) +
-                           animate(kJump, 4, 6));
+                           animation.loop(kJump, 4, 6));
     } else if (w.flags[kBossState] == 3) {
         // The shark swims past and takes him.
         shark_ = true;
@@ -264,20 +257,15 @@ void SnorkBoss::fire() {
             {3, 7, 0, 52, -16},  {4, 6, 4, 35, 25},   {5, 5, 5, 35, 25},
         };
 
-        subFrame += 1;
-        subFrame %= 6;
-        if (subFrame == 0) {
-            frame += 1;
-        }
-        if (frame > 5) {
+        animation.tick(6);
+        if (animation.frame > 5) {
             mode = kNormal;
-            frame = 0;
-            subFrame = 0;
+            animation.restart();
             stand();
             return;
         }
-        if (subFrame == 1) {
-            const FanSpine& f = kFan[frame];
+        if (animation.subFrame == 1) {
+            const FanSpine& f = kFan[animation.frame];
             // Right: images 425 to 430; left: 439 down to 434.
             auto* spine = right ? new Spine(w, img::kBossSpinesRight + f.image, f.speedX, f.speedY)
                                 : new Spine(w, img::kBossSpinesLeft + 5 - f.image, -f.speedX, f.speedY);
@@ -286,15 +274,11 @@ void SnorkBoss::fire() {
             spine->y = y + f.dy;
             w.enemyShots.add(spine);
         }
-        image =
-            enemyImage((right ? img::kBossFireRight : img::kBossFireLeft) + 2 * (frame / 2) + subFrame / 3);
+        image = enemyImage((right ? img::kBossFireRight : img::kBossFireLeft) + 2 * (animation.frame / 2) +
+                           animation.subFrame / 3);
     } else {
-        subFrame += 1;
-        subFrame %= 5;
-        if (subFrame == 0) {
-            frame += 1;
-        }
-        if (frame >= 1) {
+        animation.tick(5);
+        if (animation.frame >= 1) {
             auto* spine = right ? new Spine(w, img::kBossBigSpineRight, 14, 0)
                                 : new Spine(w, img::kBossBigSpineLeft, -14, 0);
             spine->direction = direction;
@@ -302,8 +286,7 @@ void SnorkBoss::fire() {
             spine->y = y - 2;
             w.enemyShots.add(spine);
             mode = kNormal;
-            frame = 0;
-            subFrame = 0;
+            animation.restart();
             stand();
             return;
         }
@@ -369,13 +352,9 @@ void GruntShot::update() {
         y += kBobShot[bobStep_];
     }
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 3;
-    }
-    image = enemyImage((direction == kFacingRight ? img::kGruntShotRight : img::kGruntShotLeft) + frame);
+    animation.cycle(4, 3);
+    image = enemyImage((direction == kFacingRight ? img::kGruntShotRight : img::kGruntShotLeft) +
+                       animation.frame);
 
     if (solidWall(x, y)) {
         dead = true;
@@ -410,12 +389,7 @@ void GovernorShot::update() {
     static const int kMaxSpeed = 6;
     static const int kSteerTime = 100;
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 4;
-    }
+    animation.cycle(4, 4);
 
     const int camera = world().camera.x;
     if (x < camera - 100 || x > camera + 740 || y > 580 || y < -100) {
@@ -456,7 +430,8 @@ void GovernorShot::update() {
 
     x += xSpeed_;
     y += dy;
-    image = enemyImage(xSpeed_ <= 0 ? img::kGovernorShot + frame : img::kGovernorShot + 3 - frame);
+    image = enemyImage(xSpeed_ <= 0 ? img::kGovernorShot + animation.frame
+                                    : img::kGovernorShot + 3 - animation.frame);
 
     if (solidWall(x + xSpeed_, y + dy)) {
         dead = true;
@@ -465,15 +440,11 @@ void GovernorShot::update() {
 }
 
 void MageShot::update() {
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0 && frame < 3) {
-        frame += 1;
+    animation.tickUpTo(4, 3);
+    if (animation.frame == 3) {
+        animation.frame = 1;
     }
-    if (frame == 3) {
-        frame = 1;
-    }
-    if (frame == 0 && subFrame == 1) {
+    if (animation.frame == 0 && animation.subFrame == 1) {
         xSpeed_ = direction == kFacingRight ? 6 : -6;
     }
 
@@ -485,12 +456,13 @@ void MageShot::update() {
     }
     // About to hit a wall: the impact image.
     if (solidWall(x + 3 * xSpeed_, y + 3 * dy)) {
-        frame = 3;
+        animation.frame = 3;
     }
     x += xSpeed_;
     y += dy;
 
-    image = enemyImage((direction == kFacingRight ? img::kMageShotRight : img::kMageShotLeft) + frame);
+    image =
+        enemyImage((direction == kFacingRight ? img::kMageShotRight : img::kMageShotLeft) + animation.frame);
     hitboxFromImage();
 }
 
@@ -515,14 +487,10 @@ void Spine::update() {
 void GruntHead::update() {
     World& w = world();
 
-    subFrame += 1;
-    subFrame %= 5;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(5);
 
     const bool right = direction == kFacingRight;
-    if (frame == 2 && subFrame == 0) {
+    if (animation.frame == 2 && animation.subFrame == 0) {
         GruntTrunk* trunk = nullptr;
         if (right) {
             const int speedX = 1 + w.random() % 2;
@@ -539,7 +507,7 @@ void GruntHead::update() {
         trunk->y = y - 26;
         w.blood.add(trunk);
     }
-    if (frame == 3 && subFrame == 0) {
+    if (animation.frame == 3 && animation.subFrame == 0) {
         auto* back = new GruntHeadBack(w, right ? 1 : -1, 0);
         back->x = x;
         back->direction = direction;
@@ -547,7 +515,7 @@ void GruntHead::update() {
         w.blood.add(back);
     }
 
-    if (frame == 6) {
+    if (animation.frame == 6) {
         w.media.effects->engrave(x, y, image);
         dead = true;
         return;
@@ -556,24 +524,24 @@ void GruntHead::update() {
     fall();
     if (right) {
         x += 1;
-        image = enemyImage(img::kGruntHeadRight + frame);
-        if (frame >= 3) {
+        image = enemyImage(img::kGruntHeadRight + animation.frame);
+        if (animation.frame >= 3) {
             fall();
             x += 1;
         }
         if (platformAt(x, y) != 0 && x > 0) {
-            x -= 6 - frame;
+            x -= 6 - animation.frame;
         }
     } else {
         x -= 1;
-        image = enemyImage(img::kGruntHeadLeft + frame);
-        if (frame >= 3) {
+        image = enemyImage(img::kGruntHeadLeft + animation.frame);
+        if (animation.frame >= 3) {
             fall();
             x -= 1;
         }
         // (2002: "x < 0", never true: no slowing down to the left.)
         if (platformAt(x, y) != 0 && x < 0) {
-            x += 6 - frame;
+            x += 6 - animation.frame;
         }
     }
 }
@@ -582,62 +550,52 @@ void GruntHeadBack::update() {
     fall();
     x += xSpeed_;
 
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0 && frame < 3) {
-        frame += 1;
-    }
-    image =
-        enemyImage((direction == kFacingRight ? img::kGruntHeadBackRight : img::kGruntHeadBackLeft) + frame);
+    animation.tickUpTo(6, 3);
+    image = enemyImage((direction == kFacingRight ? img::kGruntHeadBackRight : img::kGruntHeadBackLeft) +
+                       animation.frame);
 
-    if (frame == 3 && platformAt(x, y) != 0) {
+    if (animation.frame == 3 && platformAt(x, y) != 0) {
         world().media.effects->engrave(x, y, image);
         dead = true;
     }
+    dieWhenFallenOut();
 }
 
 void GruntTrunk::update() {
     fall();
     x += xSpeed_;
 
-    subFrame += 1;
-    subFrame %= 3;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 8;
-    }
-    image = enemyImage(img::kGruntTrunk + frame);
+    animation.cycle(3, 8);
+    image = enemyImage(img::kGruntTrunk + animation.frame);
 
     if (platformAt(x, y) != 0) {
         world().media.effects->engrave(x, y, image);
         dead = true;
     }
+    dieWhenFallenOut();
 }
 
 void RiderBody::update() {
     fall();
     x += xSpeed_;
 
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0 && frame < 3) {
-        frame += 1;
-    }
+    animation.tickUpTo(6, 3);
 
     const int first = direction == kFacingRight ? img::kRiderBodyRight : img::kRiderBodyLeft;
-    if (frame < 3) {
-        image = enemyImage(first + frame);
+    if (animation.frame < 3) {
+        image = enemyImage(first + animation.frame);
     } else if (platformAt(x, y) != 0) {
-        if (subFrame == 0) {
-            frame += 1;
+        if (animation.subFrame == 0) {
+            animation.frame += 1;
         }
-        if (frame < 5) {
-            image = enemyImage(first + frame);
+        if (animation.frame < 5) {
+            image = enemyImage(first + animation.frame);
         } else {
             world().media.effects->engrave(x, y, image);
             dead = true;
         }
     }
+    dieWhenFallenOut();
 }
 
 }  // namespace bb::game::snorks

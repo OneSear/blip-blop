@@ -17,13 +17,6 @@ public:
     // Same for a problem the program can continue after.
     virtual void showWarning(const std::string& title, const std::string& message) = 0;
 
-    // Directory of the executable, with a trailing separator ("" if unknown).
-    virtual std::string baseDirectory() const = 0;
-
-    // Per-user writable directory for settings and scores, created if
-    // needed, with a trailing separator ("" if unavailable).
-    virtual std::string preferencesDirectory() const = 0;
-
     // The process's peak resident memory in bytes, 0 if unknown (for the
     // benchmark line of headless runs).
     virtual std::uint64_t peakMemoryBytes() const = 0;

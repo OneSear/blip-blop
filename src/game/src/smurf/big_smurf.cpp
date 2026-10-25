@@ -19,7 +19,7 @@ constexpr int kThrowRange = 200;    // throws from at least this far
 }  // namespace
 
 BigSmurf::BigSmurf(World& world) : Enemy(world) {
-    hitPoints = 5000;
+    health.points = 5000;
     mode = kWaitingOffscreen;
     image = enemyImage(img::kBigSmurfWalkLeft);
 }
@@ -104,7 +104,7 @@ void BigSmurf::choose() {
 
     if (plan_ == Plan::Flurry) {
         if (dx > -kCloseRange && dx < kCloseRange) {
-            frame = subFrame = 0;
+            animation.restart();
             mode = kFlurry;
         } else {
             xSpeed_ = dx < 0 ? -kSpeed : kSpeed;
@@ -122,7 +122,7 @@ void BigSmurf::choose() {
         throwWait_ -= 1;
         xSpeed_ = 0;
     } else {
-        frame = subFrame = 0;
+        animation.restart();
         xSpeed_ = 0;
         mode = kThrowing;
     }
@@ -146,7 +146,7 @@ void BigSmurf::walkAbout() {
         image = enemyImage(right ? img::kBigSmurfWalkRight : img::kBigSmurfWalkLeft);
     } else {
         image = enemyImage((right ? img::kBigSmurfWalkRight : img::kBigSmurfWalkLeft) +
-                           animate(kWalkCycle, kWalkSteps, 4));
+                           animation.loop(kWalkCycle, kWalkSteps, 4));
     }
     hitboxFromImage();
 }
@@ -154,14 +154,10 @@ void BigSmurf::walkAbout() {
 void BigSmurf::flurry() {
     fall();
 
-    subFrame += 1;
-    subFrame %= 3;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(3);
 
-    if (frame > kFlurrySteps) {
-        frame = subFrame = 0;
+    if (animation.frame > kFlurrySteps) {
+        animation.restart();
         mode = kNormal;
         plan_ = world().random() % 2 == 0 ? Plan::Flurry : Plan::Gifts;
         giftsThrown_ = 0;
@@ -170,7 +166,7 @@ void BigSmurf::flurry() {
 
     // A fast shuffle towards the target on the first three walking images.
     const bool right = direction == kFacingRight;
-    image = enemyImage((right ? img::kBigSmurfWalkRight : img::kBigSmurfWalkLeft) + frame % 3);
+    image = enemyImage((right ? img::kBigSmurfWalkRight : img::kBigSmurfWalkLeft) + animation.frame % 3);
     moveBy(right ? 1 : -1);
     hitboxFromImage();
 }
@@ -179,11 +175,11 @@ void BigSmurf::throwGift() {
     World& w = world();
     fall();
 
-    frame += 1;
+    animation.frame += 1;
     image = enemyImage(direction == kFacingRight ? img::kBigSmurfJumpRight : img::kBigSmurfJumpLeft);
     hitboxFromImage();
 
-    if (frame == kThrowTicks / 2 && target_) {
+    if (animation.frame == kThrowTicks / 2 && target_) {
         auto* gift = new LobbedGift(w);
         gift->direction = direction;
         gift->x = x;
@@ -193,8 +189,8 @@ void BigSmurf::throwGift() {
         w.media.levelSounds->play(snd::kGreedyThrow + w.random() % 2);
     }
 
-    if (frame >= kThrowTicks) {
-        frame = 0;
+    if (animation.frame >= kThrowTicks) {
+        animation.frame = 0;
         mode = kNormal;
         throwWait_ = kThrowPause;
         giftsThrown_ += 1;
@@ -208,17 +204,14 @@ void BigSmurf::throwGift() {
 void BigSmurf::die() {
     fall();
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-    }
-    if (frame > 10) {
+    animation.tick(4);
+    if (animation.frame > 10) {
         dead = true;
         scriptKill();
         return;
     }
-    image = enemyImage((direction == kFacingLeft ? img::kBigSmurfDieLeft : img::kBigSmurfDieRight) + frame);
+    image = enemyImage((direction == kFacingLeft ? img::kBigSmurfDieLeft : img::kBigSmurfDieRight) +
+                       animation.frame);
 }
 
 void BigSmurf::scriptKill() {
@@ -260,8 +253,8 @@ void LobbedGift::update() {
         if (ground != 0) {
             y = ground;
             exploding_ = true;
-            frame = 20;
-            subFrame = 0;
+            animation.frame = 20;
+            animation.subFrame = 0;
             w.media.miscSounds->play(miscsnd::kExplosion);
         } else {
             y += dy;
@@ -276,18 +269,14 @@ void LobbedGift::update() {
     }
 
     // Explodes like the prankster's gift: only the first steps hurt.
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0) {
-        frame += 1;
-    }
-    if (frame > 35) {
+    animation.tick(6);
+    if (animation.frame > 35) {
         dead = true;
         return;
     }
-    image = enemyImage(img::kGiftExplosion + frame - 20);
+    image = enemyImage(img::kGiftExplosion + animation.frame - 20);
     hitboxFromImage();
-    if (frame >= 30) {
+    if (animation.frame >= 30) {
         noHitbox();
     }
 }

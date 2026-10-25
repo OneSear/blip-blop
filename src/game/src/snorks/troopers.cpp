@@ -70,13 +70,13 @@ void Trooper::fallDown() {
 void Trooper::stepAndTurn(int speed, int imageRight, int imageLeft, const int* cycle, int steps) {
     if (direction == kFacingLeft) {
         walk(-speed);
-        image = enemyImage(imageLeft + animate(cycle, steps, 4));
+        image = enemyImage(imageLeft + animation.loop(cycle, steps, 4));
         if (solidWall(x - speed, y) || x - speed < minX) {
             direction = kFacingRight;
         }
     } else {
         walk(speed);
-        image = enemyImage(imageRight + animate(cycle, steps, 4));
+        image = enemyImage(imageRight + animation.loop(cycle, steps, 4));
         if (solidWall(x + speed, y) || x + speed > world().camera.x + 640) {
             direction = kFacingLeft;
         }
@@ -90,7 +90,7 @@ void Trooper::stepAndTurn(int speed, int imageRight, int imageLeft, const int* c
 
 Grunt::Grunt(World& world) : Trooper(world) {
     shotDelay_ = 50 + world.random() % 200;
-    hitPoints = 200;
+    health.points = 200;
     image = enemyImage(img::kGruntWalkRight);
     dy = 0;
 }
@@ -105,8 +105,7 @@ void Grunt::walkAbout() {
         ((direction == kFacingRight && x > camera + 40) || (direction == kFacingLeft && x < camera + 600))) {
         shotWait_ = 0;
         shotDelay_ = 50 + world().random() % 200;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         mode = kShooting;
         shoot();
         return;
@@ -118,13 +117,9 @@ void Grunt::die() {
     World& w = world();
     fall();
 
-    subFrame += 1;
-    subFrame %= 5;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(5);
 
-    if (frame == 4 && subFrame == 1) {
+    if (animation.frame == 4 && animation.subFrame == 1) {
         auto* head = new GruntHead(w);
         head->direction = direction;
         head->y = y - 22;
@@ -133,38 +128,33 @@ void Grunt::die() {
         dy = 0;
     }
 
-    if (frame == 14) {
+    if (animation.frame == 14) {
         if (platformAt(x, y) != 0) {
             w.media.effects->engrave(x, y, image);
         }
         dead = true;
     } else if (direction == kFacingLeft) {
         walk(-2);
-        image = enemyImage(img::kGruntDieLeft + frame);
+        image = enemyImage(img::kGruntDieLeft + animation.frame);
     } else {
         walk(2);
-        image = enemyImage(img::kGruntDieRight + frame);
+        image = enemyImage(img::kGruntDieRight + animation.frame);
     }
 }
 
 void Grunt::shoot() {
     World& w = world();
 
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(6);
 
-    if (frame == 12) {
-        frame = 0;
-        subFrame = 0;
+    if (animation.frame == 12) {
+        animation.restart();
         mode = kWalking;
         walkAbout();
         return;
     }
 
-    if (frame == 10 && subFrame == 0) {
+    if (animation.frame == 10 && animation.subFrame == 0) {
         const bool right = direction == kFacingRight;
         auto* shot = new GruntShot(w, right ? 1 : -1);
         shot->direction = direction;
@@ -174,9 +164,9 @@ void Grunt::shoot() {
         w.media.levelSounds->play(snd::kGruntShoot);
     }
 
-    if (frame < 11) {
-        image =
-            enemyImage((direction == kFacingRight ? img::kGruntShootRight : img::kGruntShootLeft) + frame);
+    if (animation.frame < 11) {
+        image = enemyImage((direction == kFacingRight ? img::kGruntShootRight : img::kGruntShootLeft) +
+                           animation.frame);
     }
 }
 
@@ -198,7 +188,7 @@ void Grunt::hitBy(Shot& shot) {
 
 Gunner::Gunner(World& world) : Trooper(world) {
     shotDelay_ = 50 + world.random() % 200;
-    hitPoints = 150;
+    health.points = 150;
     image = enemyImage(img::kGruntWalkRight);
     dy = 0;
 }
@@ -214,8 +204,7 @@ void Gunner::walkAbout() {
         ((direction == kFacingRight && x > camera + 80) || (direction == kFacingLeft && x < camera + 560))) {
         shotWait_ = 0;
         shotDelay_ = 50 + w.random() % 200;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         mode = kShooting;
         aimX_ = w.target->x;
         aimY_ = w.target->y;
@@ -229,49 +218,41 @@ void Gunner::die() {
     World& w = world();
     fall();
 
-    subFrame += 1;
-    subFrame %= 5;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(5);
 
     const int side = direction == kFacingRight ? 1 : -1;
-    if (frame == 5 && subFrame == 0) {
+    if (animation.frame == 5 && animation.subFrame == 0) {
         dy = 0;
         y -= 17;
         x += 10 * side;
     }
-    if (frame >= 5) {
+    if (animation.frame >= 5) {
         fall();
         x += side;
     }
-    if (frame == 10) {
+    if (animation.frame == 10) {
         if (platformAt(x, y) != 0) {
             w.media.effects->engrave(x, y, image);
         }
         dead = true;
     }
-    image = enemyImage((direction == kFacingLeft ? img::kGunnerDieLeft : img::kGunnerDieRight) + frame);
+    image =
+        enemyImage((direction == kFacingLeft ? img::kGunnerDieLeft : img::kGunnerDieRight) + animation.frame);
 }
 
 void Gunner::shoot() {
     World& w = world();
 
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(6);
 
-    if (frame == 12) {
-        frame = 0;
-        subFrame = 0;
+    if (animation.frame == 12) {
+        animation.restart();
         mode = kWalking;
         walkAbout();
         return;
     }
 
-    if (frame == 10 && subFrame == 0) {
+    if (animation.frame == 10 && animation.subFrame == 0) {
         // Aimed at where the target was, at most 3 pixels per tick down or up.
         const auto aim = [this]() {
             int vy = ((aimY_ - y + 50) * 6) / (aimX_ - x);
@@ -298,9 +279,9 @@ void Gunner::shoot() {
         w.enemyShots.add(shot);
     }
 
-    if (frame < 10) {
-        image =
-            enemyImage((direction == kFacingRight ? img::kGunnerShootRight : img::kGunnerShootLeft) + frame);
+    if (animation.frame < 10) {
+        image = enemyImage((direction == kFacingRight ? img::kGunnerShootRight : img::kGunnerShootLeft) +
+                           animation.frame);
     }
     hitboxFromImage();
 }
@@ -323,7 +304,7 @@ void Gunner::hitBy(Shot& shot) {
 
 Governor::Governor(World& world) : Trooper(world) {
     shotDelay_ = 50 + world.random() % 200;
-    hitPoints = 150;
+    health.points = 150;
     image = enemyImage(img::kGruntWalkRight);
     dy = 0;
 }
@@ -339,8 +320,7 @@ void Governor::walkAbout() {
         ((direction == kFacingRight && x > camera + 40) || (direction == kFacingLeft && x < camera + 600))) {
         shotWait_ = 0;
         shotDelay_ = 50 + world().random() % 200;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         shots_ = 0;
         mode = kShooting;
         shoot();
@@ -353,38 +333,30 @@ void Governor::die() {
     World& w = world();
     fall();
 
-    subFrame += 1;
-    subFrame %= 5;
-    if (subFrame == 0) {
-        frame += 1;
-    }
-    if (frame == 5) {
+    animation.tick(5);
+    if (animation.frame == 5) {
         if (platformAt(x, y) != 0) {
             w.media.effects->engrave(x, y, image);
         }
         dead = true;
     }
-    image = enemyImage((direction == kFacingLeft ? img::kGovernorDieLeft : img::kGovernorDieRight) + frame);
+    image = enemyImage((direction == kFacingLeft ? img::kGovernorDieLeft : img::kGovernorDieRight) +
+                       animation.frame);
 }
 
 void Governor::shoot() {
     World& w = world();
 
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(6);
 
-    if (frame == 10) {
-        frame = 0;
-        subFrame = 0;
+    if (animation.frame == 10) {
+        animation.restart();
         mode = kWalking;
         walkAbout();
         return;
     }
 
-    if (frame == 6 && subFrame == 0) {
+    if (animation.frame == 6 && animation.subFrame == 0) {
         if (w.target != nullptr) {
             const int speedX = w.random() % 6 - 2;
             const int speedY = -5 - w.random() % 5;
@@ -401,13 +373,13 @@ void Governor::shoot() {
     }
 
     // Five shots: back to the start of the throw after each one.
-    if (frame == 7 && shots_ < 5 && subFrame == 0) {
-        frame -= 4;
+    if (animation.frame == 7 && shots_ < 5 && animation.subFrame == 0) {
+        animation.frame -= 4;
     }
 
-    if (frame < 7) {
+    if (animation.frame < 7) {
         image = enemyImage((direction == kFacingRight ? img::kGovernorShootRight : img::kGovernorShootLeft) +
-                           frame);
+                           animation.frame);
     }
 }
 
@@ -429,7 +401,7 @@ void Governor::hitBy(Shot& shot) {
 
 SnorkInBlack::SnorkInBlack(World& world) : Trooper(world) {
     shotDelay_ = 50 + world.random() % 100;
-    hitPoints = 250;
+    health.points = 250;
     dy = 0;
 }
 
@@ -452,8 +424,7 @@ void SnorkInBlack::walkAbout() {
                 (direction == kFacingLeft && x > aimX_ && vy < 2 && vy > -2)) {
                 shotWait_ = 0;
                 shotDelay_ = 50 + w.random() % 100;
-                frame = 0;
-                subFrame = 0;
+                animation.restart();
                 shots_ = w.random() % 3;
                 mode = kShooting;
                 shoot();
@@ -468,18 +439,15 @@ void SnorkInBlack::die() {
     World& w = world();
     fall();
 
-    subFrame += 1;
-    subFrame %= 8;
-    if (subFrame == 0) {
-        frame += 1;
-    }
-    if (frame == 5) {
+    animation.tick(8);
+    if (animation.frame == 5) {
         if (platformAt(x, y) != 0) {
             w.media.effects->engrave(x, y, image);
         }
         dead = true;
     } else {
-        image = enemyImage((direction == kFacingRight ? img::kBlackDieRight : img::kBlackDieLeft) + frame);
+        image = enemyImage((direction == kFacingRight ? img::kBlackDieRight : img::kBlackDieLeft) +
+                           animation.frame);
     }
 }
 
@@ -487,13 +455,9 @@ void SnorkInBlack::shoot() {
     static const int kMaxShots = 6;
     World& w = world();
 
-    subFrame += 1;
-    subFrame %= frame == 0 ? 20 : 4;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(animation.frame == 0 ? 20 : 4);
 
-    if (frame == 1 && subFrame == 0) {
+    if (animation.frame == 1 && animation.subFrame == 0) {
         Spine* spine = nullptr;
         if (direction == kFacingRight) {
             const int vx = 5 + w.random() % 2;
@@ -512,12 +476,11 @@ void SnorkInBlack::shoot() {
         w.media.levelSounds->play(snd::kBlackShoot);
     }
 
-    if (frame == 3) {
+    if (animation.frame == 3) {
         shots_ += 1;
-        frame = 0;
+        animation.frame = 0;
         if (shots_ >= kMaxShots) {
-            subFrame = 0;
-            frame = 0;
+            animation.restart();
             mode = kWalking;
             walkAbout();
             return;
@@ -525,9 +488,11 @@ void SnorkInBlack::shoot() {
     }
 
     if (direction == kFacingRight) {
-        image = enemyImage(frame == 0 ? img::kBlackWalkRight : img::kBlackShootRight + frame - 1);
+        image = enemyImage(animation.frame == 0 ? img::kBlackWalkRight
+                                                : img::kBlackShootRight + animation.frame - 1);
     } else {
-        image = enemyImage(frame == 0 ? img::kBlackWalkLeft : img::kBlackShootLeft + frame - 1);
+        image = enemyImage(animation.frame == 0 ? img::kBlackWalkLeft
+                                                : img::kBlackShootLeft + animation.frame - 1);
     }
     hitboxFromImage();
 }
@@ -556,7 +521,7 @@ const int kBob[] = {0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0, 
 
 Mage::Mage(World& world) : Enemy(world) {
     shotDelay_ = 50 + world.random() % 200;
-    hitPoints = 200;
+    health.points = 200;
     image = enemyImage(img::kGruntWalkRight);
     dy = 0;
 }
@@ -609,11 +574,10 @@ void Mage::floatAbout() {
              below - ahead <= 30) ||
             (direction == kFacingLeft && below > 0 && ahead < 0 && below + ahead >= -30 &&
              below + ahead <= 30)) {
-            frame = 0;
+            animation.frame = 0;
             shotWait_ = 0;
             shotDelay_ = 50 + w.random() % 200;
-            frame = 0;
-            subFrame = 0;
+            animation.restart();
             mode = kShooting;
             focus_ = 0;
             cast();
@@ -621,13 +585,8 @@ void Mage::floatAbout() {
         }
     }
 
-    subFrame += 1;
-    subFrame %= 5;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 6;
-    }
-    image = enemyImage(img::kMageSwim + frame);
+    animation.cycle(5, 6);
+    image = enemyImage(img::kMageSwim + animation.frame);
 
     if (direction == kFacingLeft) {
         x -= 1;
@@ -654,31 +613,27 @@ void Mage::fallDown() {
 void Mage::die() {
     World& w = world();
 
-    if (frame > 2) {
+    if (animation.frame > 2) {
         fall();
     }
-    subFrame += 1;
-    subFrame %= frame < 2 ? 17 : 5;
-    if (subFrame == 0) {
-        frame += 1;
-    }
-    if (subFrame == 0 && frame == 3) {
+    animation.tick(animation.frame < 2 ? 17 : 5);
+    if (animation.subFrame == 0 && animation.frame == 3) {
         w.media.levelSounds->play(snd::kMageFall);
     }
     // Falls (images 4 to 6 in a loop) until it lands (image 8 on).
-    if (platformAt(x, y) != 0 && frame < 7) {
-        frame = 8;
+    if (platformAt(x, y) != 0 && animation.frame < 7) {
+        animation.frame = 8;
     }
-    if (frame == 7) {
-        frame = 4;
+    if (animation.frame == 7) {
+        animation.frame = 4;
     }
-    if (frame == 11) {
+    if (animation.frame == 11) {
         if (platformAt(x, y) != 0) {
             w.media.effects->engrave(x, y, image);
         }
         dead = true;
     } else {
-        image = enemyImage(img::kMageDie + frame);
+        image = enemyImage(img::kMageDie + animation.frame);
     }
 }
 
@@ -687,29 +642,20 @@ void Mage::cast() {
 
     if (focus_ < 3) {
         // Concentrates three times.
-        subFrame += 1;
-        subFrame %= 4;
-        if (subFrame == 0) {
-            frame += 1;
-        }
-        if (frame == 6) {
+        animation.tick(4);
+        if (animation.frame == 6) {
             focus_ += 1;
-            frame = 0;
+            animation.frame = 0;
             if (focus_ == 3) {
-                frame = 0;
-                subFrame = 0;
+                animation.restart();
             }
         }
-        image = enemyImage(img::kMageConcentrate + frame);
+        image = enemyImage(img::kMageConcentrate + animation.frame);
         return;
     }
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-    }
-    if (frame == 2 && subFrame == 0) {
+    animation.tick(4);
+    if (animation.frame == 2 && animation.subFrame == 0) {
         auto* shot = new MageShot(w);
         shot->direction = direction;
         shot->x = direction == kFacingRight ? x + 35 : x - 35;
@@ -717,15 +663,15 @@ void Mage::cast() {
         w.enemyShots.add(shot);
         w.media.levelSounds->play(snd::kMageCast);
     }
-    if (frame == 5) {
-        frame = 0;
-        subFrame = 0;
+    if (animation.frame == 5) {
+        animation.restart();
         mode = kWalking;
         floatAbout();
         return;
     }
-    if (frame < 3) {
-        image = enemyImage((direction == kFacingRight ? img::kMageCastRight : img::kMageCastLeft) + frame);
+    if (animation.frame < 3) {
+        image = enemyImage((direction == kFacingRight ? img::kMageCastRight : img::kMageCastLeft) +
+                           animation.frame);
     }
 }
 
@@ -744,7 +690,7 @@ void Mage::hitBy(Shot& shot) {
 
 SeahorseRider::SeahorseRider(World& world) : Enemy(world) {
     chargeDelay_ = 50 + world.random() % 200;
-    hitPoints = 350;
+    health.points = 350;
     dy = 0;
 }
 
@@ -780,20 +726,14 @@ void SeahorseRider::swim() {
         ((direction == kFacingRight && x > camera + 80) || (direction == kFacingLeft && x < camera + 560))) {
         chargeWait_ = 0;
         chargeDelay_ = 50 + w.random() % 200;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         mode = kShooting;
         attackStep_ = 0;
         charge();
         return;
     }
 
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 4;
-    }
+    animation.cycle(6, 4);
 
     if (direction == kFacingLeft) {
         x -= 1;
@@ -814,13 +754,9 @@ void SeahorseRider::swim() {
 void SeahorseRider::die() {
     World& w = world();
 
-    subFrame += 1;
-    subFrame %= frame < 7 ? 3 : 5;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(animation.frame < 7 ? 3 : 5);
 
-    if (frame == 7 && subFrame == 0) {
+    if (animation.frame == 7 && animation.subFrame == 0) {
         auto* body = new RiderBody(w, direction == kFacingRight ? -1 : 1);
         body->direction = direction;
         body->y = y;
@@ -830,7 +766,7 @@ void SeahorseRider::die() {
         dy = 0;
     }
 
-    if (frame >= 7) {
+    if (animation.frame >= 7) {
         // The seahorse swims off alone.
         fin_ = false;
         if (direction == kFacingLeft) {
@@ -842,10 +778,10 @@ void SeahorseRider::die() {
         }
     } else if (direction == kFacingLeft) {
         x -= 1;
-        image = enemyImage(img::kRiderDieLeft + frame);
+        image = enemyImage(img::kRiderDieLeft + animation.frame);
     } else {
         x += 1;
-        image = enemyImage(img::kRiderDieRight + frame);
+        image = enemyImage(img::kRiderDieRight + animation.frame);
     }
 }
 
@@ -854,12 +790,7 @@ void SeahorseRider::charge() {
     World& w = world();
     const int camera = w.camera.x;
 
-    subFrame += 1;
-    subFrame %= 2;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 4;
-    }
+    animation.cycle(2, 4);
 
     attackStep_ += 1;
     if (attackStep_ > 40) {
@@ -868,8 +799,7 @@ void SeahorseRider::charge() {
         // right.)
         if (direction == kFacingRight) {
             if (solidWall(x + 1, y) || x + 1 > camera + 640) {
-                frame = 0;
-                subFrame = 0;
+                animation.restart();
                 mode = kWalking;
                 fin_ = true;
                 swim();
@@ -879,8 +809,7 @@ void SeahorseRider::charge() {
             image = enemyImage(img::kRiderChargeRight);
         } else {
             if (solidWall(x - kChargeSpeed, y) || x - kChargeSpeed < minX) {
-                frame = 0;
-                subFrame = 0;
+                animation.restart();
                 mode = kWalking;
                 fin_ = true;
                 swim();
@@ -899,11 +828,7 @@ void SeahorseRider::charge() {
 void SeahorseRider::burnAway() {
     fin_ = false;
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(4);
     if (direction == kFacingRight) {
         x += 6;
         image = enemyImage(img::kRiderSeahorseRight);
@@ -918,15 +843,16 @@ void SeahorseRider::burnAway() {
 
 void SeahorseRider::draw() {
     Actor::draw();
-    if (mode == kCarbonised && frame < 9) {
+    if (mode == kCarbonised && animation.frame < 9) {
         drawAt(x, y,
-               enemyImage((direction == kFacingRight ? img::kRiderBurnRight : img::kRiderBurnLeft) + frame));
+               enemyImage((direction == kFacingRight ? img::kRiderBurnRight : img::kRiderBurnLeft) +
+                          animation.frame));
     }
     if (fin_) {
         if (direction == kFacingRight) {
-            drawAt(x + 15, y + 20, enemyImage(img::kRiderFinRight + frame % 4));
+            drawAt(x + 15, y + 20, enemyImage(img::kRiderFinRight + animation.frame % 4));
         } else {
-            drawAt(x - 15, y + 20, enemyImage(img::kRiderFinLeft + frame % 4));
+            drawAt(x - 15, y + 20, enemyImage(img::kRiderFinLeft + animation.frame % 4));
         }
     }
 }

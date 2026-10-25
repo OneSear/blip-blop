@@ -80,7 +80,7 @@ void drawPlayer(const World& world, const Player& player, const Layout& layout, 
     core::gfx::Pixmap& screen = media.canvas->screen();
     char buffer[20];
 
-    drawLifePoints(world, screen, layout.lifeX, 20, player.hitPoints);
+    drawLifePoints(world, screen, layout.lifeX, 20, player.health.points);
 
     // The score towards the centre: right-aligned on the left side.
     std::snprintf(buffer, sizeof(buffer), "%07d", player.score);

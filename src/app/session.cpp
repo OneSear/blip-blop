@@ -8,9 +8,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <fstream>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -22,7 +20,9 @@
 #include "bb/core/input/codes.hpp"
 #include "bb/core/input_timeline.hpp"
 #include "bb/core/rng.hpp"
+#include "bb/core/file_reader.hpp"
 #include "bb/platform/clock.hpp"
+#include "bb/platform/file_system.hpp"
 #include "bb/platform/system.hpp"
 
 #include "files.hpp"
@@ -149,17 +149,6 @@ std::string nameFromCode(std::uint32_t code) {
 
 // ---------------------------------------------------------------------------
 
-bool readFile(const std::string& path, std::string& out) {
-    std::ifstream in(path, std::ios::binary);
-    if (!in) {
-        return false;
-    }
-    std::ostringstream ss;
-    ss << in.rdbuf();
-    out = ss.str();
-    return true;
-}
-
 void usage() {
     std::fprintf(stderr,
                  "usage: blipblop [options] [/safe] [/cheat] [/quiet]\n"
@@ -203,6 +192,7 @@ struct Session::State {
     std::string settingsPath;
     std::string logPath;
     std::string packPath;
+    std::string dataRoot;
     std::uint64_t realFrames = 0;
     std::uint64_t traceFrom = 0;
     std::uint64_t traceTo = 0;
@@ -230,6 +220,7 @@ struct Session::State {
 
     bb::platform::Clock* clock = nullptr;
     const bb::platform::System* system = nullptr;
+    bb::platform::FileSystem* files = nullptr;
 
     // The benchmark of headless runs: the real time between presented
     // frames (the game's work per frame, fingerprints included, as nothing
@@ -288,7 +279,7 @@ void Session::writeCheckpoint(const char* kind, std::uint64_t count, std::uint64
 
 // ---------------------------------------------------------------------------
 
-bool Session::init(int argc, const char* argv[], GameFiles& files) {
+bool Session::init(int argc, const char* argv[]) {
     State& g = *state_;
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
@@ -332,7 +323,7 @@ bool Session::init(int argc, const char* argv[], GameFiles& files) {
             if (!v) {
                 return false;
             }
-            files.setDataRoot(v);
+            g.dataRoot = v;
         } else if (arg == "--pack") {
             const char* v = next("a file name");
             if (!v) {
@@ -392,10 +383,18 @@ bool Session::init(int argc, const char* argv[], GameFiles& files) {
         std::fprintf(stderr, "blipblop: --record and --replay are exclusive\n");
         return false;
     }
+    return true;
+}
+
+bool Session::load(const bb::core::FileReader& reader, GameFiles& files) {
+    State& g = *state_;
+    if (!g.dataRoot.empty()) {
+        files.setDataRoot(g.dataRoot);
+    }
     if (!g.packPath.empty()) {
         std::string error;
         std::shared_ptr<const bb::core::assets::PackFile> pack =
-            bb::core::assets::PackFile::open(g.packPath, error);
+            bb::core::assets::PackFile::open(g.packPath, error, reader);
         if (!pack) {
             std::fprintf(stderr, "blipblop: %s\n", error.c_str());
             return false;
@@ -403,11 +402,12 @@ bool Session::init(int argc, const char* argv[], GameFiles& files) {
         files.setAssetSource(std::make_unique<bb::core::assets::PackSource>(pack));
     }
     if (!g.replayPath.empty()) {
-        std::string text;
-        if (!readFile(g.replayPath, text)) {
+        const auto bytes = reader.readAll(g.replayPath);
+        if (!bytes) {
             std::fprintf(stderr, "blipblop: cannot read '%s'\n", g.replayPath.c_str());
             return false;
         }
+        const std::string text(bytes->begin(), bytes->end());
         std::string error;
         auto parsed = bb::core::InputTimeline::parse(text, codeFromName, error);
         if (!parsed) {
@@ -448,10 +448,12 @@ bool Session::init(int argc, const char* argv[], GameFiles& files) {
     return true;
 }
 
-void Session::start(bb::platform::Clock& clock, const bb::platform::System& system) {
+void Session::start(bb::platform::Clock& clock, const bb::platform::System& system,
+                    bb::platform::FileSystem& files) {
     State& g = *state_;
     g.clock = &clock;
     g.system = &system;
+    g.files = &files;
     // Binary: the same bytes on every platform (no CRLF on Windows), so
     // fingerprints recorded anywhere compare and diff alike.
     if (!g.tracePath.empty()) {
@@ -484,9 +486,8 @@ int Session::finish() {
     }
     if (!g.recordPath.empty()) {
         g.timeline.endFrame = g.frames.frame();
-        std::ofstream out(g.recordPath, std::ios::binary);
-        out << g.timeline.serialize(nameFromCode);
-        if (!out) {
+        const std::string text = g.timeline.serialize(nameFromCode);
+        if (g.files == nullptr || !g.files->writeAll(g.recordPath, text.data(), text.size())) {
             std::fprintf(stderr, "blipblop: cannot write '%s'\n", g.recordPath.c_str());
             return 1;
         }

@@ -3,8 +3,6 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
-#include <fstream>
-#include <system_error>
 
 namespace bb::core {
 
@@ -49,7 +47,7 @@ std::vector<std::string> splitLegacyPath(std::string_view path) {
     return parts;
 }
 
-Vfs::Vfs(std::string dataRoot) : root_(std::move(dataRoot)) {
+Vfs::Vfs(std::string dataRoot, const FileReader& files) : root_(std::move(dataRoot)), files_(&files) {
     if (root_.empty()) {
         root_ = ".";
     }
@@ -60,19 +58,19 @@ std::optional<std::string> Vfs::resolve(std::string_view path) const {
     if (parts.empty()) {
         return std::nullopt;
     }
-    fs::path current(root_);
-    std::error_code ec;
+    // Paths are UTF-8 (u8path, u8string: the same bytes on macOS and Linux).
+    fs::path current = fs::u8path(root_);
     for (const auto& part : parts) {
-        const fs::path exact = current / part;
-        if (fs::exists(exact, ec)) {
+        const fs::path exact = current / fs::u8path(part);
+        if (files_->kind(exact.u8string()) != FileReader::Kind::Missing) {
             current = exact;
             continue;
         }
         // Case-insensitive match among the directory entries.
         bool found = false;
-        for (fs::directory_iterator it(current, ec), end; !ec && it != end; it.increment(ec)) {
-            if (equalsIgnoreCase(it->path().filename().string(), part)) {
-                current = it->path();
+        for (const std::string& name : files_->list(current.u8string())) {
+            if (equalsIgnoreCase(name, part)) {
+                current /= fs::u8path(name);
                 found = true;
                 break;
             }
@@ -81,21 +79,21 @@ std::optional<std::string> Vfs::resolve(std::string_view path) const {
             return std::nullopt;
         }
     }
-    if (!fs::is_regular_file(current, ec)) {
+    if (files_->kind(current.u8string()) != FileReader::Kind::File) {
         return std::nullopt;
     }
-    return current.string();
+    return current.u8string();
 }
 
 std::string Vfs::writablePath(std::string_view path) const {
     if (auto existing = resolve(path)) {
         return *existing;
     }
-    fs::path p(root_);
+    fs::path p = fs::u8path(root_);
     for (const auto& part : splitLegacyPath(path)) {
-        p /= part;
+        p /= fs::u8path(part);
     }
-    return p.string();
+    return p.u8string();
 }
 
 std::optional<std::vector<std::uint8_t>> Vfs::readAll(std::string_view path) const {
@@ -103,21 +101,7 @@ std::optional<std::vector<std::uint8_t>> Vfs::readAll(std::string_view path) con
     if (!host) {
         return std::nullopt;
     }
-    std::ifstream in(*host, std::ios::binary);
-    if (!in) {
-        return std::nullopt;
-    }
-    in.seekg(0, std::ios::end);
-    const std::streamoff size = in.tellg();
-    if (size < 0) {
-        return std::nullopt;
-    }
-    in.seekg(0, std::ios::beg);
-    std::vector<std::uint8_t> data(static_cast<std::size_t>(size));
-    if (size > 0 && !in.read(reinterpret_cast<char*>(data.data()), size)) {
-        return std::nullopt;
-    }
-    return data;
+    return files_->readAll(*host);
 }
 
 }  // namespace bb::core

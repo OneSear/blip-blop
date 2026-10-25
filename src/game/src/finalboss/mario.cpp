@@ -24,7 +24,7 @@ const int kRecoil[] = {4, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 
 
 Mario::Mario(World& world) : Enemy(world) {
     attackDelay_ = 50 + world.random() % 50;
-    hitPoints = 50000;
+    health.points = 50000;
     image = enemyImage(img::kMarioWalkLeft);
 }
 
@@ -144,10 +144,10 @@ void Mario::walkAbout() {
 
     if (direction == kFacingRight) {
         walk(speed_);
-        image = enemyImage(img::kMarioWalkRight + animate(kWalk, 4, 16 - 3 * speed_));
+        image = enemyImage(img::kMarioWalkRight + animation.loop(kWalk, 4, 16 - 3 * speed_));
     } else {
         walk(-speed_);
-        image = enemyImage(img::kMarioWalkLeft + animate(kWalk, 4, 16 - 3 * speed_));
+        image = enemyImage(img::kMarioWalkLeft + animation.loop(kWalk, 4, 16 - 3 * speed_));
     }
     if (speed_ < kTopSpeed) {
         speedStep_ += 1;
@@ -162,8 +162,7 @@ void Mario::walkAbout() {
 void Mario::startAttack() {
     World& w = world();
 
-    frame = 0;
-    subFrame = 0;
+    animation.restart();
     speed_ = 0;
     dy = -6;
     attackWait_ = 0;
@@ -175,13 +174,13 @@ void Mario::startAttack() {
     attackPhase_ = 0;
 
     // Four sets of attacks, more and faster as his HP drop.
-    if (hitPoints < kLastHp) {
+    if (health.points < kLastHp) {
         attackType_ = w.random() % 5 + 11;
         attackDelay_ = 30 + w.random() % 30;
-    } else if (hitPoints < kCriticalHp) {
+    } else if (health.points < kCriticalHp) {
         attackType_ = w.random() % 6 + 5;
         attackDelay_ = 50 + w.random() % 50;
-    } else if (hitPoints < kBelowFirstHp) {
+    } else if (health.points < kBelowFirstHp) {
         attackType_ = w.random() % 5 + 2;
         attackDelay_ = 100 + w.random() % 50;
     } else {
@@ -273,8 +272,7 @@ void Mario::startAttack() {
 
 void Mario::endAttack() {
     mode = kWalking;
-    frame = 0;
-    subFrame = 0;
+    animation.restart();
     speed_ = 1;
     walkAbout();
 }
@@ -336,11 +334,11 @@ void Mario::floatUp() {
 
 void Mario::draw() {
     Actor::draw();
-    if (fireball_ && frame < 3) {
+    if (fireball_ && animation.frame < 3) {
         if (direction == kFacingRight) {
-            drawAt(x + 29, y - 33, enemyImage(img::kMarioHandFireballRight + frame));
+            drawAt(x + 29, y - 33, enemyImage(img::kMarioHandFireballRight + animation.frame));
         } else {
-            drawAt(x - 29, y - 33, enemyImage(img::kMarioHandFireballLeft + frame));
+            drawAt(x - 29, y - 33, enemyImage(img::kMarioHandFireballLeft + animation.frame));
         }
     }
 }
@@ -408,12 +406,7 @@ void Mario::throwAcross() {
         y += dy;
     } else {
         // There: throws at step 40, pushed back, and walks at 60.
-        subFrame += 1;
-        subFrame %= 4;
-        if (subFrame == 0) {
-            frame += 1;
-            frame %= 3;
-        }
+        animation.cycle(4, 3);
 
         attackStep_ += 1;
         if (attackStep_ == 60) {
@@ -438,12 +431,7 @@ void Mario::throwAcross() {
 void Mario::throwUp() {
     image = enemyImage(direction == kFacingRight ? img::kMarioThrowRight : img::kMarioThrowLeft);
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 3;
-    }
+    animation.cycle(4, 3);
 
     attackStep_ += 1;
     if (attackStep_ == 40) {
@@ -491,12 +479,7 @@ void Mario::cross() {
 void Mario::burstAcross() {
     image = enemyImage(direction == kFacingRight ? img::kMarioThrowRight : img::kMarioThrowLeft);
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 3;
-    }
+    animation.cycle(4, 3);
 
     // A fireball at each of four heights as he rises or falls.
     if ((y >= 140 && y <= 145) || (y >= 240 && y <= 245) || (y >= 340 && y <= 345) ||
@@ -505,8 +488,7 @@ void Mario::burstAcross() {
     }
 
     if ((dy < 0 && y < 100) || (dy > 0 && y > 435)) {
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         mode = kFalling;
         fireball_ = false;
         jump();
@@ -586,12 +568,7 @@ void Mario::burstUp() {
 
     image = enemyImage(direction == kFacingRight ? img::kMarioThrowRight : img::kMarioThrowLeft);
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 3;
-    }
+    animation.cycle(4, 3);
 
     // Every 6 ticks a fireball falling 100 pixels further away, until off
     // the screen.
@@ -602,8 +579,7 @@ void Mario::burstUp() {
         if (direction == kFacingRight) {
             goalX_ = x + attackStep_ * 100 + w.random() % 20;
             if (goalX_ > w.camera.x + 720) {
-                frame = 0;
-                subFrame = 0;
+                animation.restart();
                 speed_ = 0;
                 mode = kWalking;
                 fireball_ = false;
@@ -615,8 +591,7 @@ void Mario::burstUp() {
             // (2002: a local copy; the goal member is left alone.)
             const int goalX = x - attackStep_ * 100 - w.random() % 20;
             if (goalX < w.camera.x - 100) {
-                frame = 0;
-                subFrame = 0;
+                animation.restart();
                 speed_ = 0;
                 mode = kWalking;
                 fireball_ = false;
@@ -634,12 +609,7 @@ void Mario::burstUpBack() {
 
     image = enemyImage(direction == kFacingRight ? img::kMarioThrowRight : img::kMarioThrowLeft);
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 3;
-    }
+    animation.cycle(4, 3);
 
     // From the far side of the screen back towards him.
     attackSub_ += 1;
@@ -649,8 +619,7 @@ void Mario::burstUpBack() {
         if (direction == kFacingRight) {
             goalX_ = w.camera.x + attackStep_ * 100 + w.random() % 20;
             if (goalX_ < x + 20) {
-                frame = 0;
-                subFrame = 0;
+                animation.restart();
                 speed_ = 0;
                 mode = kWalking;
                 fireball_ = false;
@@ -661,8 +630,7 @@ void Mario::burstUpBack() {
         } else {
             const int goalX = w.camera.x + 640 - attackStep_ * 100 - w.random() % 20;
             if (goalX > x - 20) {
-                frame = 0;
-                subFrame = 0;
+                animation.restart();
                 speed_ = 0;
                 mode = kWalking;
                 fireball_ = false;
@@ -783,7 +751,7 @@ void Mario::runToEdge() {
 
     if (direction == kFacingRight) {
         walk(speed_);
-        image = enemyImage(img::kMarioWalkRight + animate(kWalk, 4, 16 - 3 * speed_));
+        image = enemyImage(img::kMarioWalkRight + animation.loop(kWalk, 4, 16 - 3 * speed_));
         if (x > w.camera.x + 600) {
             fireball_ = true;
             attackPhase_ = 1;
@@ -792,7 +760,7 @@ void Mario::runToEdge() {
         }
     } else {
         walk(-speed_);
-        image = enemyImage(img::kMarioWalkLeft + animate(kWalk, 4, 16 - 3 * speed_));
+        image = enemyImage(img::kMarioWalkLeft + animation.loop(kWalk, 4, 16 - 3 * speed_));
         if (x < w.camera.x + 40) {
             fireball_ = true;
             attackPhase_ = 1;
@@ -857,8 +825,7 @@ void Mario::berserk() {
                     attackStep_ = 1 + (x - world().camera.x) / 100;
                 }
                 attackSub_ = 0;
-                frame = 0;
-                subFrame = 0;
+                animation.restart();
                 dy = 0;
             } else {
                 burstAcross();
@@ -925,11 +892,10 @@ void Mario::fireRain() {
     }
 
     // Waits for the rain to fall.
-    frame += 1;
+    animation.frame += 1;
     fireball_ = false;
-    if (frame >= 60 + volleys_ * 30) {
-        frame = 0;
-        subFrame = 0;
+    if (animation.frame >= 60 + volleys_ * 30) {
+        animation.restart();
         speed_ = 0;
         mode = kWalking;
         walkAbout();
@@ -962,27 +928,22 @@ void Fireball::update() {
     }
     x += xSpeed_;
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 3;
-    }
+    animation.cycle(4, 3);
 
     // Longer flames as it speeds up (unchanged at speed 0).
     if (xSpeed_ > 12) {
-        image = enemyImage(img::kFireballRightFast + frame);
+        image = enemyImage(img::kFireballRightFast + animation.frame);
     } else if (xSpeed_ > 6) {
-        image = enemyImage(img::kFireballRightMedium + frame);
+        image = enemyImage(img::kFireballRightMedium + animation.frame);
     } else if (xSpeed_ > 0) {
-        image = enemyImage(img::kFireballRightSlow + frame);
+        image = enemyImage(img::kFireballRightSlow + animation.frame);
     }
     if (xSpeed_ < -12) {
-        image = enemyImage(img::kFireballLeftFast + frame);
+        image = enemyImage(img::kFireballLeftFast + animation.frame);
     } else if (xSpeed_ < -6) {
-        image = enemyImage(img::kFireballLeftMedium + frame);
+        image = enemyImage(img::kFireballLeftMedium + animation.frame);
     } else if (xSpeed_ < 0) {
-        image = enemyImage(img::kFireballLeftSlow + frame);
+        image = enemyImage(img::kFireballLeftSlow + animation.frame);
     }
     hitboxFromImage();
 }
@@ -1024,26 +985,21 @@ void FireballUp::update() {
         x += xSpeed_;
     }
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 3;
-    }
+    animation.cycle(4, 3);
 
     if (dy > 12) {
-        image = enemyImage(img::kFireballDownFast + frame);
+        image = enemyImage(img::kFireballDownFast + animation.frame);
     } else if (dy > 6) {
-        image = enemyImage(img::kFireballDownMedium + frame);
+        image = enemyImage(img::kFireballDownMedium + animation.frame);
     } else if (dy > 0) {
-        image = enemyImage(img::kFireballDownSlow + frame);
+        image = enemyImage(img::kFireballDownSlow + animation.frame);
     }
     if (dy < -12) {
-        image = enemyImage(img::kFireballUpFast + frame);
+        image = enemyImage(img::kFireballUpFast + animation.frame);
     } else if (dy < -6) {
-        image = enemyImage(img::kFireballUpMedium + frame);
+        image = enemyImage(img::kFireballUpMedium + animation.frame);
     } else if (dy < 0) {
-        image = enemyImage(img::kFireballUpSlow + frame);
+        image = enemyImage(img::kFireballUpSlow + animation.frame);
     }
     hitboxFromImage();
 

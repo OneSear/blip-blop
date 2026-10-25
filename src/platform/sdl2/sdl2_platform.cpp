@@ -12,8 +12,10 @@
 #include <sys/resource.h>
 #endif
 
+#include <filesystem>
 #include <memory>
 #include <string>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -71,6 +73,88 @@ public:
 #endif
     }
 
+private:
+    void show(Uint32 flags, const std::string& title, const std::string& message) const {
+        if (!headless_ && SDL_ShowSimpleMessageBox(flags, title.c_str(), message.c_str(), nullptr) != 0) {
+            SDL_Log("%s: %s (no message box: %s)", title.c_str(), message.c_str(), SDL_GetError());
+        }
+    }
+
+    bool headless_;
+};
+
+// Files through SDL_RWops (UTF-8 paths on every system); SDL 2 cannot list
+// directories, the C++ library does (from UTF-8 paths as well).
+class Sdl2File final : public core::ReadableFile {
+public:
+    Sdl2File(SDL_RWops* rw, std::uint64_t size) noexcept : rw_(rw), size_(size) {}
+    ~Sdl2File() override { SDL_RWclose(rw_); }
+    Sdl2File(const Sdl2File&) = delete;
+    Sdl2File& operator=(const Sdl2File&) = delete;
+
+    std::uint64_t size() const override { return size_; }
+
+    bool readAt(std::uint64_t offset, void* out, std::size_t count) override {
+        if (count == 0) {
+            return true;
+        }
+        if (offset > size_ || SDL_RWseek(rw_, static_cast<Sint64>(offset), RW_SEEK_SET) < 0) {
+            return false;
+        }
+        return SDL_RWread(rw_, out, 1, count) == count;
+    }
+
+private:
+    SDL_RWops* rw_;
+    std::uint64_t size_;
+};
+
+class Sdl2FileSystem final : public FileSystem {
+public:
+    std::unique_ptr<core::ReadableFile> open(const std::string& path) const override {
+        SDL_RWops* rw = SDL_RWFromFile(path.c_str(), "rb");
+        if (rw == nullptr) {
+            return nullptr;
+        }
+        const Sint64 size = SDL_RWsize(rw);
+        if (size < 0) {
+            SDL_RWclose(rw);
+            return nullptr;
+        }
+        return std::make_unique<Sdl2File>(rw, static_cast<std::uint64_t>(size));
+    }
+
+    Kind kind(const std::string& path) const override {
+        std::error_code ec;
+        const std::filesystem::file_status status = std::filesystem::status(std::filesystem::u8path(path), ec);
+        if (std::filesystem::is_regular_file(status)) {
+            return Kind::File;
+        }
+        if (std::filesystem::is_directory(status)) {
+            return Kind::Directory;
+        }
+        return Kind::Missing;  // nor the other kinds (devices, sockets)
+    }
+
+    std::vector<std::string> list(const std::string& directory) const override {
+        std::vector<std::string> names;
+        std::error_code ec;
+        for (std::filesystem::directory_iterator it(std::filesystem::u8path(directory), ec), end;
+             !ec && it != end; it.increment(ec)) {
+            names.push_back(it->path().filename().u8string());
+        }
+        return names;
+    }
+
+    bool writeAll(const std::string& path, const void* data, std::size_t size) override {
+        SDL_RWops* rw = SDL_RWFromFile(path.c_str(), "wb");
+        if (rw == nullptr) {
+            return false;
+        }
+        const bool written = size == 0 || SDL_RWwrite(rw, data, 1, size) == size;
+        return SDL_RWclose(rw) == 0 && written;
+    }
+
     std::string baseDirectory() const override {
         char* path = SDL_GetBasePath();
         if (path == nullptr) {
@@ -91,14 +175,6 @@ public:
         return result;
     }
 
-private:
-    void show(Uint32 flags, const std::string& title, const std::string& message) const {
-        if (!headless_ && SDL_ShowSimpleMessageBox(flags, title.c_str(), message.c_str(), nullptr) != 0) {
-            SDL_Log("%s: %s (no message box: %s)", title.c_str(), message.c_str(), SDL_GetError());
-        }
-    }
-
-    bool headless_;
 };
 
 class Sdl2Input final : public InputSource {
@@ -675,12 +751,14 @@ public:
     Clock& clock() override { return clock_; }
     InputSource& input() override { return input_; }
     Audio& audio() override { return audio_; }
+    FileSystem& files() override { return files_; }
     System& system() override { return system_; }
 
 private:
     bool headless_;
     Sdl2Clock clock_;
     Sdl2System system_;
+    Sdl2FileSystem files_;
     Sdl2Input input_;
     Sdl2Audio audio_;
 };

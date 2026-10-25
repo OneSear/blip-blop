@@ -6,7 +6,7 @@
 namespace bb::game::smurf {
 
 PranksterSmurf::PranksterSmurf(World& world) : Enemy(world) {
-    hitPoints = 150;
+    health.points = 150;
     giftDelay_ = 100 + world.random() % 400;
     newGiftDelay_ = 50 + world.random() % 200;
 }
@@ -47,29 +47,25 @@ void PranksterSmurf::update() {
 }
 
 void PranksterSmurf::takeOutGift() {
-    subFrame += 1;
-    subFrame %= 8;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(8);
 
-    image = enemyImage(
-        (direction == kFacingRight ? img::kPranksterTakeOutRight : img::kPranksterTakeOutLeft) + frame);
+    image =
+        enemyImage((direction == kFacingRight ? img::kPranksterTakeOutRight : img::kPranksterTakeOutLeft) +
+                   animation.frame);
 
-    if (frame > 4) {
+    if (animation.frame > 4) {
         mode = kNormal;
         carrying_ = true;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         walkAbout();
     }
 }
 
 void PranksterSmurf::putGiftDown() {
     // The gift goes gently down to the ground...
-    subFrame += 1;
-    subFrame %= 5;
-    if (subFrame == 0) {
+    animation.subFrame += 1;
+    animation.subFrame %= 5;
+    if (animation.subFrame == 0) {
         giftHeight_ -= 1;
     }
 
@@ -86,8 +82,7 @@ void PranksterSmurf::putGiftDown() {
         gift->y = y;
         world().enemyShots.add(gift);
 
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
     }
 }
 
@@ -102,8 +97,7 @@ void PranksterSmurf::walkAbout() {
             mode = kWaiting;
             giftWait_ = 0;
             giftDelay_ = 50 + w.random() % 250;
-            frame = 0;
-            subFrame = 0;
+            animation.restart();
         }
     } else if (platformAt(x, y) != 0) {
         // Takes out another one after a while.
@@ -112,8 +106,7 @@ void PranksterSmurf::walkAbout() {
             newGiftWait_ = 0;
             newGiftDelay_ = 50 + w.random() % 200;
             mode = kTakingOut;
-            frame = 0;
-            subFrame = 0;
+            animation.restart();
         }
     }
 
@@ -127,11 +120,11 @@ void PranksterSmurf::walkAbout() {
     if (direction == kFacingRight) {
         walk(kSpeed);
         image = enemyImage((carrying_ ? img::kPranksterWalkRight : img::kSmurfWalkRight) +
-                           animate(kWalkCycle, kWalkSteps, 4));
+                           animation.loop(kWalkCycle, kWalkSteps, 4));
     } else {
         walk(-kSpeed);
         image = enemyImage((carrying_ ? img::kPranksterWalkLeft : img::kSmurfWalkLeft) +
-                           animate(kWalkCycle, kWalkSteps, 4));
+                           animation.loop(kWalkCycle, kWalkSteps, 4));
     }
     hitboxFromImage();
 }
@@ -144,7 +137,7 @@ void PranksterSmurf::die() {
         mode = kCarbonised;
         carrying_ = false;
         auto* gift = new Gift(world());
-        gift->frame = 20;
+        gift->animation.frame = 20;
         gift->y = y - 5;
         gift->x = direction == kFacingRight ? x + 26 : x - 26;
         world().enemyShots.add(gift);
@@ -152,12 +145,8 @@ void PranksterSmurf::die() {
         return;
     }
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-    }
-    if (frame > 10) {
+    animation.tick(4);
+    if (animation.frame > 10) {
         dead = true;
         return;
     }
@@ -166,12 +155,12 @@ void PranksterSmurf::die() {
         if (!solidWall(x - kSpeed, y) && platformAt(x, y) == 0) {
             x -= kSpeed;
         }
-        image = enemyImage(img::kSmurfDieLeft + frame);
+        image = enemyImage(img::kSmurfDieLeft + animation.frame);
     } else {
         if (!solidWall(x + kSpeed, y) && platformAt(x, y) == 0) {
             x += kSpeed;
         }
-        image = enemyImage(img::kSmurfDieRight + frame);
+        image = enemyImage(img::kSmurfDieRight + animation.frame);
     }
 }
 
@@ -203,25 +192,22 @@ void Gift::update() {
         fall();
     }
 
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0) {
-        frame += 1;
-        if (frame == 20) {
+    if (animation.tick(6)) {
+        if (animation.frame == 20) {
             world().media.miscSounds->play(miscsnd::kExplosion);
         }
     }
 
     // Explodes from step 20; only the first steps of the blast hurt.
-    if (frame >= 20) {
-        collides = true;
-        image = enemyImage(img::kGiftExplosion + frame - 20);
+    if (animation.frame >= 20) {
+        hitbox.active = true;
+        image = enemyImage(img::kGiftExplosion + animation.frame - 20);
     }
-    if (frame > 35) {
+    if (animation.frame > 35) {
         dead = true;
     }
     hitboxFromImage();
-    if (frame >= 30) {
+    if (animation.frame >= 30) {
         noHitbox();
     }
 }

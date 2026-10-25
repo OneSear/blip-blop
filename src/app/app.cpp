@@ -5,8 +5,6 @@
 #include "app.hpp"
 
 #include <cstdio>
-#include <fstream>
-#include <iterator>
 #include <optional>
 #include <string>
 #include <vector>
@@ -21,6 +19,7 @@
 #include "bb/platform/audio.hpp"
 #include "bb/platform/clock.hpp"
 #include "bb/platform/display.hpp"
+#include "bb/platform/file_system.hpp"
 #include "bb/platform/platform.hpp"
 #include "bb/platform/system.hpp"
 #include "files.hpp"
@@ -43,18 +42,11 @@ game::EntityRegistry makeRegistry() {
     return r;
 }
 
-std::optional<std::vector<std::uint8_t>> readFile(const std::string& path) {
-    std::ifstream in(path, std::ios::binary);
-    if (!in) {
-        return std::nullopt;
-    }
-    return std::vector<std::uint8_t>(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
-}
-
-void loadHiScores(const std::string& path, const core::Vfs& dataFiles, game::HiScores& table) {
+void loadHiScores(const std::string& path, const platform::FileSystem& fileSystem, const core::Vfs& dataFiles,
+                  game::HiScores& table) {
     table.reset();
     if (!path.empty()) {
-        if (const auto bytes = readFile(path)) {
+        if (const auto bytes = fileSystem.readAll(path)) {
             if (table.fromFile(*bytes)) {
                 core::Log::info("Using " + path + " as hi-scores file.");
                 return;
@@ -74,16 +66,11 @@ void loadHiScores(const std::string& path, const core::Vfs& dataFiles, game::HiS
     core::Log::info("Cannot load hi-scores file. Use default hi-scores");
 }
 
-bool saveHiScores(const std::string& path, const GameFiles& files, const game::HiScores& table) {
+bool saveHiScores(const std::string& path, platform::FileSystem& fileSystem, const GameFiles& files,
+                  const game::HiScores& table) {
     const std::vector<std::uint8_t> bytes = table.toFile();
     const std::string target = path.empty() ? files.writablePath(kLegacyHiScoresFile) : path;
-    std::FILE* f = std::fopen(target.c_str(), "wb");
-    if (f == nullptr) {
-        return false;
-    }
-    const bool ok = std::fwrite(bytes.data(), 1, bytes.size(), f) == bytes.size();
-    std::fclose(f);
-    return ok;
+    return fileSystem.writeAll(target, bytes.data(), bytes.size());
 }
 
 }  // namespace
@@ -133,11 +120,11 @@ App::App(platform::Platform& platform, Session& session, GameFiles& files)
 
     if (!session_.settingsPath().empty()) {
         settingsPath_ = session_.settingsPath();
-    } else if (!platform.system().preferencesDirectory().empty()) {
-        settingsPath_ = platform.system().preferencesDirectory() + "settings.cfg";
+    } else if (!platform.files().preferencesDirectory().empty()) {
+        settingsPath_ = platform.files().preferencesDirectory() + "settings.cfg";
     }
-    if (!platform.system().preferencesDirectory().empty()) {
-        hiScoresPath_ = platform.system().preferencesDirectory() + "hiscores.scr";
+    if (!platform.files().preferencesDirectory().empty()) {
+        hiScoresPath_ = platform.files().preferencesDirectory() + "hiscores.scr";
     }
 
     connectServices();
@@ -262,14 +249,14 @@ bool App::init() {
     if (session_.deterministic()) {
         applyDefaultSettings(options_, input_);
     } else {
-        loadSettings(settingsPath_, files_.dataFiles(), kLegacySettingsFile, options_, input_);
+        loadSettings(settingsPath_, platform_.files(), files_.dataFiles(), kLegacySettingsFile, options_, input_);
     }
 
     hiScores_.reset();
     if (session_.deterministic()) {
         core::Log::info("Deterministic run: using default hi-scores");
     } else {
-        loadHiScores(hiScoresPath_, files_.dataFiles(), hiScores_);
+        loadHiScores(hiScoresPath_, platform_.files(), files_.dataFiles(), hiScores_);
     }
 
     // Only English text exists (D-25).
@@ -429,10 +416,10 @@ int App::run() {
     release();
 
     if (!session_.deterministic()) {
-        if (!saveHiScores(hiScoresPath_, files_, hiScores_)) {
+        if (!saveHiScores(hiScoresPath_, platform_.files(), files_, hiScores_)) {
             core::Log::info("Cannot save hi-scores");
         }
-        saveSettings(settingsPath_, options_, input_);
+        saveSettings(settingsPath_, platform_.files(), options_, input_);
     }
 
     return session_.finish();

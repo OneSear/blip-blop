@@ -6,6 +6,8 @@
 #include <string_view>
 #include <vector>
 
+#include "bb/core/file_reader.hpp"
+
 namespace bb::core {
 
 // Read-only view of the game data, rooted at the data directory.
@@ -19,10 +21,11 @@ namespace bb::core {
 //   * when the exact name does not exist, each path component is matched
 //     without regard to case.
 // Paths that do not start with "data/" are resolved relative to the data
-// root as well.
+// root as well. The files are read through `files`, which must outlive the
+// Vfs.
 class Vfs {
 public:
-    explicit Vfs(std::string dataRoot);
+    explicit Vfs(std::string dataRoot, const FileReader& files = hostFiles());
 
     const std::string& dataRoot() const noexcept { return root_; }
 
@@ -37,6 +40,7 @@ public:
 
 private:
     std::string root_;
+    const FileReader* files_;
 };
 
 // Splits a legacy path into components, accepting both separators and

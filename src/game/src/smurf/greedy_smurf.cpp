@@ -5,7 +5,7 @@
 namespace bb::game::smurf {
 
 GreedySmurf::GreedySmurf(World& world) : Enemy(world) {
-    hitPoints = 150;
+    health.points = 150;
     shotDelay_ = 50 + world.random() % 100;
 }
 
@@ -51,8 +51,7 @@ void GreedySmurf::stand() {
         mode = kShooting;
         shotWait_ = 0;
         shotDelay_ = 100 + w.random() % 250;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         aimX_ = w.target->x;
         aimY_ = w.target->y;
         direction = aimX_ > x ? kFacingRight : kFacingLeft;
@@ -65,13 +64,9 @@ void GreedySmurf::stand() {
 }
 
 void GreedySmurf::throwCake() {
-    subFrame += 1;
-    subFrame %= 5;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(5);
 
-    if (frame >= 5) {
+    if (animation.frame >= 5) {
         auto* cake = new Cake(world());
         cake->direction = direction;
         cake->x = direction == kFacingLeft ? x - 13 : x + 13;
@@ -79,19 +74,20 @@ void GreedySmurf::throwCake() {
         lob(cake->x, cake->y, aimX_, aimY_, cake->xSpeed, cake->dy);
         world().enemyShots.add(cake);
 
-        frame = 0;
+        animation.frame = 0;
         mode = kHolding;
         return;
     }
 
-    image = enemyImage((direction == kFacingRight ? img::kGreedyThrowRight : img::kGreedyThrowLeft) + frame);
+    image = enemyImage((direction == kFacingRight ? img::kGreedyThrowRight : img::kGreedyThrowLeft) +
+                       animation.frame);
     hitboxFromImage();
 }
 
 void GreedySmurf::hold() {
-    frame += 1;
-    if (frame >= 50) {
-        frame = 0;
+    animation.frame += 1;
+    if (animation.frame >= 50) {
+        animation.frame = 0;
         mode = kNormal;
         return;
     }
@@ -102,26 +98,22 @@ void GreedySmurf::hold() {
 void GreedySmurf::die() {
     fall();
 
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0 && frame < 11) {
-        frame += 1;
-    }
+    animation.tickUpTo(6, 11);
 
     // Thrown back by the shot.
     if (direction == kFacingRight) {
         if (!solidWall(x - 2, y)) {
             x -= 2;
         }
-        image = enemyImage(img::kGreedyDieRight + frame);
+        image = enemyImage(img::kGreedyDieRight + animation.frame);
     } else {
         if (!solidWall(x + 2, y)) {
             x += 2;
         }
-        image = enemyImage(img::kGreedyDieLeft + frame);
+        image = enemyImage(img::kGreedyDieLeft + animation.frame);
     }
 
-    if (frame >= 11 && platformAt(x, y) != 0) {
+    if (animation.frame >= 11 && platformAt(x, y) != 0) {
         dead = true;
         world().media.effects->engrave(x, y, image);
     }

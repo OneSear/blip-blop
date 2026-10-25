@@ -114,11 +114,9 @@ bool Decor::engrave(int x, int y, const Image* image) {
 
     // Not over a prop or a moving platform.
     Marker box;
-    box.x1 = x - image->spotX();
-    box.y1 = y - image->spotY();
-    box.x2 = box.x1 + image->width();
-    box.y2 = box.y1 + image->height();
-    box.collides = true;
+    const int left = x - image->spotX();
+    const int top = y - image->spotY();
+    box.hitbox.set(left, top, left + image->width(), top + image->height());
 
     for (w.props.rewind(); !w.props.atEnd(); w.props.next()) {
         if (box.hits(*w.props.current())) {

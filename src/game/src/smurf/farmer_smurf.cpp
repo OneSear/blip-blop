@@ -13,7 +13,7 @@ const int kHeadlessLeft[] = {0, 1, 2, 2};  // (2002 table: the last image repeat
 }  // namespace
 
 FarmerSmurf::FarmerSmurf(World& world) : Enemy(world) {
-    hitPoints = 200;
+    health.points = 200;
     mode = kWalking;
 }
 
@@ -76,18 +76,18 @@ void FarmerSmurf::run() {
     if (mode == kDying) {
         if (direction == kFacingRight) {
             walk(kSpeed);
-            image = enemyImage(img::kFarmerHeadlessRight + animate(kHeadlessRight, 4, 3));
+            image = enemyImage(img::kFarmerHeadlessRight + animation.loop(kHeadlessRight, 4, 3));
         } else {
             walk(-kSpeed);
-            image = enemyImage(img::kFarmerHeadlessLeft + animate(kHeadlessLeft, 4, 3));
+            image = enemyImage(img::kFarmerHeadlessLeft + animation.loop(kHeadlessLeft, 4, 3));
         }
     } else {
         if (direction == kFacingRight) {
             walk(kSpeed);
-            image = enemyImage(img::kFarmerChargeRight + animate(kCharge, 4, 3));
+            image = enemyImage(img::kFarmerChargeRight + animation.loop(kCharge, 4, 3));
         } else {
             walk(-kSpeed);
-            image = enemyImage(img::kFarmerChargeLeft + animate(kCharge, 4, 3));
+            image = enemyImage(img::kFarmerChargeLeft + animation.loop(kCharge, 4, 3));
         }
         hitboxFromImage();
     }

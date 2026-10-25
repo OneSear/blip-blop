@@ -132,8 +132,8 @@ Player::Player(World& world, Hero which, const PlayerControls& controls, int ind
       controls_(controls),
       own_(which == Hero::Blip ? world.media.blip : world.media.blop) {
     direction = aim::kRight;
-    collides = true;
-    hitPoints = kFullHealth;
+    hitbox.active = true;
+    health.points = kFullHealth;
 
     rifleBullets_.reserve(kRifleBullets);
     smgBullets_.reserve(kSmgBullets);
@@ -313,7 +313,7 @@ void Player::update() {
         hurtEye_ -= 1;
     }
 
-    if (subFrame == 0) {
+    if (animation.subFrame == 0) {
         bounce_ += 1;
         bounce_ %= 4;
     }
@@ -369,7 +369,7 @@ void Player::dropCowBomb() {
             cow->x = cowX;
             cow->y = w.random() % 180 - 200;
             cow->dy = 5 + w.random() % 3;
-            cow->frame = w.random() % 8;
+            cow->animation.frame = w.random() % 8;
             cow->owner = this;
             w.cowBombs.add(cow);
         }
@@ -385,8 +385,8 @@ void Player::dropCowBomb() {
 void Player::respawn() {
     mode = kComingBack;
     y = -50;
-    collides = true;
-    hitPoints = kFullHealth;
+    hitbox.active = true;
+    health.points = kFullHealth;
     weaponAim = direction = aim::kRight;
     invincible = 400;
     image = own(img::kJumpRight + 2);
@@ -568,7 +568,7 @@ void Player::standing() {
     }
 
     const int first = facesRight(direction) ? img::kWalkRight : img::kWalkLeft;
-    image = own(first + animate(kWalkSteps, 4, 8));
+    image = own(first + animation.loop(kWalkSteps, 4, 8));
 }
 
 void Player::walking() {
@@ -600,7 +600,7 @@ void Player::walking() {
     }
 
     const int first = facesRight(direction) ? img::kWalkRight : img::kWalkLeft;
-    image = own(first + animate(kWalkSteps, 4, 5));
+    image = own(first + animation.loop(kWalkSteps, 4, 5));
 }
 
 void Player::jumping() {
@@ -613,8 +613,7 @@ void Player::jumping() {
     if (controls_.jump() && jumpReleased_ && mode == kJumping && dy < 3) {
         dy = -5;
         mode = kSomersault;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         firing = false;
         flashStep_ = flashSubStep_ = 0;
         somersault();
@@ -659,12 +658,7 @@ void Player::jumping() {
 void Player::somersault() {
     const int cameraX = world().camera.x;
 
-    subFrame += 1;
-    subFrame %= 3;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 8;
-    }
+    animation.cycle(3, 8);
 
     fallThrough();
 
@@ -686,7 +680,7 @@ void Player::somersault() {
         x = nextX;
     }
 
-    image = own(img::kSomersault + static_cast<int>(weapon) * 8 + frame);
+    image = own(img::kSomersault + static_cast<int>(weapon) * 8 + animation.frame);
 }
 
 void Player::turn() {
@@ -843,7 +837,7 @@ void Player::fireShots(int gunY) {
             shot.x = x + kLaserShotDx[gun] + kRecoilX[gun][recoilStep_];
             shot.y = gunY + kLaserShotDy[gun] + kRecoilY[gun][recoilStep_];
             shot.aim(direction);
-            shot.frame = flashStep_;
+            shot.animation.frame = flashStep_;
             w.playerShots.add(&shot);
             break;
         }
@@ -876,10 +870,10 @@ void Player::hitboxFromBody() {
     hitboxFromImage();
 
     const int margin = mode == kSomersault ? 15 : 10;
-    x1 += margin;
-    x2 -= margin;
-    y1 += margin;
-    y2 -= margin;
+    hitbox.x1 += margin;
+    hitbox.x2 -= margin;
+    hitbox.y1 += margin;
+    hitbox.y2 -= margin;
 }
 
 //-----------------------------------------------------------------------------
@@ -891,17 +885,15 @@ void Player::hurt(int damage) {
         return;
     }
 
-    hitPoints -= damage;
+    health.take(damage);
     perfect = false;
 
-    if (hitPoints <= 0) {
-        hitPoints = 0;
+    if (!health.left()) {
         mode = kDying;
         firing = false;
         flashStep_ = flashSubStep_ = 0;
-        frame = 0;
-        subFrame = 0;
-        collides = false;
+        animation.restart();
+        hitbox.active = false;
         world().camera.stopped[slot] = true;
     } else {
         invincible = 200;
@@ -917,13 +909,9 @@ void Player::dying() {
     }
     fall();
 
-    subFrame += 1;
-    subFrame %= 7;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(7);
 
-    if (frame == 15) {
+    if (animation.frame == 15) {
         lives -= 1;
         if (lives == 0) {
             dead = true;
@@ -937,10 +925,10 @@ void Player::dying() {
         if (w.cowBombUnlocked) {
             cowBombs = 1;
         }
-    } else if (frame == 5 && subFrame == 0 && platformAt(x, y) != 0) {
+    } else if (animation.frame == 5 && animation.subFrame == 0 && platformAt(x, y) != 0) {
         w.media.effects->engrave(x, y, own(facesRight(direction) ? img::kCorpseRight : img::kCorpseLeft));
-    } else if (frame < 5) {
-        image = own((facesRight(direction) ? img::kDieRight : img::kDieLeft) + frame);
+    } else if (animation.frame < 5) {
+        image = own((facesRight(direction) ? img::kDieRight : img::kDieLeft) + animation.frame);
     }
 }
 
@@ -950,19 +938,13 @@ void Player::comingBack() {
     w.camera.stopped[slot] = true;
 
     if (y < landingY) {
-        subFrame += 1;
-        subFrame %= 3;
-        if (subFrame == 0) {
-            frame += 1;
-            frame %= 8;
-        }
+        animation.cycle(3, 8);
         y += 5;
-        image = own(img::kSomersault + static_cast<int>(weapon) * 8 + frame);
+        image = own(img::kSomersault + static_cast<int>(weapon) * 8 + animation.frame);
     } else {
         y = landingY;
         mode = kNormal;
-        frame = 0;
-        subFrame = 0;
+        animation.restart();
         w.camera.stopped[slot] = false;
     }
 }
@@ -984,7 +966,7 @@ void Player::board(bool canFire, bool canTurn) {
 }
 
 void Player::leave() {
-    frame = subFrame = 0;
+    animation.restart();
     mode = kSomersault;
     dy = -5;
     jumpDx_ = 0;
@@ -1020,7 +1002,7 @@ void Player::draw() {
             drawJumping();
             break;
         case kDying:
-            if (frame < 5) {
+            if (animation.frame < 5) {
                 Actor::draw();
             }
             break;

@@ -7,17 +7,12 @@
 namespace bb::game::videoboss {
 
 void TableProp::update() {
-    image = levelImage(first_ + animate(table_, steps_, delay_));
+    image = levelImage(first_ + animation.loop(table_, steps_, delay_));
 }
 
 void Electronics::update() {
-    subFrame += 1;
-    subFrame %= 2;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 15;
-    }
-    image = levelImage(prop::kElectronics + frame);
+    animation.cycle(2, 15);
+    image = levelImage(prop::kElectronics + animation.frame);
 }
 
 void Electronics::draw() {
@@ -28,34 +23,24 @@ void Electronics::draw() {
 }
 
 void ScreenLoop::update() {
-    subFrame += 1;
-    subFrame %= delay_;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= steps_;
-    }
-    image = levelImage(first_ + frame);
+    animation.cycle(delay_, steps_);
+    image = levelImage(first_ + animation.frame);
     dieWhenOffscreen();
 }
 
 void CameraScreen::update() {
-    subFrame += 1;
-    subFrame %= 87;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 3;
-    }
-    image = levelImage(prop::kCameraScreen + frame);
+    animation.cycle(87, 3);
+    image = levelImage(prop::kCameraScreen + animation.frame);
 }
 
 void CameraScreen::draw() {
     Actor::draw();
-    drawAt(x, y + subFrame, levelImage(prop::kCameraScreenBar));
+    drawAt(x, y + animation.subFrame, levelImage(prop::kCameraScreenBar));
 }
 
 void Assembler::update() {
-    frame += 1;
-    frame %= 432;
+    animation.frame += 1;
+    animation.frame %= 432;
 }
 
 void Assembler::draw() {
@@ -63,21 +48,17 @@ void Assembler::draw() {
     // screen.
     const int camera = world().camera.x;
     const int width = x + 75 > camera + 640 ? camera + 640 - x : 75;
-    world().media.canvas->drawPart(levelImage(prop::kAssembler), 0, frame, width, 87 + frame, x - camera, y);
+    world().media.canvas->drawPart(levelImage(prop::kAssembler), 0, animation.frame, width,
+                                   87 + animation.frame, x - camera, y);
 }
 
 void WindowsScreen::update() {
-    subFrame += 1;
-    subFrame %= 180;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 4;
-    }
+    animation.cycle(180, 4);
     // Two steps on the second image (the bank's 55 is unused).
     int picture = prop::kWindows1;
-    if (frame == 1 || frame == 2) {
+    if (animation.frame == 1 || animation.frame == 2) {
         picture = prop::kWindows2;
-    } else if (frame == 3) {
+    } else if (animation.frame == 3) {
         picture = prop::kWindows3;
     }
     image = levelImage(picture);

@@ -8,7 +8,6 @@
 
 #include <array>
 #include <cstdint>
-#include <cstdio>
 #include <memory>
 #include <optional>
 #include <string>
@@ -16,6 +15,7 @@
 #include <vector>
 
 #include "bb/core/assets/asset_source.hpp"
+#include "bb/core/file_reader.hpp"
 
 namespace bb::core::assets {
 
@@ -95,7 +95,8 @@ public:
         std::array<std::int32_t, 6> meta{};
     };
 
-    static std::unique_ptr<PackFile> open(const std::string& path, std::string& error);
+    static std::unique_ptr<PackFile> open(const std::string& path, std::string& error,
+                                          const FileReader& files = hostFiles());
     ~PackFile();
     PackFile(const PackFile&) = delete;
     PackFile& operator=(const PackFile&) = delete;
@@ -108,7 +109,7 @@ public:
 private:
     PackFile() = default;
 
-    std::FILE* file_ = nullptr;
+    std::unique_ptr<ReadableFile> file_;
     std::vector<Asset> assets_;  // sorted by (hash, name)
     std::vector<std::uint32_t> hashes_;
     std::vector<Chunk> chunks_;

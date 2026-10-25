@@ -8,7 +8,7 @@ namespace bb::game::smurf {
 
 StrongmanSmurf::StrongmanSmurf(World& world) : Enemy(world) {
     attackDelay_ = 50 + world.random() % 50;
-    hitPoints = 2000;
+    health.points = 2000;
 }
 
 void StrongmanSmurf::update() {
@@ -70,10 +70,10 @@ void StrongmanSmurf::walkAbout() {
 
     if (direction == kFacingRight) {
         walk(kSpeed);
-        image = enemyImage(img::kStrongmanWalkRight + animate(kWalk, 6, 6));
+        image = enemyImage(img::kStrongmanWalkRight + animation.loop(kWalk, 6, 6));
     } else {
         walk(-kSpeed);
-        image = enemyImage(img::kStrongmanWalkLeft + animate(kWalk, 6, 6));
+        image = enemyImage(img::kStrongmanWalkLeft + animation.loop(kWalk, 6, 6));
     }
 
     if (attackWait_ >= attackDelay_ && platformAt(x, y) != 0) {
@@ -90,7 +90,7 @@ void StrongmanSmurf::hitBy(Shot& shot) {
     Enemy::hitBy(shot);
     sprayBlood(shot, kBloodX, kBloodY);
 
-    if (hitPoints <= 0) {
+    if (health.points <= 0) {
         world().flags[kBossKills] += 1;
     }
 }
@@ -104,32 +104,23 @@ void StrongmanSmurf::die() {
         x = nextX;
     }
 
-    if (frame < 13) {
-        subFrame += 1;
-        subFrame %= 3;
-        if (subFrame == 0) {
-            frame += 1;
-        }
+    if (animation.frame < 13) {
+        animation.tick(3);
     }
 
-    image =
-        enemyImage((direction == kFacingRight ? img::kStrongmanDieRight : img::kStrongmanDieLeft) + frame);
+    image = enemyImage((direction == kFacingRight ? img::kStrongmanDieRight : img::kStrongmanDieLeft) +
+                       animation.frame);
     // At the last step, on the ground, the corpse becomes part of the decor
     // (D-76 fixed: the 2002 test waited for a step 14 that never came).
-    if (frame >= 13 && platformAt(x, y) != 0) {
+    if (animation.frame >= 13 && platformAt(x, y) != 0) {
         dead = true;
         world().media.effects->engrave(x, y, image);
     }
 }
 
 void StrongmanSmurf::fireball() {
-    subFrame += 1;
-    subFrame %= 6;
-
-    if (subFrame == 0) {
-        frame += 1;
-
-        if (frame == 4) {
+    if (animation.tick(6)) {
+        if (animation.frame == 4) {
             auto* ball = new Fireball(world());
             ball->x = x;
             ball->y = y - 30;
@@ -137,8 +128,8 @@ void StrongmanSmurf::fireball() {
             world().enemyShots.add(ball);
         }
 
-        if (frame > 7) {
-            frame = subFrame = 0;
+        if (animation.frame > 7) {
+            animation.restart();
             mode = kWalking;
             attackDelay_ = 100 + world().random() % 50;
             attackWait_ = 0;
@@ -147,9 +138,10 @@ void StrongmanSmurf::fireball() {
         }
     }
 
-    if (frame <= 4) {
+    if (animation.frame <= 4) {
         image = enemyImage(
-            (direction == kFacingRight ? img::kStrongmanFireballRight : img::kStrongmanFireballLeft) + frame);
+            (direction == kFacingRight ? img::kStrongmanFireballRight : img::kStrongmanFireballLeft) +
+            animation.frame);
     }
 }
 
@@ -157,13 +149,10 @@ void StrongmanSmurf::uppercut() {
     const int camera = world().camera.x;
     fall();
 
-    if (frame <= 2) {
+    if (animation.frame <= 2) {
         // Take-off.
-        subFrame += 1;
-        subFrame %= 4;
-        if (subFrame == 0) {
-            frame += 1;
-            if (frame > 2) {
+        if (animation.tick(4)) {
+            if (animation.frame > 2) {
                 dy = uppercutSpeed_;
             }
         }
@@ -176,15 +165,11 @@ void StrongmanSmurf::uppercut() {
         }
     } else {
         // Coming down.
-        if (frame < 6) {
-            subFrame += 1;
-            subFrame %= 12;
-            if (subFrame == 0) {
-                frame += 1;
-            }
+        if (animation.frame < 6) {
+            animation.tick(12);
         }
         if (platformAt(x, y) != 0) {
-            subFrame = frame = 0;
+            animation.restart();
             attackDelay_ = 100 + world().random() % 50;
             attackWait_ = 0;
             mode = kNormal;
@@ -193,20 +178,16 @@ void StrongmanSmurf::uppercut() {
         }
     }
 
-    image = enemyImage(
-        (direction == kFacingRight ? img::kStrongmanUppercutRight : img::kStrongmanUppercutLeft) + frame);
+    image =
+        enemyImage((direction == kFacingRight ? img::kStrongmanUppercutRight : img::kStrongmanUppercutLeft) +
+                   animation.frame);
     hitboxFromImage();
 }
 
 void StrongmanSmurf::spinKick() {
     fall();
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 6;
-    }
+    animation.cycle(4, 6);
 
     const int nextX = x + xSpeed_;
     if (!solidWall(nextX, y) && nextX > minX && nextX < world().camera.x + 740) {
@@ -214,7 +195,7 @@ void StrongmanSmurf::spinKick() {
     }
 
     if (dy > 0 && platformAt(x, y) != 0) {
-        subFrame = frame = 0;
+        animation.restart();
         attackDelay_ = 100 + world().random() % 50;
         attackWait_ = 0;
         mode = kNormal;
@@ -222,7 +203,7 @@ void StrongmanSmurf::spinKick() {
         return;
     }
 
-    image = enemyImage(img::kStrongmanSpin + frame);
+    image = enemyImage(img::kStrongmanSpin + animation.frame);
     hitboxFromImage();
 }
 
@@ -232,7 +213,7 @@ void StrongmanSmurf::attack() {
         return;
     }
 
-    frame = subFrame = 0;
+    animation.restart();
 
     const int targetX = w.target->x;
     const int targetY = w.target->y;
@@ -268,22 +249,17 @@ void StrongmanSmurf::attack() {
 void Fireball::update() {
     static const int kSpeed = 8;
 
-    subFrame += 1;
-    subFrame %= 2;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 3;
-    }
+    animation.cycle(2, 3);
 
     // Blinks: no image every third step.
-    if (frame == 2) {
+    if (animation.frame == 2) {
         image = nullptr;
     } else if (direction == kFacingRight) {
         x += kSpeed;
-        image = enemyImage(img::kFireballRight + frame);
+        image = enemyImage(img::kFireballRight + animation.frame);
     } else {
         x -= kSpeed;
-        image = enemyImage(img::kFireballLeft + frame);
+        image = enemyImage(img::kFireballLeft + animation.frame);
     }
 
     if (solidWall(x, y)) {

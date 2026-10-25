@@ -24,8 +24,7 @@ public:
     EntityState state() const override;
 
     int dy = 0;                    // vertical speed
-    int frame = 0;                 // animation step (etape)
-    int subFrame = 0;              // ticks within the step (ss_etape)
+    AnimationPlayer animation;     // etape, ss_etape
     int direction = 0;             // facing or one of 8 directions (dir)
     int gravityDelay = 0;          // lat_grav
     const Image* image = nullptr;  // pic
@@ -43,9 +42,6 @@ protected:
         world_.media.canvas->draw(picture, px - world_.camera.x, py);
     }
 
-    // Advances an animation of `steps` entries by one tick, a step every
-    // `delay` ticks, and returns the current entry (anime()).
-    int animate(const int* table, int steps, int delay);
     // Falls with gravity, landing on platforms (tombe()).
     void fall();
     // Same, but lands only when not already on a platform (tombe2()).
@@ -54,9 +50,14 @@ protected:
     void walk(int dx);
     // The hitbox is the current image (colFromPic()).
     void hitboxFromImage();
-    void noHitbox() noexcept { collides = false; }
+    void noHitbox() noexcept { hitbox.active = false; }
     // Dies when far outside the screen (updateADetruire()).
     void dieWhenOffscreen();
+    // Dies once fallen below the screen, where no platform is: for the
+    // debris that end only when they land (D-55 fixed: in 2002 a piece
+    // that fell into a hole fell for the rest of the level). Nothing that
+    // has fallen there lands again, so this ends no landing.
+    void dieWhenFallenOut();
 
 private:
     World& world_;
@@ -114,7 +115,7 @@ public:
 
     EntityState state() const override;
 
-    int hitPoints = 0;
+    Health health;       // pv
     int mode = kNormal;  // a CharacterState, or a class's own states (etat)
 };
 
@@ -162,7 +163,7 @@ public:
     int heading() const override { return direction; }
     void onHit(int) override {
         dead = true;
-        collides = false;
+        hitbox.active = false;
     }
     void onKill() override {}
 };

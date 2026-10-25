@@ -34,16 +34,12 @@ void BloodSpray::update() {
         return;
     }
 
-    subFrame += 1;
-    subFrame %= 5;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(5);
 
-    if (frame == 4) {
+    if (animation.frame == 4) {
         dead = true;
     } else {
-        image = world().media.misc->image(img::kBloodSpray + direction * 4 + frame);
+        image = world().media.misc->image(img::kBloodSpray + direction * 4 + animation.frame);
     }
 
     x = owner->x + offsetX_;

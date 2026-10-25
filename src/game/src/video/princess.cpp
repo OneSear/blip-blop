@@ -32,7 +32,7 @@ bool onEngravingGround(World& w, int x, int y) {
 //-----------------------------------------------------------------------------
 
 Princess::Princess(World& world) : Enemy(world) {
-    hitPoints = 3700;
+    health.points = 3700;
     treasure = 0;
     image = enemyImage(img::kPrincessStand);
 }
@@ -82,26 +82,16 @@ void Princess::walkAbout() {
         }
         if (direction == kFacingRight) {
             // Faster in the left part of the screen.
-            subFrame += 1;
-            subFrame %= 6;
-            if (subFrame == 0) {
-                frame += 1;
-                frame %= 2;
-            }
+            animation.cycle(6, 2);
             walk(x - camera > 400 ? kPrincessSpeed : 2);
-            image = enemyImage(img::kPrincessWalk + frame);
+            image = enemyImage(img::kPrincessWalk + animation.frame);
         } else if (direction == kFacingLeft) {
             direction = kFacingRight;
         }
     } else if (x < world().marker("video.princessWalk", 0)) {
-        subFrame += 1;
-        subFrame %= 6;
-        if (subFrame == 0) {
-            frame += 1;
-            frame %= 2;
-        }
+        animation.cycle(6, 2);
         walk(kPrincessSpeed);
-        image = enemyImage(img::kPrincessWalk + frame);
+        image = enemyImage(img::kPrincessWalk + animation.frame);
     } else if (x > world().marker("video.princessWalk", 1)) {
         image = enemyImage(img::kPrincessWalk);
     } else {
@@ -115,13 +105,9 @@ void Princess::die() {
 
     fall();
 
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0 && frame < 6) {
-        frame += 1;
-    }
+    animation.tickUpTo(6, 6);
 
-    if (frame >= 5) {
+    if (animation.frame >= 5) {
         if (onEngravingGround(w, x, y)) {
             w.media.effects->engrave(x, y, image);
             showBanner(w, kKilledText);
@@ -132,7 +118,7 @@ void Princess::die() {
             w.registry->spawn(w, EntityCategory::Pickup, kCowBombPickup, SpawnPoint{x, y, 0});
         }
     } else {
-        image = enemyImage(img::kPrincessDie + frame);
+        image = enemyImage(img::kPrincessDie + animation.frame);
     }
 }
 
@@ -157,7 +143,7 @@ const int kGuardWalk[] = {0, 1, 2, 1};
 
 PrincessGuard::PrincessGuard(World& world, Princess* princess, int distance)
     : Enemy(world), princess_(princess), distance_(distance) {
-    hitPoints = 2500;
+    health.points = 2500;
     treasure = 100;
     direction = kFacingLeft;
 }
@@ -204,10 +190,10 @@ void PrincessGuard::walkAbout() {
         // faster than it falls back.
         if (x + distance_ + kGuardSpeed < princess->x) {
             walk(kGuardSpeed);
-            image = enemyImage(img::kGuardWalkLeft + animate(kGuardWalk, 4, 6));
+            image = enemyImage(img::kGuardWalkLeft + animation.loop(kGuardWalk, 4, 6));
         } else if (x + distance_ - kGuardSpeed > princess->x) {
             walk(-kGuardSpeed * 3);
-            image = enemyImage(img::kGuardWalkLeft + animate(kGuardWalk, 4, 6));
+            image = enemyImage(img::kGuardWalkLeft + animation.loop(kGuardWalk, 4, 6));
         } else {
             image = enemyImage(img::kGuardWalkLeft);
         }
@@ -222,20 +208,16 @@ void PrincessGuard::die() {
 
     fall();
 
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0 && frame < 10) {
-        frame += 1;
-    }
+    animation.tickUpTo(6, 10);
 
-    if (frame >= 10) {
+    if (animation.frame >= 10) {
         if (onEngravingGround(w, x, y)) {
             w.media.effects->engrave(x, y, image);
             dead = true;
             w.flags[kGuardsAlive] -= 1;
         }
     } else {
-        image = enemyImage(img::kGuardDie + frame);
+        image = enemyImage(img::kGuardDie + animation.frame);
     }
 }
 

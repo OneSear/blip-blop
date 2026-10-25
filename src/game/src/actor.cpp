@@ -6,6 +6,13 @@
 
 namespace bb::game {
 
+namespace {
+
+// Below the screen (480 pixels high, no platform under it), with a margin.
+constexpr int kFallenOut = 600;
+
+}  // namespace
+
 //-----------------------------------------------------------------------------
 // Actor (Sprite)
 //-----------------------------------------------------------------------------
@@ -17,24 +24,10 @@ void Actor::draw() {
 EntityState Actor::state() const {
     EntityState s;
     s.dy = dy;
-    s.frame = frame;
-    s.subFrame = subFrame;
+    s.frame = animation.frame;
+    s.subFrame = animation.subFrame;
     s.direction = direction;
     return s;
-}
-
-int Actor::animate(const int* table, int steps, int delay) {
-    subFrame += 1;
-    subFrame %= delay;
-
-    if (subFrame == 0) {
-        frame += 1;
-    }
-    if (frame < 0) {
-        frame = 0;
-    }
-    frame %= steps;
-    return table[frame];
 }
 
 void Actor::fall() {
@@ -94,19 +87,23 @@ void Actor::walk(int dx) {
 
 void Actor::hitboxFromImage() {
     if (image == nullptr) {
-        collides = false;
+        hitbox.active = false;
     } else {
-        x1 = x - image->spotX();
-        y1 = y - image->spotY();
-        x2 = x1 + image->width();
-        y2 = y1 + image->height();
-        collides = true;
+        const int left = x - image->spotX();
+        const int top = y - image->spotY();
+        hitbox.set(left, top, left + image->width(), top + image->height());
     }
 }
 
 void Actor::dieWhenOffscreen() {
     const int camera = world_.camera.x;
-    if (x < camera - 250 || x > camera + 900 || y < -200 || y > 600) {
+    if (x < camera - 250 || x > camera + 900 || y < -200 || y > kFallenOut) {
+        dead = true;
+    }
+}
+
+void Actor::dieWhenFallenOut() {
+    if (y > kFallenOut) {
         dead = true;
     }
 }
@@ -133,7 +130,7 @@ void MovingPlatform::carryPlayers(int width, int top, int step) {
 
 EntityState Character::state() const {
     EntityState s = Actor::state();
-    s.hitPoints = hitPoints;
+    s.hitPoints = health.points;
     s.state = mode;
     return s;
 }
@@ -148,17 +145,13 @@ void Enemy::hitBy(Shot& shot) {
     World& w = world();
     const int wound = shot.damage();
 
-    if (wound < hitPoints) {
-        shot.onHit(wound);
-        hitPoints -= wound;
+    shot.onHit(health.take(wound));
+    if (health.left()) {
         return;
     }
 
-    shot.onHit(hitPoints);
-    hitPoints = 0;
-    frame = 0;
-    subFrame = 0;
-    collides = false;
+    animation.restart();
+    hitbox.active = false;
 
     if (shot.burning() == 2) {
         mode = kCarbonised;
@@ -200,16 +193,11 @@ void Enemy::sprayBlood(const Shot& shot, const int* offsetX, const int* offsetY)
 }
 
 void Enemy::burn(int firstLeft, int firstRight, int steps, int delay) {
-    subFrame += 1;
-    subFrame %= delay;
-
-    if (subFrame == 0) {
-        frame += 1;
-    }
-    if (frame >= steps) {
+    animation.tick(delay);
+    if (animation.frame >= steps) {
         dead = true;
     } else {
-        image = enemyImage((direction == kFacingLeft ? firstLeft : firstRight) + frame);
+        image = enemyImage((direction == kFacingLeft ? firstLeft : firstRight) + animation.frame);
     }
 }
 

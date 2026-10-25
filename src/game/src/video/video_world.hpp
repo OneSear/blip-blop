@@ -264,7 +264,7 @@ private:
 class RaymanFist : public Projectile {
 public:
     RaymanFist(World& world, int speed, int goalX) : Projectile(world), xSpeed_(speed), goalX_(goalX) {
-        subFrame = 1;
+        animation.subFrame = 1;
     }
     void update() override;
 
@@ -275,7 +275,8 @@ private:
 
 // A fist or a foot of Rayman's (in the blood-spray list): engraved on
 // landing, where it sets register 0 = 2 and register 2 = which limb.
-// Never dies off screen (D-55).
+// One that falls into a hole never lands: it then leaves the level below
+// the screen (D-55 fixed), and Rayman stays at stage 1, as in 2002.
 class RaymanLimb : public Actor {
 public:
     RaymanLimb(World& world, int limb, int speedX, int speedY);

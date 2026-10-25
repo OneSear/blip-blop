@@ -49,7 +49,7 @@ extern const WalkerSpec kCharmander;  // 102
 // Walks between walls and screen edges, falls off platforms.
 class Walker : public Enemy {
 public:
-    Walker(World& world, const WalkerSpec& spec) : Enemy(world), spec_(spec) { hitPoints = 100; }
+    Walker(World& world, const WalkerSpec& spec) : Enemy(world), spec_(spec) { health.points = 100; }
 
     void update() override;
     void hitBy(Shot& shot) override;
@@ -64,7 +64,7 @@ private:
 // The COM (103): flies sideways between walls and screen edges.
 class Com : public Enemy {
 public:
-    explicit Com(World& world) : Enemy(world) { hitPoints = 100; }
+    explicit Com(World& world) : Enemy(world) { health.points = 100; }
     void update() override;
 
 protected:

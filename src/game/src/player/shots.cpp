@@ -50,7 +50,7 @@ bool gone(const World& w, int x, int y, int rightEdge) {
 
 void PlayerShot::onHit(int points) {
     dead = true;
-    collides = false;
+    hitbox.active = false;
     owner->addPoints(points);
 }
 
@@ -229,11 +229,7 @@ void LaserBeam::aim(int playerAim) {
             }
             height_ = ny - y;
             firstImage_ = img::kLaserBeamVertical;
-            x1 = x;
-            y1 = y;
-            x2 = x + 6;
-            y2 = ny;
-            collides = true;
+            hitbox.set(x, y, x + 6, ny);
             break;
 
         case 2:  // right
@@ -242,11 +238,7 @@ void LaserBeam::aim(int playerAim) {
             }
             width_ = nx - x;
             firstImage_ = img::kLaserBeamHorizontal;
-            x1 = x;
-            y1 = y;
-            x2 = nx;
-            y2 = y + 6;
-            collides = true;
+            hitbox.set(x, y, nx, y + 6);
             break;
 
         case 4:  // up
@@ -255,12 +247,8 @@ void LaserBeam::aim(int playerAim) {
             }
             height_ = y - ny;
             firstImage_ = img::kLaserBeamVertical;
-            x1 = x;
-            y1 = ny;
-            x2 = x + 6;
-            y2 = y;
+            hitbox.set(x, ny, x + 6, y);
             y = ny;
-            collides = true;
             break;
 
         case 6:  // left
@@ -269,24 +257,20 @@ void LaserBeam::aim(int playerAim) {
             }
             width_ = x - nx;
             firstImage_ = img::kLaserBeamHorizontal;
-            x1 = nx;
-            y1 = y;
-            x2 = x;
-            y2 = y + 6;
+            hitbox.set(nx, y, x, y + 6);
             x = nx;
-            collides = true;
             break;
 
         default:
             break;
     }
 
-    subFrame = 2;
+    animation.subFrame = 2;
 }
 
 void LaserBeam::update() {
-    subFrame -= 1;
-    if (subFrame == 0) {
+    animation.subFrame -= 1;
+    if (animation.subFrame == 0) {
         dead = true;
     }
 }
@@ -299,8 +283,8 @@ void LaserBeam::draw() {
     const World& w = world();
     Canvas& canvas = *w.media.canvas;
     const ImageBank& misc = *w.media.misc;
-    const Image* beam = playerImage(firstImage_ + frame);
-    const Image* impact = misc.image(bb::assets::sprites::misc::kLaserImpact + frame);
+    const Image* beam = playerImage(firstImage_ + animation.frame);
+    const Image* impact = misc.image(bb::assets::sprites::misc::kLaserImpact + animation.frame);
 
     int screenX = x - w.camera.x;
     int nx = x;
@@ -322,7 +306,7 @@ void LaserBeam::draw() {
         case 1:  // down-right
             while (nx > w.camera.x - 20 && nx < w.camera.x + 660 && ny > -50 && ny < 500 &&
                    !w.collision.solidWall(nx, ny)) {
-                drawAt(nx, ny, playerImage(img::kLaserBeamFalling + frame));
+                drawAt(nx, ny, playerImage(img::kLaserBeamFalling + animation.frame));
                 nx += 8;
                 ny += 8;
             }
@@ -341,7 +325,7 @@ void LaserBeam::draw() {
         case 3:  // up-right
             while (nx > w.camera.x - 20 && nx < w.camera.x + 660 && ny > -20 && ny < 500 &&
                    !w.collision.solidWall(nx, ny)) {
-                drawAt(nx, ny, playerImage(img::kLaserBeamRising + frame));
+                drawAt(nx, ny, playerImage(img::kLaserBeamRising + animation.frame));
                 nx += 8;
                 ny -= 8;
             }
@@ -362,7 +346,7 @@ void LaserBeam::draw() {
         case 5:  // up-left
             while (nx > w.camera.x - 20 && nx < w.camera.x + 660 && ny > -20 && ny < 500 &&
                    !w.collision.solidWall(nx, ny)) {
-                drawAt(nx, ny, playerImage(img::kLaserBeamFalling + frame));
+                drawAt(nx, ny, playerImage(img::kLaserBeamFalling + animation.frame));
                 nx -= 8;
                 ny -= 8;
             }
@@ -387,7 +371,7 @@ void LaserBeam::draw() {
         case 7:  // down-left
             while (nx > w.camera.x - 20 && nx < w.camera.x + 660 && ny > -50 && ny < 500 &&
                    !w.collision.solidWall(nx, ny)) {
-                drawAt(nx, ny, playerImage(img::kLaserBeamRising + frame));
+                drawAt(nx, ny, playerImage(img::kLaserBeamRising + animation.frame));
                 nx -= 8;
                 ny += 8;
             }
@@ -403,7 +387,7 @@ bool LaserBeam::hits(const Entity& other) const {
     if (direction % 2 == 0) {
         return overlaps(other);
     }
-    if (!other.collides) {
+    if (!other.hitbox.active) {
         return false;
     }
 
@@ -412,35 +396,36 @@ bool LaserBeam::hits(const Entity& other) const {
     int atRight = 0;
     switch (direction) {
         case 1:  // down-right
-            if (other.x2 < x || other.y2 < y) {
+            if (other.hitbox.x2 < x || other.hitbox.y2 < y) {
                 return false;
             }
-            atLeft = (other.x1 - x) + y;
-            atRight = (other.x2 - x) + y;
+            atLeft = (other.hitbox.x1 - x) + y;
+            atRight = (other.hitbox.x2 - x) + y;
             break;
         case 3:  // up-right
-            if (other.x2 < x || other.y1 > y) {
+            if (other.hitbox.x2 < x || other.hitbox.y1 > y) {
                 return false;
             }
-            atLeft = -(other.x1 - x) + y;
-            atRight = -(other.x2 - x) + y;
+            atLeft = -(other.hitbox.x1 - x) + y;
+            atRight = -(other.hitbox.x2 - x) + y;
             break;
         case 5:  // up-left
-            if (other.x1 > x || other.y1 > y) {
+            if (other.hitbox.x1 > x || other.hitbox.y1 > y) {
                 return false;
             }
-            atLeft = (other.x1 - x) + y;
-            atRight = (other.x2 - x) + y;
+            atLeft = (other.hitbox.x1 - x) + y;
+            atRight = (other.hitbox.x2 - x) + y;
             break;
         default:  // 7, down-left
-            if (other.x1 > x || other.y2 < y) {
+            if (other.hitbox.x1 > x || other.hitbox.y2 < y) {
                 return false;
             }
-            atLeft = -(other.x1 - x) + y;
-            atRight = -(other.x2 - x) + y;
+            atLeft = -(other.hitbox.x1 - x) + y;
+            atRight = -(other.hitbox.x2 - x) + y;
             break;
     }
-    return (atLeft > other.y1 && atLeft < other.y2) || (atRight > other.y1 && atRight < other.y2);
+    return (atLeft > other.hitbox.y1 && atLeft < other.hitbox.y2) ||
+           (atRight > other.hitbox.y1 && atRight < other.hitbox.y2);
 }
 
 //-----------------------------------------------------------------------------
@@ -451,8 +436,7 @@ void Flame::aim(int playerAim) {
     World& w = world();
 
     PlayerShot::aim(playerAim);
-    frame = 0;
-    subFrame = 0;
+    animation.restart();
     rise_ = 0;
     large_ = w.random() % 2 == 1;
     shrinking_ = false;
@@ -532,26 +516,26 @@ void Flame::aim(int playerAim) {
 }
 
 void Flame::update() {
-    subFrame += 1;
-    subFrame %= speed_;
+    animation.subFrame += 1;
+    animation.subFrame %= speed_;
 
     // Grows through its images, then shrinks back and is gone.
-    if (subFrame == 0) {
+    if (animation.subFrame == 0) {
         const int first = large_ ? img::kFlameLarge : img::kFlameSmall;
         const int steps = large_ ? 10 : 5;
         if (shrinking_) {
-            frame -= 1;
-            if (frame < 0) {
+            animation.frame -= 1;
+            if (animation.frame < 0) {
                 dead = true;
             } else {
-                image = playerImage(first + frame);
+                image = playerImage(first + animation.frame);
             }
         } else {
-            frame += 1;
-            if (frame >= steps) {
+            animation.frame += 1;
+            if (animation.frame >= steps) {
                 shrinking_ = true;
             } else {
-                image = playerImage(first + frame);
+                image = playerImage(first + animation.frame);
             }
         }
     }
@@ -573,7 +557,7 @@ void Flame::update() {
 void Flame::onHit(int points) {
     // Burns on, without hitting again this tick.
     if (!dead) {
-        collides = false;
+        hitbox.active = false;
         owner->addPoints(points);
     }
 }
@@ -587,19 +571,14 @@ void FallingCow::update() {
 
     y += dy;
 
-    subFrame += 1;
-    subFrame %= 8;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 8;
-    }
+    animation.cycle(8, 8);
 
     if (solidWall(x, y) && y > 50) {
         // Bursts: a carcass in the decor, gore, a screen shake.
         image = nullptr;
         w.media.effects->engrave(
-            x, y, playerImage(frame < 4 ? img::kCowCarcassHeadRight : img::kCowCarcassHeadLeft));
-        collides = false;
+            x, y, playerImage(animation.frame < 4 ? img::kCowCarcassHeadRight : img::kCowCarcassHeadLeft));
+        hitbox.active = false;
         dead = true;
         w.shake.start(10);
 
@@ -615,7 +594,7 @@ void FallingCow::update() {
     } else if (y > 550 || x < w.camera.x - 50) {
         dead = true;
     } else {
-        image = playerImage(img::kCowBomb + frame);
+        image = playerImage(img::kCowBomb + animation.frame);
         hitboxFromImage();
     }
 }

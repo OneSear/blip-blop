@@ -40,9 +40,8 @@ void Lemming::update() {
     // 200 lemmings killed: they all blow up and the generators stop.
     if (w.flags[Flag::Kills] >= kNukeKills && mode != kDying && mode != kCarbonised) {
         nuked_ = true;
-        collides = false;
-        subFrame = 0;
-        frame = 0;
+        hitbox.active = false;
+        animation.restart();
         mode = kDying;
         w.flags[Flag::GeneratorsOff] = 1;
     }
@@ -75,24 +74,19 @@ void Lemming::update() {
 }
 
 void Lemming::walkAbout() {
-    subFrame += 1;
-    subFrame %= 5;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 14;
-    }
+    animation.cycle(5, 14);
 
     if (direction == kFacingLeft) {
         x -= 1;
         fall();
-        image = enemyImage(img::kLemmingWalkLeft + frame);
+        image = enemyImage(img::kLemmingWalkLeft + animation.frame);
         if (solidWall(x, y) || x < 5) {
             direction = kFacingRight;
         }
     } else {
         x += 1;
         fall();
-        image = enemyImage(img::kLemmingWalkRight + frame);
+        image = enemyImage(img::kLemmingWalkRight + animation.frame);
         if (solidWall(x, y)) {
             direction = kFacingLeft;
         }
@@ -112,18 +106,14 @@ void Lemming::die() {
     World& w = world();
     fall();
 
-    subFrame += 1;
-    subFrame %= 5;
-    if (subFrame == 0) {
-        frame += 1;
-    }
+    animation.tick(5);
 
     // The explosion is cut short at a platform edge.
-    if (frame >= 6 && (platformAt(x - 80, y) == 0 || platformAt(x + 80, y) == 0)) {
+    if (animation.frame >= 6 && (platformAt(x - 80, y) == 0 || platformAt(x + 80, y) == 0)) {
         dead = true;
     }
 
-    if (frame == 10) {
+    if (animation.frame == 10) {
         if (platformAt(x, y) != 0 && platformAt(x - 80, y) != 0 && platformAt(x + 80, y) != 0) {
             w.media.effects->engrave(x, y, image);
         }
@@ -134,7 +124,8 @@ void Lemming::die() {
             w.flags[kNuked] = 1;
         }
     } else {
-        image = enemyImage((direction == kFacingLeft ? img::kLemmingDieLeft : img::kLemmingDieRight) + frame);
+        image = enemyImage((direction == kFacingLeft ? img::kLemmingDieLeft : img::kLemmingDieRight) +
+                           animation.frame);
     }
 }
 
@@ -163,13 +154,8 @@ void Lemming::hitBy(Shot& shot) {
 //-----------------------------------------------------------------------------
 
 void Fan::update() {
-    subFrame += 1;
-    subFrame %= 3;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 4;
-    }
-    image = levelImage(prop::kFan + frame);
+    animation.cycle(3, 4);
+    image = levelImage(prop::kFan + animation.frame);
     if (x < world().camera.x - 100) {
         dead = true;
     }
@@ -194,12 +180,11 @@ void FlickeringLight::update() {
     if (lit_) {
         if (litWait_ >= litDelay_) {
             lit_ = false;
-            subFrame = 0;
-            frame = 0;
+            animation.restart();
         }
     } else {
-        image = levelImage(first_ + animate(kFlicker, 58, 3));
-        if (frame == 57) {
+        image = levelImage(first_ + animation.loop(kFlicker, 58, 3));
+        if (animation.frame == 57) {
             lit_ = true;
             litWait_ = 0;
             litDelay_ = 50 + world().random() % 200;
@@ -226,9 +211,9 @@ Water::Water(World& world) : Actor(world) {
 }
 
 void Water::update() {
-    subFrame += 1;
-    subFrame %= 7;
-    if (subFrame == 0) {
+    animation.subFrame += 1;
+    animation.subFrame %= 7;
+    if (animation.subFrame == 0) {
         LemmingCounters& counters = world().shared<LemmingCounters>();
         counters.waterStep += 1;
         counters.waterStep %= 10;

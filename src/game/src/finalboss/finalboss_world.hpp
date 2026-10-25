@@ -158,7 +158,7 @@ class CruiserLaser : public Actor {
 public:
     CruiserLaser(World& world, int picture, int side) : Actor(world), picture_(picture), toRight_(side > 0) {
         image = levelImage(picture);
-        subFrame = 2;
+        animation.subFrame = 2;
     }
     void update() override;
 

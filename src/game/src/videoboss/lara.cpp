@@ -25,7 +25,7 @@ const int kDraw[] = {0, 0, 0, 1, 1, 2, 3, 3, 4, 4, 4};
 //-----------------------------------------------------------------------------
 
 Lara::Lara(World& world) : Enemy(world) {
-    hitPoints = 15000;
+    health.points = 15000;
     image = enemyImage(img::kLaraBody);
 }
 
@@ -87,29 +87,23 @@ void Lara::stand() {
             }
             break;
         case 2:
-            subFrame += 1;
-            subFrame %= 6;
-            if (subFrame == 0) {
-                frame += 1;
-                if (frame > 9) {
+            if (animation.tick(6)) {
+                if (animation.frame > 9) {
                     w.flags[kStage] = 3;
-                    frame = 0;
+                    animation.frame = 0;
                     w.flags[Flag::Timer] = 180;
                 } else {
-                    bust_ = img::kLaraBustButton + kButton[frame];
+                    bust_ = img::kLaraBustButton + kButton[animation.frame];
                 }
             }
             break;
         case 3:
-            subFrame += 1;
-            subFrame %= 6;
-            if (subFrame == 0) {
-                frame += 1;
-                if (frame > 10) {
+            if (animation.tick(6)) {
+                if (animation.frame > 10) {
                     w.flags[kStage] = 4;
-                    frame = 0;
+                    animation.frame = 0;
                 } else {
-                    bust_ = img::kLaraBustDraw + kDraw[frame];
+                    bust_ = img::kLaraBustDraw + kDraw[animation.frame];
                 }
             }
             break;
@@ -179,22 +173,18 @@ void Lara::aim() {
         fire(60, 144, 0);
         bust_ = img::kLaraAim4;
     }
-    subFrame = 0;
-    frame = 1;
+    animation.subFrame = 0;
+    animation.frame = 1;
     mode = kShooting;
     shoot();
 }
 
 void Lara::shoot() {
     // Five more bust images, each held one tick longer.
-    subFrame += 1;
-    subFrame %= frame;
-    if (subFrame == 0) {
-        frame += 1;
-        if (frame >= 7) {
+    if (animation.tick(animation.frame)) {
+        if (animation.frame >= 7) {
             mode = kWalking;
-            subFrame = 0;
-            frame = 0;
+            animation.restart();
             bust_ -= 5;
             attackWait_ = 0;
             stand();
@@ -216,14 +206,14 @@ void Lara::draw() {
 //-----------------------------------------------------------------------------
 
 Spikes::Spikes(World& world) : Enemy(world) {
-    hitPoints = 1;
+    health.points = 1;
     image = enemyImage(img::kSpikes);
 }
 
 void Spikes::spikeHitbox() {
     hitboxFromImage();
-    x2 += 25;
-    x1 += 25;
+    hitbox.x2 += 25;
+    hitbox.x1 += 25;
 }
 
 void Spikes::update() {
@@ -299,7 +289,7 @@ void Spikes::draw() {
 //-----------------------------------------------------------------------------
 
 Weight::Weight(World& world) : Enemy(world) {
-    hitPoints = 1000;
+    health.points = 1000;
     image = enemyImage(img::kWeight);
 }
 
@@ -353,20 +343,20 @@ void Weight::crush() {
     if (solidWall(x, y + dy)) {
         // Landed on her.
         w.flags[kStage] = 7;
-        subFrame += 1;
-        subFrame %= 15;
-        if (frame == 0 && subFrame == 1) {
+        animation.subFrame += 1;
+        animation.subFrame %= 15;
+        if (animation.frame == 0 && animation.subFrame == 1) {
             w.shake.start(8);
         }
-        if (subFrame == 0) {
-            frame += 1;
-            if (frame >= 3) {
+        if (animation.subFrame == 0) {
+            animation.frame += 1;
+            if (animation.frame >= 3) {
                 w.media.effects->engrave(x, y, image);
                 dead = true;
             }
         }
-        if (frame < 3) {
-            image = enemyImage(img::kWeightLanded + frame);
+        if (animation.frame < 3) {
+            image = enemyImage(img::kWeightLanded + animation.frame);
         }
         return;
     }
@@ -407,7 +397,7 @@ void Weight::hitBy(Shot& shot) {
 //-----------------------------------------------------------------------------
 
 RaymanHead::RaymanHead(World& world) : Enemy(world) {
-    hitPoints = 1;
+    health.points = 1;
     image = enemyImage(img::kRaymanHeadRoll);
 }
 
@@ -439,12 +429,9 @@ void RaymanHead::roll() {
     fall();
     hitboxFromImage();
 
-    subFrame += 1;
-    subFrame %= 4;
-    if (subFrame == 0) {
-        frame += 1;
-        frame %= 8;
-        image = enemyImage(img::kRaymanHeadRoll + frame);
+    if (animation.tick(4)) {
+        animation.frame %= 8;
+        image = enemyImage(img::kRaymanHeadRoll + animation.frame);
     }
 
     if (dy > 0 && platformAt(x, y + dy) != 0) {
@@ -455,15 +442,12 @@ void RaymanHead::roll() {
 }
 
 void RaymanHead::die() {
-    subFrame += 1;
-    subFrame %= 6;
-    if (subFrame == 0) {
-        frame += 1;
-        if (frame >= 6) {
+    if (animation.tick(6)) {
+        if (animation.frame >= 6) {
             world().flags[kStage] = 2;
             dead = true;
         } else {
-            image = enemyImage(img::kRaymanHeadDie + frame);
+            image = enemyImage(img::kRaymanHeadDie + animation.frame);
         }
     }
 }

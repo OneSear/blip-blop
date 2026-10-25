@@ -16,7 +16,8 @@ All in `src/platform/include/bb/platform/`:
 | `InputSource` | The keyboard, pad and window events (`poll()`), with key codes of `bb::core::input` (`codes.hpp`); the pads' slots and names. |
 | `Audio` | Sounds from complete WAV files (32 voices, looping or not) and one streamed music at a time (Ogg Vorbis or MP3); `available()` false when there is no device. |
 | `Clock` | Microseconds since start, and sleeping. |
-| `System` | Message boxes for errors and warnings; the game's directory and the user's preferences directory (settings, hi-scores, log). |
+| `FileSystem` | Files by UTF-8 path: opening for reading at any offset, a file's kind, a directory's entries (`core::FileReader`, what `Vfs` and the pack read through), writing whole files (settings, hi-scores, recordings); the game's directory and the user's preferences directory. The SDL backend uses `SDL_RWops`, so Windows paths are UTF-8 too. The log and the debugging outputs (`--hash`, `--trace-ticks`) are still written with `fopen`. |
+| `System` | Message boxes for errors and warnings; the process's peak memory (the headless benchmark line). |
 
 And the process entry (`entry.hpp`): the backend owns `main()` (or what the
 system calls instead) and calls `bbMain(argc, argv)`.
