@@ -8,6 +8,7 @@ target_include_directories(bb_tools_thirdparty SYSTEM INTERFACE
 
 add_library(bb_asset_tools STATIC
     bbassets/json_text.cpp
+    bbassets/level_events.cpp
     bbassets/png_io.cpp
     bbassets/source_assets.cpp
     bbassets/sprite_ids.cpp
@@ -21,6 +22,39 @@ bb_set_strict_warnings(bb_asset_tools)
 add_executable(bbassets bbassets/main.cpp)
 target_link_libraries(bbassets PRIVATE bb_asset_tools)
 bb_set_strict_warnings(bbassets)
+
+# The level editor (Phase 8): its document model (no user interface, tested
+# by tests/editor) and the bbedit application (Dear ImGui over SDL 2).
+add_library(bb_editor STATIC
+    editor/level_document.cpp
+)
+target_include_directories(bb_editor PUBLIC editor)
+target_link_libraries(bb_editor PUBLIC bb_asset_tools)
+bb_set_strict_warnings(bb_editor)
+
+# Dear ImGui (third_party/imgui, DEC-11) with its SDL 2 platform and
+# renderer backends: third-party code, built without the strict warnings.
+add_library(bb_imgui STATIC
+    "${CMAKE_SOURCE_DIR}/third_party/imgui/imgui.cpp"
+    "${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_draw.cpp"
+    "${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_tables.cpp"
+    "${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_widgets.cpp"
+    "${CMAKE_SOURCE_DIR}/third_party/imgui/backends/imgui_impl_sdl2.cpp"
+    "${CMAKE_SOURCE_DIR}/third_party/imgui/backends/imgui_impl_sdlrenderer2.cpp"
+)
+target_include_directories(bb_imgui SYSTEM PUBLIC
+    "${CMAKE_SOURCE_DIR}/third_party/imgui"
+    "${CMAKE_SOURCE_DIR}/third_party/imgui/backends")
+target_link_libraries(bb_imgui PUBLIC SDL2::SDL2)
+
+add_executable(bbedit
+    editor/bbedit.cpp
+    editor/editor_app.cpp
+    editor/self_test.cpp
+    editor/textures.cpp
+)
+target_link_libraries(bbedit PRIVATE ${BB_SDL2MAIN} bb_editor bb_imgui)
+bb_set_strict_warnings(bbedit)
 
 # stb's PNG coder is third-party code nobody debugs here: optimise it in
 # every configuration, so debug builds of the tools stay usable.

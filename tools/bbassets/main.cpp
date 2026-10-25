@@ -7,6 +7,7 @@
 //   bbassets verify <source-dir> <data-dir>    source assets == 2002 files?
 //   bbassets ids <source-dir> <include-dir>    C++ constants of sprite and sound names
 //   bbassets ids-check <source-dir> <include-dir>   are they up to date?
+//   bbassets entities                          the entity types levels can place
 //
 // The plan's bbpack, bbfont, bbsfx, bbtext and bblevel are the sprite,
 // font, sound, text and level parts of these commands.
@@ -22,6 +23,7 @@
 #include "bb/core/assets/legacy_formats.hpp"
 #include "bb/core/assets/pack.hpp"
 #include "bb/core/assets/text_encoding.hpp"
+#include "level_events.hpp"
 #include "source_assets.hpp"
 #include "sprite_ids.hpp"
 
@@ -286,6 +288,15 @@ int ids(const std::string& sourceDir, const std::string& includeDir, bool check)
     return 0;
 }
 
+// One line per entity type: category, 2002 id, name.
+int entities() {
+    static const char* const kCategories[] = {"enemy", "prop", "pickup", "vehicle"};
+    for (const bb::game::EntityType& type : bb::tools::entityRegistry().types()) {
+        std::printf("%s %d %s\n", kCategories[static_cast<int>(type.category)], type.legacyId, type.name.c_str());
+    }
+    return 0;
+}
+
 void usage() {
     std::fprintf(stderr,
                  "usage: bbassets extract <data-dir> <source-dir>\n"
@@ -294,13 +305,17 @@ void usage() {
                  "       bbassets legacy <source-dir> <out-dir>\n"
                  "       bbassets verify <source-dir> <data-dir>\n"
                  "       bbassets ids <source-dir> <include-dir>\n"
-                 "       bbassets ids-check <source-dir> <include-dir>\n");
+                 "       bbassets ids-check <source-dir> <include-dir>\n"
+                 "       bbassets entities\n");
 }
 
 }  // namespace
 
 static int run(int argc, char** argv) {
     const std::vector<std::string> args(argv + 1, argv + argc);
+    if (args.size() == 1 && args[0] == "entities") {
+        return entities();
+    }
     if (args.size() != 3) {
         usage();
         return 2;

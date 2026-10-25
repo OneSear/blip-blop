@@ -22,11 +22,13 @@ GameFiles::GameFiles(const core::FileReader& reader)
 
 GameFiles::~GameFiles() {
     // The default asset source reads through the files: it goes first.
+    overlaySource_.reset();
     assetSource_.reset();
 }
 
 void GameFiles::setDataRoot(const std::string& dataRoot) {
     // The default asset source reads through the files: drop it first.
+    overlaySource_.reset();
     assetSource_.reset();
     vfs_ = std::make_unique<core::Vfs>(dataRoot, reader_);
     chosen_ = true;
@@ -63,13 +65,25 @@ void GameFiles::locateGameData(const std::string& baseDirectory) {
 }
 
 void GameFiles::setAssetSource(std::unique_ptr<core::assets::AssetSource> source) {
+    overlaySource_.reset();
     assetSource_ = std::move(source);
     chosen_ = true;
+}
+
+void GameFiles::setOverlay(std::shared_ptr<const core::assets::PackFile> overlay) {
+    overlaySource_.reset();
+    overlay_ = std::move(overlay);
 }
 
 const core::assets::AssetSource& GameFiles::assets() {
     if (!assetSource_) {
         assetSource_ = std::make_unique<core::assets::LegacyDataSource>(*vfs_);
+    }
+    if (overlay_) {
+        if (!overlaySource_) {
+            overlaySource_ = std::make_unique<core::assets::OverlayPackSource>(overlay_, *assetSource_);
+        }
+        return *overlaySource_;
     }
     return *assetSource_;
 }

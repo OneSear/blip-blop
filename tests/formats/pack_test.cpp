@@ -229,3 +229,38 @@ TEST_CASE("damaged pack files are rejected") {
     twice.addScript("A.CIN", "y");
     CHECK_FALSE(twice.finish(error).has_value());
 }
+
+TEST_CASE("an overlay pack replaces the assets it holds, and only those") {
+    const bb::core::Vfs files(BB_TEST_DATA_DIR);
+    const LegacyDataSource base(files);
+    std::string error;
+    auto level = base.level("data/snuf1.lvl", error);
+    REQUIRE_MESSAGE(level.has_value(), error);
+    level->victoryX = 1234;  // the edited level
+
+    PackWriter writer;
+    writer.addLevel("snuf1.lvl", *level);
+    const auto bytes = writer.finish(error);
+    REQUIRE(bytes.has_value());
+    TempFile temp;
+    {
+        std::ofstream out(temp.path, std::ios::binary | std::ios::trunc);
+        out.write(reinterpret_cast<const char*>(bytes->data()), static_cast<std::streamsize>(bytes->size()));
+    }
+    std::shared_ptr<const PackFile> overlay = PackFile::open(temp.path.string(), error);
+    REQUIRE_MESSAGE(overlay != nullptr, error);
+    const OverlayPackSource source(overlay, base);
+
+    const auto edited = source.level("data/snuf1.lvl", error);
+    REQUIRE(edited.has_value());
+    CHECK(edited->victoryX == 1234);
+    CHECK(sameLevel(withoutUnreadEventBytes(*level), *edited));
+
+    const auto other = source.level("data/snuf2.lvl", error);
+    const auto otherBase = base.level("data/snuf2.lvl", error);
+    REQUIRE(other.has_value());
+    REQUIRE(otherBase.has_value());
+    CHECK(other->victoryX == otherBase->victoryX);
+    CHECK(source.spriteBank("data/snufenn.gfx", error).has_value());
+    CHECK_FALSE(source.level("data/nothing.lvl", error).has_value());
+}

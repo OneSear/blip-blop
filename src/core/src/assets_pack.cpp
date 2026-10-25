@@ -883,4 +883,44 @@ std::optional<std::string> PackSource::script(std::string_view name, std::string
     return std::string(bytes->begin(), bytes->end());
 }
 
+//-----------------------------------------------------------------------------
+// OverlayPackSource
+//-----------------------------------------------------------------------------
+
+std::optional<SpriteBank> OverlayPackSource::spriteBank(std::string_view name, std::string& error) const {
+    return from(name).spriteBank(name, error);
+}
+
+std::optional<Font> OverlayPackSource::font(std::string_view name, std::string& error) const {
+    return from(name).font(name, error);
+}
+
+std::optional<SoundBank> OverlayPackSource::soundBank(std::string_view name, std::string& error) const {
+    return from(name).soundBank(name, error);
+}
+
+std::optional<MusicList> OverlayPackSource::musicList(std::string_view name, std::string& error) const {
+    return from(name).musicList(name, error);
+}
+
+std::optional<std::vector<std::uint8_t>> OverlayPackSource::music(std::string_view name, std::string& error) const {
+    return from(name).music(name, error);
+}
+
+std::optional<LevelData> OverlayPackSource::level(std::string_view name, std::string& error) const {
+    return from(name).level(name, error);
+}
+
+std::optional<Campaign> OverlayPackSource::campaign(std::string_view name, std::string& error) const {
+    return from(name).campaign(name, error);
+}
+
+std::optional<StringTable> OverlayPackSource::strings(std::string_view name, std::string& error) const {
+    return from(name).strings(name, error);
+}
+
+std::optional<std::string> OverlayPackSource::script(std::string_view name, std::string& error) const {
+    return from(name).script(name, error);
+}
+
 }  // namespace bb::core::assets

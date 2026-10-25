@@ -14,6 +14,7 @@
 #include "bb/core/vfs.hpp"
 #include "bb/game/content.hpp"
 #include "bb/game/entity_registry.hpp"
+#include "level_events.hpp"
 #include "png_io.hpp"
 
 namespace bb::tools {
@@ -28,6 +29,8 @@ using core::assets::MusicTrack;
 using core::assets::PixelFormat16;
 using core::assets::SoundSample;
 using core::assets::SpriteImage;
+using Slot = EventSlot;
+using Entity = EventEntity;
 
 namespace {
 
@@ -105,122 +108,6 @@ bool getInt(const Json& j, const char* key, T& out, std::string& error) {
 }
 
 // --- Level events ----------------------------------------------------------
-
-enum class Slot { Id, X, Bank, Y, Capacity, Value, Period };
-constexpr std::array<const char*, 7> kSlotNames = {"id", "x", "bank", "y", "capacity", "value", "period"};
-
-std::int32_t& slotRef(LevelEventRecord& e, Slot s) {
-    switch (s) {
-        case Slot::Id:
-            return e.id;
-        case Slot::X:
-            return e.x;
-        case Slot::Bank:
-            return e.bank;
-        case Slot::Y:
-            return e.y;
-        case Slot::Capacity:
-            return e.capacity;
-        case Slot::Value:
-            return e.value;
-        case Slot::Period:
-            break;
-    }
-    return e.period;
-}
-
-// The entity an event places: levels name it (bb::game's registry), the
-// pack and the 2002 files store its number.
-enum class Entity { None, Enemy, Prop, Pickup, Vehicle };
-
-struct EventField {
-    const char* name;
-    Slot slot;
-    Entity entity = Entity::None;
-};
-
-const bb::game::EntityRegistry& entityRegistry() {
-    static const bb::game::EntityRegistry registry = [] {
-        bb::game::EntityRegistry r;
-        bb::game::registerAllEntities(r);
-        return r;
-    }();
-    return registry;
-}
-
-bb::game::EntityCategory categoryOf(Entity entity) {
-    switch (entity) {
-        case Entity::Prop:
-            return bb::game::EntityCategory::Prop;
-        case Entity::Pickup:
-            return bb::game::EntityCategory::Pickup;
-        case Entity::Vehicle:
-            return bb::game::EntityCategory::Vehicle;
-        default:
-            return bb::game::EntityCategory::Enemy;
-    }
-}
-
-struct EventSchema {
-    const char* name;
-    std::vector<EventField> fields;
-    bool temporary = false;  // the enemy generator's bool
-};
-
-// Field names by event type: the values the game's loader (game.cpp) or
-// the level editor read (docs/formats/source-assets.md).
-const std::map<std::int32_t, EventSchema>& eventSchemas() {
-    static const std::map<std::int32_t, EventSchema> schemas = {
-        {0,
-         {"enemy",
-          {{"enemy", Slot::Id, Entity::Enemy}, {"x", Slot::X}, {"y", Slot::Y}, {"facing", Slot::Value}}}},
-        {1,
-         {"enemyGenerator",
-          {{"enemy", Slot::Id, Entity::Enemy},
-           {"x", Slot::X},
-           {"y", Slot::Y},
-           {"facing", Slot::Value},
-           {"capacity", Slot::Capacity},
-           {"period", Slot::Period}},
-          true}},
-        {2, {"animatedProp", {{"prop", Slot::Id, Entity::Prop}, {"x", Slot::X}, {"y", Slot::Y}}}},
-        {3,
-         {"midgroundDecal",
-          {{"image", Slot::Id}, {"x", Slot::X}, {"y", Slot::Y}, {"editorImage", Slot::Capacity}}}},
-        {4,
-         {"foreground",
-          {{"image", Slot::Id}, {"x", Slot::X}, {"y", Slot::Y}, {"editorImage", Slot::Capacity}}}},
-        {5, {"scrollLock", {{"condition", Slot::Y}, {"flag", Slot::Capacity}, {"value", Slot::Value}}}},
-        {6, {"holdFire", {{"flag", Slot::Capacity}, {"value", Slot::Value}}}},
-        {7, {"forceScroll", {{"speed", Slot::Y}}}},
-        {8,
-         {"dialogue",
-          {{"scene", Slot::Id}, {"condition", Slot::Y}, {"flag", Slot::Capacity}, {"value", Slot::Value}}}},
-        {9, {"setFlag", {{"flag", Slot::Capacity}, {"value", Slot::Value}}}},
-        {10,
-         {"bannerText",
-          {{"text", Slot::Bank}, {"condition", Slot::Y}, {"flag", Slot::Capacity}, {"value", Slot::Value}}}},
-        {11,
-         {"sound",
-          {{"sound", Slot::Id},
-           {"soundBank", Slot::Bank},
-           {"flag", Slot::Capacity},
-           {"value", Slot::Value}}}},
-        {12, {"weather", {{"kind", Slot::Id}, {"intensity", Slot::Y}}}},
-        {13, {"overkill", {{"enemy", Slot::Id}, {"duration", Slot::Capacity}}}},
-        {14, {"dynamicLoad", {{"id", Slot::Id}}}},
-        {15, {"music", {{"track", Slot::Id}, {"play", Slot::Y}}}},
-        {16, {"pickupGenerator", {{"pickup", Slot::Id}, {"period", Slot::Period}}}},
-        {17,
-         {"vehicle",
-          {{"vehicle", Slot::Id, Entity::Vehicle},
-           {"x", Slot::X},
-           {"y", Slot::Y},
-           {"direction", Slot::Value}}}},
-        {18, {"pickup", {{"pickup", Slot::Id, Entity::Pickup}, {"x", Slot::X}, {"y", Slot::Y}}}},
-    };
-    return schemas;
-}
 
 std::string hex(const std::uint8_t* p, std::size_t n) {
     static const char digits[] = "0123456789abcdef";
@@ -875,6 +762,10 @@ std::optional<SoundBank> readSounds(const fs::path& dir, std::string& error) {
 }
 
 }  // namespace
+
+std::optional<SpriteBank> readSpriteBank(const std::string& dir, std::string& error) {
+    return readSprites(fs::u8path(dir), error);
+}
 
 bool readSourceTree(const std::string& sourceDir, const AssetVisitor& visit, std::string& error) {
     const fs::path root(sourceDir);

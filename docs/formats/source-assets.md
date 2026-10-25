@@ -32,6 +32,7 @@ the game are the names of the 2002 files; the tree maps them as follows.
 | `strings/<stem>.json` | `<stem>.dat` |
 | `campaign/<stem>.json` | `<stem>.lst` |
 | `scripts/<name>.cin`, `scripts/<name>.rpg` (UTF-8) | same name (Windows-1252) |
+| `editor/entities.json` | none: the level editor's images of the entities (docs/editor.md); `bbassets` ignores it |
 
 ## Images
 

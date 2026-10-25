@@ -155,6 +155,10 @@ void usage() {
                  "  --data <dir>          game data directory (default: ./data)\n"
                  "  --pack <file>         read the game assets from this runtime pack instead of\n"
                  "                        the data directory (built by the bbassets tool)\n"
+                 "  --overlay <file>      a runtime pack whose assets replace the game's (the\n"
+                 "                        level editor's test of a level)\n"
+                 "  --level <file> <kind>  play this level only (\"data/snuf1.lvl\"; kind as in\n"
+                 "                        bb.lst: 0 bonus ... 5 end), then quit\n"
                  "  --settings <file>     settings file (default: in the user's preferences directory)\n"
                  "  --log <file>          log file (default: BlipBlop.log in the user's preferences\n"
                  "                        directory; in the working directory for deterministic runs)\n"
@@ -193,6 +197,9 @@ struct Session::State {
     std::string logPath;
     std::string packPath;
     std::string dataRoot;
+    std::string onlyLevel;
+    std::string overlayPath;
+    std::uint64_t onlyLevelKind = 1;
     std::uint64_t realFrames = 0;
     std::uint64_t traceFrom = 0;
     std::uint64_t traceTo = 0;
@@ -330,6 +337,19 @@ bool Session::init(int argc, const char* argv[]) {
                 return false;
             }
             g.packPath = v;
+        } else if (arg == "--overlay") {
+            const char* v = next("a file name");
+            if (!v) {
+                return false;
+            }
+            g.overlayPath = v;
+        } else if (arg == "--level") {
+            const char* v = next("a level file and its kind");
+            const char* kind = v ? next("a level kind (0 to 5)") : nullptr;
+            if (!kind || !number(kind, g.onlyLevelKind) || g.onlyLevelKind > 5) {
+                return false;
+            }
+            g.onlyLevel = v;
         } else if (arg == "--deterministic") {
             g.deterministic = true;
         } else if (arg == "--headless") {
@@ -400,6 +420,16 @@ bool Session::load(const bb::core::FileReader& reader, GameFiles& files) {
             return false;
         }
         files.setAssetSource(std::make_unique<bb::core::assets::PackSource>(pack));
+    }
+    if (!g.overlayPath.empty()) {
+        std::string error;
+        std::shared_ptr<const bb::core::assets::PackFile> overlay =
+            bb::core::assets::PackFile::open(g.overlayPath, error, reader);
+        if (!overlay) {
+            std::fprintf(stderr, "blipblop: %s\n", error.c_str());
+            return false;
+        }
+        files.setOverlay(overlay);
     }
     if (!g.replayPath.empty()) {
         const auto bytes = reader.readAll(g.replayPath);
@@ -556,6 +586,14 @@ std::string Session::settingsPath() const {
 std::string Session::logPath() const {
     const State& g = *state_;
     return g.logPath;
+}
+
+std::string Session::onlyLevel() const {
+    return state_->onlyLevel;
+}
+
+int Session::onlyLevelKind() const {
+    return static_cast<int>(state_->onlyLevelKind);
 }
 std::uint64_t Session::frame() const {
     const State& g = *state_;

@@ -46,6 +46,11 @@ std::optional<Campaign> campaignFromJson(const Json& json, std::string& error);
 Json playlistToJson(const MusicList& list);
 std::optional<MusicList> playlistFromJson(const Json& json, std::string& error);
 
+// --- One asset of a source tree -------------------------------------------
+
+// The sprite bank of a directory with a sprites.json manifest.
+std::optional<SpriteBank> readSpriteBank(const std::string& dir, std::string& error);
+
 // --- Whole trees -----------------------------------------------------------
 
 // One asset of the game, by legacy file name ("snufenn.gfx"), in memory.

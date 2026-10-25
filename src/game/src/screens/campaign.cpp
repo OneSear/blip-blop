@@ -213,7 +213,18 @@ Frame CampaignScreen::update(ScreenStack& stack) {
                     return Frame::Continue;
                 }
                 part_ = 0;
-                step_ = Step::Parts;
+                step_ = onlyFile_.empty() ? Step::Parts : Step::OnlyLevel;
+                break;
+
+            case Step::OnlyLevel:
+                session.note("test level");
+                step_ = Step::OnlyLevelDone;
+                stack.push(std::make_unique<LevelScreen>(services_, game_, onlyFile_.c_str(), onlyKind_, won_));
+                return Frame::Continue;
+
+            case Step::OnlyLevelDone:
+                game_.finishCampaign();
+                step_ = Step::Done;
                 break;
 
             // Every part of bb.lst.

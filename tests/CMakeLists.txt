@@ -73,6 +73,25 @@ if(TARGET assets_pack)
     set_tests_properties(content PROPERTIES LABELS assets)
 endif()
 
+# The level editor's document: every source level loads and saves byte for
+# byte, and the edits keep the game's event order.
+if(TARGET bb_editor)
+    add_executable(bb_editor_tests
+        unit/main.cpp
+        editor/level_document_test.cpp
+    )
+    target_link_libraries(bb_editor_tests PRIVATE bb_editor bb_doctest)
+    target_compile_definitions(bb_editor_tests PRIVATE BB_TEST_SOURCE_DIR="${BB_PACK_SOURCE}")
+    if(NOT EXISTS "${BB_ASSET_SOURCE_DIR}")
+        add_dependencies(bb_editor_tests assets_pack)
+    endif()
+    bb_set_strict_warnings(bb_editor_tests)
+    add_test(NAME editor COMMAND bb_editor_tests)
+endif()
+if(TARGET bbedit)
+    add_test(NAME editor.ui COMMAND bbedit "${BB_PACK_SOURCE}" --self-test)
+endif()
+
 # No French identifier in the code (migration.md 4.5, the glossary of
 # Appendix B).
 find_package(Python3 COMPONENTS Interpreter QUIET)

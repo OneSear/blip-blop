@@ -155,4 +155,31 @@ private:
     std::shared_ptr<const PackFile> pack_;
 };
 
+// The assets of an overlay pack in place of those of another source; the
+// others from that source (the level editor's test of one level).
+class OverlayPackSource final : public AssetSource {
+public:
+    OverlayPackSource(std::shared_ptr<const PackFile> overlay, const AssetSource& base)
+        : overlay_(overlay), overlaySource_(std::move(overlay)), base_(base) {}
+
+    std::optional<SpriteBank> spriteBank(std::string_view name, std::string& error) const override;
+    std::optional<Font> font(std::string_view name, std::string& error) const override;
+    std::optional<SoundBank> soundBank(std::string_view name, std::string& error) const override;
+    std::optional<MusicList> musicList(std::string_view name, std::string& error) const override;
+    std::optional<std::vector<std::uint8_t>> music(std::string_view name, std::string& error) const override;
+    std::optional<LevelData> level(std::string_view name, std::string& error) const override;
+    std::optional<Campaign> campaign(std::string_view name, std::string& error) const override;
+    std::optional<StringTable> strings(std::string_view name, std::string& error) const override;
+    std::optional<std::string> script(std::string_view name, std::string& error) const override;
+
+private:
+    const AssetSource& from(std::string_view name) const {
+        return overlay_->find(name) != nullptr ? static_cast<const AssetSource&>(overlaySource_) : base_;
+    }
+
+    std::shared_ptr<const PackFile> overlay_;
+    PackSource overlaySource_;
+    const AssetSource& base_;
+};
+
 }  // namespace bb::core::assets

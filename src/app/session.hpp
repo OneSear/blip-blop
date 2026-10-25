@@ -71,6 +71,11 @@ public:
     // Log file given with --log, empty for the default location.
     std::string logPath() const;
 
+    // The level given with --level ("data/xxx.lvl"), played alone with its
+    // level kind (docs/formats/lst.md); empty for the whole game.
+    std::string onlyLevel() const;
+    int onlyLevelKind() const;
+
     // Current time in microseconds: virtual in deterministic mode, wall-clock
     // otherwise.
     std::uint64_t nowMicroseconds() const;

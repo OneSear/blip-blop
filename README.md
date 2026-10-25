@@ -68,6 +68,10 @@ bbassets legacy ../../assets/source out        # source assets -> 2002 files (fo
 bbassets ids ../../assets/source ../../src/assets/include   # sprite-name constants
 ```
 
+The level editor `bbedit` (same directory) edits the levels and the sprite
+hotspots and names of `assets/source`, and test-plays a level with F5:
+see [docs/editor.md](docs/editor.md).
+
 ## Running
 
 ```sh
@@ -127,9 +131,9 @@ src/platform/             platform interfaces, and their SDL 2 backend (the only
 src/game/                 the game: world, entities of every world, screens, campaign
 src/app/                  the game executable: entry point, session (record/replay), input, settings
 tests/                    unit, conformance and regression tests; benchmarks in tests/bench
-tools/                    developer tools (replay script generator, ...)
+tools/                    developer tools: bbassets, the level editor bbedit, replay scripts, ...
 vc-projects/Blip_n_Blop_3 data.zip, the 2002 game data (the 2002 code is in the git history)
-vc-projects/*Editor*      the original MFC level, sprite, font and sound editors (Windows)
+vc-projects/*Editor*      the original MFC level, sprite, font and sound editors (Windows; replaced by bbedit)
 level-editor/, assets-gfx/ source art for the editors
 docs/                     file formats, replay format, progress notes
 ```

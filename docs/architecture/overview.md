@@ -15,14 +15,16 @@ src/core       bb::core: pixmaps, sprites, fonts, asset readers and packs, input
                settings, Rng, FixedClock, hashing, Log, Vfs
 src/platform   bb::platform: the interfaces (Display, InputSource, Audio, Clock, System,
                Platform) and the SDL 2 backend (sdl2/)
-tools          bbassets (extract, pack, ids), replay scripts
+tools          bbassets (extract, pack, ids), the level editor bbedit (Dear ImGui on SDL 2,
+               docs/editor.md), replay scripts
 ```
 
 Dependencies point down only: `app` uses `game`, `core` and the platform
 interfaces, and is the only user of a backend (`bb::platform::sdl2`);
 `game` uses `core` and the platform interfaces (the audio banks hold a
-`platform::Audio`); `core` uses the C++17 standard library only. No file
-outside `src/platform/sdl2` includes an SDL header.
+`platform::Audio`); `core` uses the C++17 standard library only. No file of
+the game outside `src/platform/sdl2` includes an SDL header (the editor,
+a tool, uses SDL directly).
 
 ## The run
 

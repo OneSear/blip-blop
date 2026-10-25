@@ -399,7 +399,14 @@ int App::run() {
         // The screens, from the intro to the main menu's EXIT.
         game::Game game(services_);
         game::ScreenStack screens;
-        screens.push(std::make_unique<game::AttractScreen>(services_, game));
+        if (session_.onlyLevel().empty()) {
+            screens.push(std::make_unique<game::AttractScreen>(services_, game));
+        } else {
+            // One level, one player (the level editor's test).
+            auto campaign = std::make_unique<game::CampaignScreen>(services_, game, 1, 0);
+            campaign->playOnly(session_.onlyLevel(), session_.onlyLevelKind());
+            screens.push(std::move(campaign));
+        }
         runScreens(screens);
     }
 

@@ -8,6 +8,7 @@ class FileReader;
 class Vfs;
 namespace assets {
 class AssetSource;
+class PackFile;
 }
 }  // namespace bb::core
 
@@ -40,12 +41,16 @@ public:
     // The source of the game assets: the 2002 files of the data directory,
     // unless another source was set (--pack).
     void setAssetSource(std::unique_ptr<core::assets::AssetSource> source);
+    // Assets of this pack replace those of the source (--overlay).
+    void setOverlay(std::shared_ptr<const core::assets::PackFile> overlay);
     const core::assets::AssetSource& assets();
 
 private:
     const core::FileReader& reader_;
     std::unique_ptr<core::Vfs> vfs_;
     std::unique_ptr<core::assets::AssetSource> assetSource_;
+    std::shared_ptr<const core::assets::PackFile> overlay_;
+    std::unique_ptr<core::assets::AssetSource> overlaySource_;  // over assetSource_
     bool chosen_ = false;  // --data or --pack was given
 };
 

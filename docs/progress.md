@@ -306,7 +306,84 @@ fixes (the ASan snapshot of 12:24) and after:
   ("0 identifiers found", exit status lost). It now names the
   interpreter's path; checked in the cross build and on macOS.
 
-## Phase 8 — Tools (in progress)
+## Phase 8 — Tools (done)
+
+### The level editor `bbedit` (25 October 2026)
+
+The plan's optional editor (§5 Phase 8): `tools/editor`, user guide
+[editor.md](editor.md).
+
+* **What the 2002 editor did** (`vc-projects/BB3_level_editor`, read for
+  this; 5,757 lines in `BB3_level_editorDlg.cpp`): one 640×480 view without
+  zoom; a tool list of 27 entries (platforms with a brush on 8 layers,
+  solid and blood walls, every event type, starts, victory, the seven bank
+  names); placing with the left button, deleting with the right. No
+  selection, move, edit of a placed object, undo, test play, or change of
+  the screens or the level's width ("Nouveau" had no handler). Defects
+  found in it: a level longer than the editor's screen list overflowed the
+  platform and wall arrays; loading kept the previous level's pickups;
+  unused event fields were saved uninitialised (the `0xCD` fill and garbage
+  the source levels keep as `null`).
+* **The new editor**: SDL 2 and Dear ImGui 1.92.9b (vendored,
+  `third_party/imgui`). Everything the 2002 editor edited, plus selection,
+  moving by dragging, editing any field of a placed event by name (entity
+  types by their registry names, flags by name, conditions by meaning),
+  duplicate, delete, 200 steps of undo (a stroke or a drag is one step),
+  zoom and pan, the screen sequence (the level's width), the markers, new
+  levels, and sprite hotspots and names (`sprites.json`). Its document
+  model (`level_document.hpp`) has no interface code and its own tests.
+* **The 2002 activation rules, checked on the data**: x − 750 / x + 50 for
+  enemies (facing), x − 800 for generators (x + 50 when temporary and
+  facing right), x − 660 for midground, x − 740 for props, foreground,
+  vehicles and pickups (`OnButtonSave`, lines 2564–2953). All 1,141
+  positioned events of the 12 levels match; the editor recomputes the
+  activation x of an event when it moves and keeps the descending order
+  the game reads.
+* **Files unchanged when nothing changed**: every source level loads and
+  saves byte for byte, and every one of the 56 sprite manifests rewrites
+  byte for byte (test `editor`). New events set every named field and
+  leave the others at the 2002 fill, so the files keep their form (no
+  `"_slot"` keys).
+* **Entity images**: the 2002 icons are copies of bank images. The script
+  `tools/editor/make_entity_previews.py` compares each icon BMP with the
+  bank images of the same size: 64 of the 89 enemy and prop types match at
+  0 % difference (0.1 % for `lemmings.water`) once 16-bit rounding (12
+  levels per channel) is allowed; a contact sheet of the 64 pairs was
+  checked by eye. With a tolerance of 8 only 49 matched, the 15 others at
+  6–19 % (rounding). The rest have no icon of a bank image's size or
+  differ by 9 % or more. Output: `assets/source/editor/entities.json`,
+  which `bbassets` ignores (the pack built with it is byte for byte the
+  previous one). Screenshots show the entities standing on the platform
+  lines (snuf1 at x 1350).
+* **Test play**: new game options `--level <file> <kind>` (one level, one
+  player, through the campaign screen's `playOnly()`; quits after it,
+  without ending, game over or hi-scores) and `--overlay <pack>` (assets
+  of a pack replace the game's: `OverlayPackSource`). F5 writes the level
+  alone into an overlay pack (in memory, milliseconds) and starts the game
+  on the game's own pack; Shift+F5 packs the whole source tree first
+  (40.7 s with a debug `bbassets`, 11.5 s with a release one, measured).
+  Checked headless: the overlay with the unchanged snuf1 gives the
+  fingerprint of the run without it (`faba298c9854a1c2` after 900 frames),
+  an overlay with snuf1's events removed another (`b4e922122537f9b7`); a
+  format test checks the overlay serves its level and only that.
+* **Its own interface test**: `bbedit --self-test` (ctest `editor.ui`)
+  runs with SDL's dummy video driver and drives the interface with SDL
+  input events: place an enemy (at the clicked point, activation x − 750),
+  undo; paint a platform stroke on layer 0 (columns 1997 to 2103 at 200,
+  no other), undo it in one step; drag an enemy by 40 pixels and undo;
+  delete one and undo; 16 checks. It found two faults of its own while
+  being written (input sent before the layout settled; a Ctrl modifier
+  left down, which ImGui turns into a right click on macOS).
+  `--screenshot`, `--at` and `--show` save the window for a look.
+* **Facts found**: the victory needs flag 1 == value 1 *and* flag 2 ==
+  value 2 with the screen's left edge at victory x or further
+  (`level.cpp:514`); the game ignores overkill and dynamic-load events and
+  a pickup generator's type; a midground decal left of x 320 is dropped at
+  once (2002 rule). The editor says so in its inspector.
+* **Not done**: editing the decor images, fonts and sounds (their sources
+  are PNG, WAV and JSON files for ordinary tools) and the campaign,
+  strings and scripts (text files). The editor is not in the packages
+  (a developer tool, built with the tools).
 
 ### Content validation in the tests (24 October 2026)
 
@@ -327,8 +404,7 @@ fixes (the ASan snapshot of 12:24) and after:
 * CI runs both (`ctest -LE replay`). Both pass on Linux (GCC 13), after
   a fix: GCC could not compile a `REQUIRE_MESSAGE` on a `shared_ptr`
   (doctest prints the operands; Apple Clang accepted it).
-* Not done: the optional editor (Dear ImGui) replacing the MFC tools; the
-  MFC editor with `bbassets legacy` / `extract` stays the authoring path.
+* The optional editor was done on 25 October (above).
 
 ## Phase 7 — Desktop release (in progress)
 

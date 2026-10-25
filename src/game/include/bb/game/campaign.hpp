@@ -61,6 +61,12 @@ public:
     // players: 1 or 2; character: 0 Blip, 1 Blop for player 1.
     CampaignScreen(Services& services, Game& game, int players, int character)
         : services_(services), game_(game), players_(players), character_(character) {}
+    // Plays one level only ("data/xxx.lvl", a level kind of bb.lst), then
+    // stops: no ending, game over or hi-scores (the level editor's test).
+    void playOnly(std::string file, int kind) {
+        onlyFile_ = std::move(file);
+        onlyKind_ = kind;
+    }
     Frame update(ScreenStack& stack) override;
     const char* name() const override { return "campaign"; }
 
@@ -90,6 +96,8 @@ private:
         HiScore2,
         Table,
         Done,
+        OnlyLevel,
+        OnlyLevelDone,
     };
 
     // What the ending loads (the locals of the 2002 jouePartie).
@@ -110,6 +118,8 @@ private:
     int part_ = 0;
     std::unique_ptr<Ending> ending_;
     unsigned int key_ = 0;
+    std::string onlyFile_;
+    int onlyKind_ = 0;
 };
 
 // A level: the briefing, the frames and their ticks (with the pause menu
