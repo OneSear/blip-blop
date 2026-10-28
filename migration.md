@@ -548,7 +548,7 @@ Per class: rename; `enum class` states; animation tables as `constexpr`; named s
 
 ### Phase 9 — Optional improvements (not part of the migration)
 
-Render interpolation for 60 Hz displays, French text restoration, configurable scaling filters/shaders, remappable third-player controller for couch play, restored cut content, achievements. Listed so they do not creep into Phases 0–8.
+Render interpolation for 60 Hz displays, French text restoration, configurable scaling filters/shaders, remappable controller buttons for both players (a third player is out of scope: the game is built for two, Blip and Blop), restored cut content, achievements. Listed so they do not creep into Phases 0–8.
 
 ---
 
