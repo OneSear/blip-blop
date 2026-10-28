@@ -63,6 +63,19 @@ jobs:
         shell: bash
         run: find build/release/packages/_CPack_Packages -name '*.log' -exec sh -c 'echo "== $1"; cat "$1"' sh {} \; || true
 
+      # The definition of done asks for the campaign completed from the
+      # release packages: install each package (the zip on Windows, not the
+      # installer, which needs a desktop session) and replay it there.
+      - name: Replays from the package
+        shell: bash
+        run: |
+          case "$RUNNER_OS" in
+            Linux) package=$(ls build/release/packages/BlipBlop-*.tar.gz) ;;
+            macOS) package=$(ls build/release/packages/BlipBlop-*.dmg) ;;
+            Windows) package=$(ls build/release/packages/BlipBlop-*.zip) ;;
+          esac
+          tools/replays/package-replay.sh "$package" campaign smoke
+
       # The present paths (D-08) on a hosted Windows VM: no GPU, so the
       # numbers only show that the paths work; real hardware is measured
       # with docs/release-checklist.md.

@@ -81,6 +81,17 @@ cmake --build --preset default --target update_replay_hashes
 and commit them in a dedicated, reviewed commit that says why the frames
 changed.
 
+The same replays can be played with the game installed from a release
+package, run from an empty directory so it finds its data the way a
+player's copy does (CI does it with `campaign` and `smoke` on the three
+platforms):
+
+```sh
+tools/replays/package-replay.sh build/release/packages/BlipBlop-0.1.0-Darwin.dmg campaign smoke
+```
+
+It takes the `.dmg`, the Linux `.tar.gz` or the Windows `.zip`.
+
 A failing replay test does the first step itself: it dumps the frames of
 the build under test, one in six, from the frame checkpoint before the
 divergence to the one after, into `build/<preset>/tests/replays/out/<replay>-frames/`

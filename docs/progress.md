@@ -454,15 +454,28 @@ The plan's optional editor (§5 Phase 8): `tools/editor`, user guide
   (`CPACK_DMG_SLA_USE_RESOURCE_FILE_LICENSE`), the licence is beside the
   app.
 * Windows: executable, SDL DLLs (`$<TARGET_RUNTIME_DLLS>`), pack, licence,
-  README; NSIS installer and zip. Not built yet (no Windows machine; CI).
+  README; NSIS installer and zip. Built by CI since run 40212003833
+  (25 October 2026; no Windows machine here).
 * Linux: `.tar.gz` of the same folder, SDL from the system. Checked in
   the Ubuntu 24.04 container (GCC 13): the package holds `blipblop`, the
   pack, `LICENSE` and `README.md`; unpacked and run from an empty
   directory, the smoke replay read the pack next to the executable and
   kept its fingerprints. The pack built there is byte for byte the one
   built on macOS.
-* CI (`.github/workflows/ci.yml`, never run yet) packages on each platform
-  and uploads the packages.
+* CI (`.github/workflows/ci.yml`) packages on each platform and uploads
+  the packages.
+* **Replays from the packages (28 October 2026).** The definition of done
+  (§4.5) asks for the campaign completed from the release packages; only
+  the smoke replay had been run from them, by hand.
+  `tools/replays/package-replay.sh` installs a package (mounts the disk
+  image, unpacks the `.tar.gz` or the `.zip`), runs replays with the
+  installed game from an empty directory and compares the fingerprints;
+  CI runs `campaign` and `smoke` after packaging on the three platforms
+  (Windows: the zip; the NSIS installer needs a desktop session). Checked
+  on macOS (x86_64) with the disk image: both match; the log read the
+  pack in `Contents/Resources`. The `campaign` replay plays every level
+  briefly and wins it with the F9 cheat, then the ending and the credits;
+  a full playthrough by a player stays on the release checklist.
 
 ### Windows: cross-build and Wine (24 October 2026)
 

@@ -66,6 +66,16 @@ the release notes.
       crash.
 - [ ] Redefined keys survive a restart.
 
+## The campaign
+
+CI replays the campaign from each package (`tools/replays/package-replay.sh`),
+but that replay wins the levels with the F9 cheat. The definition of done
+(migration.md §4.5) asks for the campaign completed end to end:
+
+- [ ] A game started from the installed package, without cheats, is played
+      through the 12 levels to the ending and the credits (one or two
+      players; continues allowed).
+
 ## Focus and quitting
 
 - [ ] Switching to another application during a level opens the pause
