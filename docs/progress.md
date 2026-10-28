@@ -619,6 +619,8 @@ with vsync too).
   pushed); its static-analysis job now runs clang-tidy on `src`, `tests`
   and `tools` and cppcheck on `src`. cppcheck is not installed on the
   development Mac, so its findings are unknown until CI runs.
+* Resolved: CI has run since 25 October 2026 (run 40137765992 first, all
+  jobs green from run 40212003833).
 
 ## Phase 5 — Content migration (done)
 
@@ -1440,6 +1442,9 @@ them.
 * D-75: the VSYNC option, which needs a frame limiter first.
 * Not presenting unchanged frames in menus (renderer work, Phase 7).
 * Windows build still not verified (since Phase 1).
+* Resolved later: D-75 in Phase 6; the Windows build in Phase 7 (CI,
+  25 October 2026); unchanged frames are still presented, by decision
+  (Phase 7, "Display").
 
 ## Phase 2 — Assets and formats (done; see "Left")
 
@@ -1558,6 +1563,14 @@ fingerprints from `data/` and from a pack built from `assets/source/`.
   committing it, possibly with Git LFS, is the maintainer's decision.
   Until then the build extracts it from `data.zip` when it is missing, and
   `bbassets extract` keeps the names of existing manifests.
+* Resolved later: the player-visible literals went to the string table in
+  Phase 3; `assets/source/` is
+  committed without Git LFS (the maintainer's choice, 25 October 2026).
+  Images are named as the first of a run plus a step, not one by one
+  (Phase 5, "Deviations from the plan"). Still true: a bank is decoded
+  whole when it is loaded (`services.cpp`); peak memory is 85.6 MB in the
+  `video` replay (docs/replays.md), so per-image loading was not needed
+  on the desktop targets.
 
 ### Deviations from the plan
 
@@ -1714,6 +1727,8 @@ unchanged (same expected fingerprints as at the end of Phase 0).
 
 * `bb::core::input::InputMapper` exists but the legacy game still reads
   its own key arrays; the screens of Phase 3 are its first users.
+* Resolved: the legacy game is gone (Phase 5); every screen reads the
+  input through the game's input services.
 
 ## Phase 0 — Baseline, hygiene and safety net
 
