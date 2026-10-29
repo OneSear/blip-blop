@@ -1,0 +1,25 @@
+# Text files are stored with LF line endings.
+* text=auto eol=lf
+
+# Visual C++ 6 project files must keep CRLF or the IDE refuses to load them.
+*.dsp text eol=crlf
+*.dsw text eol=crlf
+
+# Binary data
+*.zip  binary
+*.gfx  binary
+*.lft  binary
+*.sfx  binary
+*.lvl  binary
+*.zik  binary
+*.mp3  binary
+*.ogg  binary
+*.wav  binary
+*.bmp  binary
+*.png  binary
+*.ico  binary
+*.exe  binary
+*.dll  binary
+*.lib  binary
+*.cfg  binary
+*.scr  binary

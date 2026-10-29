@@ -1,0 +1,29 @@
+{
+  "format": "blipblop-sounds",
+  "version": 1,
+  "sounds": [
+    {"file": "00.wav", "voices": 1, "name": "greedy_death"},
+    {"file": "01.wav", "voices": 1},
+    {"file": "02.wav", "voices": 1},
+    {"file": "03.wav", "voices": 1},
+    {"file": "04.wav", "voices": 1, "name": "smurf_death"},
+    {"file": "05.wav", "voices": 1},
+    {"file": "06.wav", "voices": 1},
+    {"file": "07.wav", "voices": 1},
+    {"file": "08.wav", "voices": 1},
+    {"file": "09.wav", "voices": 1},
+    {"file": "10.wav", "voices": 1},
+    {"file": "11.wav", "voices": 1},
+    {"file": "12.wav", "voices": 1},
+    {"file": "13.wav", "voices": 1},
+    {"file": "14.wav", "voices": 1, "name": "greedy_throw"},
+    {"file": "15.wav", "voices": 1},
+    {"file": "16.wav", "voices": 1},
+    {"file": "17.wav", "voices": 1, "name": "wild_comes_down"},
+    {"file": "18.wav", "voices": 1, "name": "wild_shoots"},
+    {"file": "19.wav", "voices": 1, "name": "hadoken"},
+    {"file": "20.wav", "voices": 1, "name": "uppercut"},
+    {"file": "21.wav", "voices": 1, "name": "smurfette_death"},
+    {"file": "22.wav", "voices": 1}
+  ]
+}

@@ -1,0 +1,25 @@
+# Build trees (out-of-source builds only; see CMakePresets.json)
+/build/
+/out/
+CMakeUserPresets.json
+
+# Files the game writes at run time
+*.log
+!docs/history/*.log
+
+# IDE and OS clutter
+.vscode/
+.idea/
+.vs/
+*.ncb
+*.opt
+*.plg
+*.aps
+*.clw
+*.suo
+*.user
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/

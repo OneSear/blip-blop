@@ -1,0 +1,18 @@
+{
+  "format": "blipblop-sprites",
+  "version": 1,
+  "images": [
+    {"file": "000.png", "hotspot": [0, 0], "layout": "rgb555", "name": "game_over"},
+    {"file": "001.png", "hotspot": [0, 0], "layout": "rgb565", "name": "title"},
+    {"file": "002.png", "hotspot": [218, 124], "layout": "rgb555", "name": "select_blip"},
+    {"file": "003.png", "hotspot": [220, 175], "layout": "rgb565", "name": "select_blop"},
+    {"file": "004.png", "hotspot": [18, 18], "layout": "rgb555", "name": "arrow_right"},
+    {"file": "005.png", "hotspot": [0, 18], "layout": "rgb555", "name": "arrow_left"},
+    {"file": "006.png", "hotspot": [0, 0], "layout": "rgb555", "name": "starfield"},
+    {"file": "007.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "008.png", "hotspot": [68, 21], "layout": "rgb555", "name": "name_blip"},
+    {"file": "009.png", "hotspot": [68, 21], "layout": "rgb555", "name": "name_blop"},
+    {"file": "010.png", "hotspot": [276, 16], "layout": "rgb555", "name": "select_title"},
+    {"file": "011.png", "hotspot": [292, 12], "layout": "rgb555", "name": "select_title_fr"}
+  ]
+}

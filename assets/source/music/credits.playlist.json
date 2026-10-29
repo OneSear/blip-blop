@@ -1,0 +1,8 @@
+{
+  "format": "blipblop-playlist",
+  "version": 1,
+  "tracks": [
+    {"file": "data/credits.zik", "name": "credits"},
+    {"file": "data/hard.zik", "name": "hard"}
+  ]
+}

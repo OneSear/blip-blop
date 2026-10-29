@@ -1,0 +1,28 @@
+{
+  "format": "blipblop-sprites",
+  "version": 1,
+  "images": [
+    {"file": "000.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "001.png", "hotspot": [51, 50], "layout": "rgb555"},
+    {"file": "002.png", "hotspot": [66, 64], "layout": "rgb555"},
+    {"file": "003.png", "hotspot": [80, 72], "layout": "rgb555"},
+    {"file": "004.png", "hotspot": [112, 106], "layout": "rgb555"},
+    {"file": "005.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "006.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "007.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "008.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "009.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "010.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "011.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "012.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "013.png", "hotspot": [0, 0], "layout": "rgb555"},
+    {"file": "014.png", "hotspot": [26, 44], "layout": "rgb555"},
+    {"file": "015.png", "hotspot": [35, 36], "layout": "rgb555"},
+    {"file": "016.png", "hotspot": [51, 36], "layout": "rgb555"},
+    {"file": "017.png", "hotspot": [37, 37], "layout": "rgb555"},
+    {"file": "018.png", "hotspot": [23, 41], "layout": "rgb555"},
+    {"file": "019.png", "hotspot": [52, 39], "layout": "rgb555"},
+    {"file": "020.png", "hotspot": [63, 39], "layout": "rgb555"},
+    {"file": "021.png", "hotspot": [46, 36], "layout": "rgb555"}
+  ]
+}

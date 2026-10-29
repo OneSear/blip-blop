@@ -1,0 +1,199 @@
+// The level events (event_*.h/.cpp of 2002) that only act on the World.
+
+#include <string>
+
+#include "bb/core/assets/asset_types.hpp"
+#include "bb/core/log.hpp"
+#include "bb/game/actor.hpp"
+#include "bb/game/level_event.hpp"
+#include "bb/game/world.hpp"
+
+namespace bb::game {
+
+namespace {
+
+using core::assets::LevelEventRecord;
+using core::assets::LevelEventType;
+
+// An image of the level bank placed by a level event (FondStatique, PPlan).
+class Decal : public Actor {
+public:
+    Decal(World& world, bool midground) : Actor(world), midground_(midground) {}
+
+    void update() override {
+        // 2002 rule (FondStatique): a midground decal left of x = 320 is
+        // dropped at once.
+        if (midground_ && x < 320) {
+            dead = true;
+        }
+    }
+
+private:
+    bool midground_;
+};
+
+}  // namespace
+
+bool LevelEvent::wakes(const World& world) {
+    return activationX <= world.camera.x;
+}
+
+void SpawnEvent::run(World& world) {
+    if (world.registry->spawn(world, category_, legacyId_, at_) == nullptr) {
+        core::Log::warning("Unknown entity id " + std::to_string(legacyId_) + " in a level event");
+    }
+}
+
+void ScrollLockEvent::run(World& world) {
+    world.scrollLock.on = true;
+    world.scrollLock.x = activationX;
+    world.scrollLock.condition = condition_;
+    world.scrollLock.flag = flag_;
+    world.scrollLock.value = value_;
+}
+
+void ScrollSpeedEvent::run(World& world) {
+    world.camera.speed = speed_;
+}
+
+void SetFlagEvent::run(World& world) {
+    world.flags.values[flag_] = value_;
+}
+
+void HoldFireEvent::run(World& world) {
+    world.holdFire.on = true;
+    world.holdFire.flag = flag_;
+    world.holdFire.value = value_;
+}
+
+void WeatherEvent::run(World& world) {
+    world.weather.intensity = intensity_;
+    world.weather.type = type_;
+}
+
+void SoundEvent::run(World& world) {
+    world.media.levelSounds->play(sound_);
+}
+
+bool DialogueEvent::ready(const World& world) {
+    return !conditional_ || world.flags.values[flag_] == value_;
+}
+
+void DialogueEvent::run(World& world) {
+    world.dialogueToPlay = scene_;
+}
+
+void DecalEvent::run(World& world) {
+    const bool midground = layer_ == Layer::Midground;
+    auto* decal = new Decal(world, midground);
+    decal->x = x_;
+    decal->y = y_;
+    decal->image = world.media.level->image(image_);
+    (midground ? world.midground : world.foreground).add(decal);
+}
+
+void EnemyGeneratorEvent::run(World& world) {
+    world.enemyGenerators.add(new EnemyGenerator(world, setup_));
+}
+
+void PickupGeneratorEvent::run(World& world) {
+    world.pickupGenerators.add(new PickupGenerator(world, activationX, period_));
+}
+
+bool BannerTextEvent::ready(const World& world) {
+    if (condition_ == 0) {
+        return true;
+    }
+    if (condition_ == 1) {
+        return world.flags.values[flag_] == value_;
+    }
+    return world.flags.values[flag_] >= value_;
+}
+
+void BannerTextEvent::run(World& world) {
+    showBanner(world, text_);
+}
+
+void MusicEvent::run(World& world) {
+    MusicPlayer& music = *world.media.levelMusic;
+    if (play_) {
+        if (world.currentMusic != -1) {
+            music.stop(world.currentMusic);
+        }
+        music.play(track_);
+        world.currentMusic = track_;
+    } else {
+        music.stop(track_);
+        world.currentMusic = -1;
+    }
+}
+
+std::unique_ptr<LevelEvent> makeLevelEvent(const LevelEventRecord& r) {
+    std::unique_ptr<LevelEvent> event;
+
+    switch (static_cast<LevelEventType>(r.type)) {
+        case LevelEventType::Enemy:
+            event = std::make_unique<SpawnEvent>(EntityCategory::Enemy, r.id, SpawnPoint{r.x, r.y, r.value});
+            break;
+        case LevelEventType::AnimatedProp:
+            event = std::make_unique<SpawnEvent>(EntityCategory::Prop, r.id, SpawnPoint{r.x, r.y, 0});
+            break;
+        case LevelEventType::Pickup:
+            event = std::make_unique<SpawnEvent>(EntityCategory::Pickup, r.id, SpawnPoint{r.x, r.y, 0});
+            break;
+        case LevelEventType::ScrollLock:
+            event = std::make_unique<ScrollLockEvent>(r.y, r.capacity, r.value);
+            break;
+        case LevelEventType::ForceScroll:
+            event = std::make_unique<ScrollSpeedEvent>(r.y);
+            break;
+        case LevelEventType::SetFlag:
+            event = std::make_unique<SetFlagEvent>(r.capacity, r.value);
+            break;
+        case LevelEventType::HoldFire:
+            event = std::make_unique<HoldFireEvent>(r.capacity, r.value);
+            break;
+        case LevelEventType::Weather:
+            event = std::make_unique<WeatherEvent>(r.id, r.y);
+            break;
+        case LevelEventType::Sound:
+            event = std::make_unique<SoundEvent>(r.id);
+            break;
+        case LevelEventType::Dialogue:
+            event = std::make_unique<DialogueEvent>(r.id, r.y != 0, r.capacity, r.value);
+            break;
+        case LevelEventType::MidgroundDecal:
+            event = std::make_unique<DecalEvent>(DecalEvent::Layer::Midground, r.id, r.x, r.y);
+            break;
+        case LevelEventType::Foreground:
+            event = std::make_unique<DecalEvent>(DecalEvent::Layer::Foreground, r.id, r.x, r.y);
+            break;
+        case LevelEventType::EnemyGenerator:
+            event = std::make_unique<EnemyGeneratorEvent>(
+                EnemyGenerator::Setup{r.id, r.x, r.y, r.value, r.period, r.capacity, r.temporary != 0});
+            break;
+        case LevelEventType::PickupGenerator:
+            // (The record's pickup type is unused, as in 2002.)
+            event = std::make_unique<PickupGeneratorEvent>(r.period);
+            break;
+        case LevelEventType::BannerText:
+            event = std::make_unique<BannerTextEvent>(r.bank, r.y, r.capacity, r.value);
+            break;
+        case LevelEventType::Music:
+            event = std::make_unique<MusicEvent>(r.id, r.y != 0);
+            break;
+        case LevelEventType::Vehicle:
+            event =
+                std::make_unique<SpawnEvent>(EntityCategory::Vehicle, r.id, SpawnPoint{r.x, r.y, r.value});
+            break;
+        case LevelEventType::Overkill:
+        case LevelEventType::DynamicLoad:
+            return nullptr;
+    }
+    if (event) {
+        event->activationX = r.activationX;
+    }
+    return event;
+}
+
+}  // namespace bb::game

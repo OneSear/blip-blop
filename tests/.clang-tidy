@@ -1,0 +1,7 @@
+# The tests: doctest's REQUIRE ends a test before an optional is read, and
+# the test programs' main functions and static data may throw.
+InheritParentConfig: true
+Checks: >
+  -bugprone-unchecked-optional-access,
+  -bugprone-exception-escape,
+  -bugprone-throwing-static-initialization

@@ -1,0 +1,195 @@
+#pragma once
+
+#include <memory>
+
+#include "bb/game/entity_registry.hpp"
+#include "bb/game/generators.hpp"
+
+namespace bb::core::assets {
+struct LevelEventRecord;
+}
+
+namespace bb::game {
+
+struct World;
+
+// A scripted event of the level (the 2002 Event). Events wait in
+// World::sleepingEvents, in level order, until the camera reaches their
+// activation X; then they wait in World::events until their condition
+// holds, run once and are destroyed.
+class LevelEvent {
+public:
+    virtual ~LevelEvent() = default;
+
+    // Whether it leaves the sleeping list (aReveiller()).
+    virtual bool wakes(const World& world);
+    // Whether it runs now (aActiver()).
+    virtual bool ready(const World&) { return true; }
+    // What it does (doEvent()).
+    virtual void run(World& world) = 0;
+
+    int activationX = 0;
+};
+
+// Creates an enemy, a prop or a pickup of the entity registry.
+class SpawnEvent : public LevelEvent {
+public:
+    SpawnEvent(EntityCategory category, int legacyId, const SpawnPoint& at) noexcept
+        : category_(category), legacyId_(legacyId), at_(at) {}
+    void run(World& world) override;
+
+private:
+    EntityCategory category_;
+    int legacyId_;
+    SpawnPoint at_;
+};
+
+// Locks the scrolling at the activation X until a condition holds.
+class ScrollLockEvent : public LevelEvent {
+public:
+    ScrollLockEvent(int condition, int flag, int value) noexcept
+        : condition_(condition), flag_(flag), value_(value) {}
+    void run(World& world) override;
+
+private:
+    int condition_;  // ScrollLock::Condition
+    int flag_;
+    int value_;
+};
+
+// Sets the scrolling speed (ForceScroll).
+class ScrollSpeedEvent : public LevelEvent {
+public:
+    explicit ScrollSpeedEvent(int speed) noexcept : speed_(speed) {}
+    void run(World& world) override;
+
+private:
+    int speed_;
+};
+
+// Sets a level flag.
+class SetFlagEvent : public LevelEvent {
+public:
+    SetFlagEvent(int flag, int value) noexcept : flag_(flag), value_(value) {}
+    void run(World& world) override;
+
+private:
+    int flag_;
+    int value_;
+};
+
+// The players cannot fire until a flag reaches a value.
+class HoldFireEvent : public LevelEvent {
+public:
+    HoldFireEvent(int flag, int value) noexcept : flag_(flag), value_(value) {}
+    void run(World& world) override;
+
+private:
+    int flag_;
+    int value_;
+};
+
+// Starts rain, snow or the underwater distortion, or stops it.
+class WeatherEvent : public LevelEvent {
+public:
+    WeatherEvent(int type, int intensity) noexcept : type_(type), intensity_(intensity) {}
+    void run(World& world) override;
+
+private:
+    int type_;
+    int intensity_;
+};
+
+// Plays a sound of the level bank.
+class SoundEvent : public LevelEvent {
+public:
+    explicit SoundEvent(int sound) noexcept : sound_(sound) {}
+    void run(World& world) override;
+
+private:
+    int sound_;
+};
+
+// Starts a dialogue scene, at once or when a flag equals a value.
+class DialogueEvent : public LevelEvent {
+public:
+    DialogueEvent(int scene, bool conditional, int flag, int value) noexcept
+        : scene_(scene), conditional_(conditional), flag_(flag), value_(value) {}
+    bool ready(const World& world) override;
+    void run(World& world) override;
+
+private:
+    int scene_;
+    bool conditional_;
+    int flag_;
+    int value_;
+};
+
+// Places an image of the level bank behind the entities (midground) or in
+// front of them (foreground).
+class DecalEvent : public LevelEvent {
+public:
+    enum class Layer { Midground, Foreground };
+    DecalEvent(Layer layer, int image, int x, int y) noexcept : layer_(layer), image_(image), x_(x), y_(y) {}
+    void run(World& world) override;
+
+private:
+    Layer layer_;
+    int image_;
+    int x_;
+    int y_;
+};
+
+// Starts an enemy generator (EventGenEnnemi).
+class EnemyGeneratorEvent : public LevelEvent {
+public:
+    explicit EnemyGeneratorEvent(const EnemyGenerator::Setup& setup) noexcept : setup_(setup) {}
+    void run(World& world) override;
+
+private:
+    EnemyGenerator::Setup setup_;
+};
+
+// Starts a pickup generator (EventGenBonus).
+class PickupGeneratorEvent : public LevelEvent {
+public:
+    explicit PickupGeneratorEvent(int period) noexcept : period_(period) {}
+    void run(World& world) override;
+
+private:
+    int period_;
+};
+
+// Shows a banner text, at once or when a flag equals or reaches a value
+// (EventTexte).
+class BannerTextEvent : public LevelEvent {
+public:
+    BannerTextEvent(int text, int condition, int flag, int value) noexcept
+        : text_(text), condition_(condition), flag_(flag), value_(value) {}
+    bool ready(const World& world) override;
+    void run(World& world) override;
+
+private:
+    int text_;
+    int condition_;  // 0 at once, 1 flag == value, else flag >= value
+    int flag_;
+    int value_;
+};
+
+// Plays a music track of the level, stopping the one playing, or stops
+// one (EventMusic).
+class MusicEvent : public LevelEvent {
+public:
+    MusicEvent(int track, bool play) noexcept : track_(track), play_(play) {}
+    void run(World& world) override;
+
+private:
+    int track_;
+    bool play_;
+};
+
+// The event of a level file record, or null for the unused types
+// (overkill, dynamic load).
+std::unique_ptr<LevelEvent> makeLevelEvent(const core::assets::LevelEventRecord& record);
+
+}  // namespace bb::game

@@ -1,0 +1,12 @@
+{
+  "format": "blipblop-sounds",
+  "version": 1,
+  "sounds": [
+    {"file": "00.wav", "voices": 1},
+    {"file": "01.wav", "voices": 1, "name": "lemming_death_rare"},
+    {"file": "02.wav", "voices": 1},
+    {"file": "03.wav", "voices": 1},
+    {"file": "04.wav", "voices": 1},
+    {"file": "05.wav", "voices": 1, "name": "script_cue"}
+  ]
+}

@@ -1,0 +1,14 @@
+# Style for new code (src/, tests/, tools/). The legacy tree has its own
+# .clang-format that disables formatting: it is rewritten, not reformatted.
+BasedOnStyle: Google
+Language: Cpp
+Standard: c++17
+IndentWidth: 4
+ColumnLimit: 110
+AccessModifierOffset: -4
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+DerivePointerAlignment: false
+PointerAlignment: Left
+IncludeBlocks: Preserve
