@@ -1577,8 +1577,13 @@ void EditorApp::canvasInput(bool hovered) {
         }
     }
 
-    const auto ix = static_cast<std::int32_t>(std::floor(wx));
-    const auto iy = static_cast<std::int32_t>(std::floor(wy));
+    // Before the first mouse event Dear ImGui puts the mouse at -FLT_MAX,
+    // which does not fit an int (UBSan, the self-test on Linux).
+    const auto toLevel = [](float v) {
+        return static_cast<std::int32_t>(std::clamp(std::floor(v), -1.0e9f, 1.0e9f));
+    };
+    const auto ix = toLevel(wx);
+    const auto iy = toLevel(wy);
     switch (tool_) {
         case Tool::Select: {
             if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
