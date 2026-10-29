@@ -9,9 +9,13 @@
 #            image, with the licence and the README beside it.
 #   Linux:   a .tar.gz of the folder; SDL 2 comes from the system.
 #
+# The version in the package names and the macOS app: the project's, or
+# the release's (-DBB_PACKAGE_VERSION=1.2.0, .github/workflows/release.yml).
+#
 # The game finds its data next to the executable (bb::app::locateGameData);
 # in an app bundle SDL reports Contents/Resources as that directory.
 
+set(BB_PACKAGE_VERSION "${PROJECT_VERSION}" CACHE STRING "Version of the packages (default: the project's)")
 set(BB_PACKAGE_DOCS "${CMAKE_SOURCE_DIR}/LICENSE" "${CMAKE_SOURCE_DIR}/README.md")
 
 if(APPLE)
@@ -85,7 +89,7 @@ endif()
 set(CPACK_PACKAGE_NAME "BlipBlop")
 set(CPACK_PACKAGE_VENDOR "LOADED Studio")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Blip & Blop, a 2D shooter by LOADED Studio (2002)")
-set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_VERSION "${BB_PACKAGE_VERSION}")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "Blip and Blop")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 set(CPACK_PACKAGE_EXECUTABLES "blipblop" "Blip & Blop")

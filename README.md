@@ -56,6 +56,15 @@ test) and `tools/docker/windows-cross-check.sh` (a MinGW build for Windows,
 every test and replay under Wine). Before a release, the manual checks of
 [docs/release-checklist.md](docs/release-checklist.md).
 
+Releases: pushing a tag `v*` (for example `git tag v1.0.0 && git push
+origin v1.0.0`), or creating a release with a new tag in GitHub, runs
+`.github/workflows/release.yml`. It builds the packages on Windows, macOS
+and Linux with the tag's version, tests each (unit tests, then the
+campaign and smoke replays played from the package) and attaches them to
+the tag's release. A release it has to create starts as a draft with
+generated notes and is published once the three platforms are attached.
+For an existing tag: Actions > Release > Run workflow.
+
 ### Assets
 
 The asset tool `bbassets` (built in `build/<preset>/tools/`) converts between
