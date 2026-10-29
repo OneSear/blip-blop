@@ -561,6 +561,18 @@ The plan's optional editor (§5 Phase 8): `tools/editor`, user guide
   pack in `Contents/Resources`. The `campaign` replay plays every level
   briefly and wins it with the F9 cheat, then the ending and the credits;
   a full playthrough by a player stays on the release checklist.
+* **The Windows packages did not start (found 28 October 2026 by the step
+  above, run 40784663938).** The installed game exited with 0xc0000135
+  (a DLL not found): the packages held SDL2 and SDL2_mixer
+  (`$<TARGET_RUNTIME_DLLS>` lists the direct DLLs only), not SDL2_mixer's
+  codecs (`ogg`, `vorbis`, `vorbisfile`, `mpg123`, `wavpackdll` from
+  vcpkg), which vcpkg copies next to the built game, so every test of the
+  build tree passed. `cmake/BBInstallWindowsDlls.cmake` now copies every
+  DLL the game loads, recursively, at install time
+  (`file(GET_RUNTIME_DEPENDENCIES)`, system DLLs excluded; an unresolved
+  one stops the packaging), and `InstallRequiredSystemLibraries` adds the
+  Microsoft C++ runtime they are built against (the CI machine has it
+  installed, so only a clean machine would show its absence).
 
 ### Windows: cross-build and Wine (24 October 2026)
 

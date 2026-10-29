@@ -69,6 +69,18 @@ else()
     if(WIN32 AND NOT CMAKE_VERSION VERSION_LESS 3.21)
         install(FILES "$<TARGET_RUNTIME_DLLS:blipblop>" DESTINATION .)
     endif()
+    if(CMAKE_HOST_WIN32)
+        # And the DLLs those load (cmake/BBInstallWindowsDlls.cmake). Only on
+        # a Windows host: the MinGW cross-build has no tool to read them.
+        install(CODE "set(BB_GAME \"$<TARGET_FILE:blipblop>\")")
+        install(SCRIPT "${CMAKE_CURRENT_LIST_DIR}/BBInstallWindowsDlls.cmake")
+    endif()
+    if(MSVC)
+        # The Microsoft C++ runtime the game and vcpkg's DLLs are built
+        # against, for machines without the redistributable.
+        set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION .)
+        include(InstallRequiredSystemLibraries)
+    endif()
 endif()
 
 set(CPACK_PACKAGE_NAME "BlipBlop")
