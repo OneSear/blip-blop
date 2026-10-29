@@ -9,6 +9,8 @@
 #
 # PACKAGE: the Linux .tar.gz, the macOS .dmg or the Windows .zip made by
 # cpack. REPLAY: names in tests/replays (default: campaign smoke).
+# BB_RUN_WITH (optional): a command that runs the game, as a CMake list:
+# "arch;-x86_64" plays the Intel half of the universal macOS app (Rosetta).
 set -e
 root=$(cd "$(dirname "$0")/../.." && pwd)
 package=$1
@@ -54,7 +56,7 @@ work=$(native "$work")
 
 status=0
 for name in "$@"; do
-    cmake -DGAME="$game" \
+    cmake -DGAME="$game" "-DEMULATOR=${BB_RUN_WITH:-}" \
           -DREPLAY="$root/tests/replays/$name.bbreplay" \
           -DEXPECTED="$root/tests/replays/expected/$name.bbhash" \
           -DOUTPUT="$work/out/$name.bbhash" \

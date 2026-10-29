@@ -58,12 +58,15 @@ every test and replay under Wine). Before a release, the manual checks of
 
 Releases: pushing a tag `v*` (for example `git tag v1.0.0 && git push
 origin v1.0.0`), or creating a release with a new tag in GitHub, runs
-`.github/workflows/release.yml`. It builds the packages on Windows, macOS
-and Linux with the tag's version, tests each (unit tests, then the
+`.github/workflows/release.yml`. It builds the packages on Windows (64 and
+32 bits: `win64` and `win32` files), macOS and Linux with the tag's version, tests each (unit tests, then the
 campaign and smoke replays played from the package) and attaches them to
 the tag's release. A release it has to create starts as a draft with
 generated notes and is published once the three platforms are attached.
-For an existing tag: Actions > Release > Run workflow.
+For an existing tag: Actions > Release > Run workflow. The macOS disk
+image holds a universal app (Apple silicon and Intel, macOS 11 or later):
+the workflows build SDL 2 so with `tools/macos/sdl2-universal.sh` instead
+of using Homebrew's.
 
 ### Assets
 
