@@ -26,6 +26,10 @@ int aliasOf(int player, int action) {
 void apply(const core::Settings& settings, game::Options& options, game::Input& in) {
     options.vsync = settings.vsync;
     options.fullscreen = settings.fullscreen;
+    options.language = settings.language;
+    options.integerScaling = settings.integerScaling;
+    options.smoothFilter = settings.smoothFilter;
+    options.smoothMotion = settings.smoothMotion;
     for (int p = 0; p < input::kPlayerCount; ++p) {
         for (int a = 0; a < input::kActionCount; ++a) {
             in.setAlias(aliasOf(p, a),
@@ -38,7 +42,10 @@ core::Settings current(const game::Options& options, const game::Input& in) {
     core::Settings settings;
     settings.vsync = options.vsync;
     settings.fullscreen = options.fullscreen;
-    settings.language = input::Language::English;
+    settings.language = options.language;
+    settings.integerScaling = options.integerScaling;
+    settings.smoothFilter = options.smoothFilter;
+    settings.smoothMotion = options.smoothMotion;
     for (int p = 0; p < input::kPlayerCount; ++p) {
         for (int a = 0; a < input::kActionCount; ++a) {
             settings.bindings.set(p, input::kActions[static_cast<std::size_t>(a)],

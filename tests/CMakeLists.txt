@@ -100,6 +100,11 @@ if(Python3_Interpreter_FOUND)
     # through the cross-compiling emulator (Wine), which loses the result.
     add_test(NAME naming.french
         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/tools/check_identifiers.py" "${CMAKE_SOURCE_DIR}")
+    # The translations use only characters the fonts have, and the
+    # dialogues fit their box (tools/data/check_strings.py).
+    add_test(NAME strings.fonts
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/tools/data/check_strings.py"
+                "${CMAKE_SOURCE_DIR}/assets/source")
 endif()
 
 add_subdirectory(replays)

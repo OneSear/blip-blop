@@ -25,16 +25,20 @@ void Decor::rewind() noexcept {
     ringX_ = 0;
 }
 
-void Decor::draw(gfx::Pixmap& dst) {
+void Decor::clampCamera() noexcept {
     Camera& camera = world_.camera;
     const int levelWidth = world_.collision.width;
-    const int screenCount = world_.collision.screens;
-
     if (camera.x < 0) {
         camera.x = 0;
     } else if (camera.x > levelWidth - 640) {
         camera.x = levelWidth - 640;
     }
+}
+
+void Decor::draw(gfx::Pixmap& dst) {
+    clampCamera();
+    const Camera& camera = world_.camera;
+    const int screenCount = world_.collision.screens;
 
     const int x1 = camera.x % kRingWidth;
     const int x2 = (camera.x + 640) % kRingWidth;

@@ -123,6 +123,19 @@ void forEachPair(EntityList<Entity>& first, EntityList<Entity>& second, F&& f) {
 
 }  // namespace
 
+void World::rememberPositions() {
+    motion.previousCameraX = camera.x;
+    const auto remember = [](Entity* e) {
+        e->previousX = e->x;
+        e->previousY = e->y;
+    };
+    for (EntityList<Entity>* list :
+         {&players, &playerShots, &cowBombs, &impacts, &vehicles, &enemies, &enemyShots, &pickups, &props,
+          &midground, &foreground, &movingPlatforms, &blood, &gore, &weatherParticles, &bubbles}) {
+        list->forEach(remember);
+    }
+}
+
 void World::updateEvents() {
     // Sleeping events move to the active list as the camera reaches them.
     if (!sleepingEvents.empty()) {

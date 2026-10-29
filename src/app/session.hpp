@@ -55,6 +55,9 @@ public:
     // frames.
     bool deterministic() const;
     bool headless() const;
+    // --smooth-motion: the option on from the start (the regression test
+    // that it changes no tick).
+    bool smoothMotion() const;
     bool safeMode() const;
     // The /cheat and /quiet switches (also replayed from a recording).
     bool cheats() const;

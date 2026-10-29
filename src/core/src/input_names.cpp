@@ -131,7 +131,21 @@ std::string displayName(Code code, Language language) {
         }
         return buffer;
     }
+    const char* english = nullptr;
+    for (const auto& k : kDisplayEnglish) {
+        if (k.code == code) {
+            english = k.name;
+            break;
+        }
+    }
     if (language == Language::French) {
+        // The 2002 French table named DirectInput scan codes, the places of
+        // the keys on an AZERTY keyboard ("Q" for the key at A's place).
+        // The codes are SDL key codes now, which follow the keyboard's
+        // layout: a letter or a sign is the one on the key.
+        if (english != nullptr && english[0] != '\0' && english[1] == '\0') {
+            return english;
+        }
         for (const auto& k : kDisplayFrench) {
             if (k.code == code) {
                 return k.name;
@@ -139,12 +153,7 @@ std::string displayName(Code code, Language language) {
         }
         return "INDEFINIE";
     }
-    for (const auto& k : kDisplayEnglish) {
-        if (k.code == code) {
-            return k.name;
-        }
-    }
-    return "UNDEFINED";
+    return english != nullptr ? english : "UNDEFINED";
 }
 
 }  // namespace bb::core::input

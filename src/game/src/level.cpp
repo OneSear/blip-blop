@@ -145,6 +145,7 @@ void Level::reset() {
 
 void Level::tick(const CheatKeys& cheats) {
     World& w = world_;
+    w.rememberPositions();
 
     w.blink = !w.blink;
     if (w.blink) {
@@ -536,6 +537,17 @@ void Level::drawWorld(core::gfx::Pixmap& screen, Decor& decor) {
     namespace gfx = core::gfx;
     World& w = world_;
 
+    // Smooth motion (World::Motion): the camera too is drawn between the
+    // last two ticks, when it moved forward by at most 2 pixels (the ring of
+    // the decor holds the 2 columns before the camera, Decor::draw). Its
+    // place is put back after drawing.
+    decor.clampCamera();
+    const int cameraX = w.camera.x;
+    const int cameraMoved = cameraX - w.motion.previousCameraX;
+    if (w.motion.on && cameraMoved > 0 && cameraMoved <= 2) {
+        w.camera.x += w.motion.offset(w.motion.previousCameraX, cameraX);
+    }
+
     decor.draw(screen);
 
     drawAll(w.midground);
@@ -593,6 +605,8 @@ void Level::drawWorld(core::gfx::Pixmap& screen, Decor& decor) {
             gfx::fill(screen, &gap, black);
         }
     }
+
+    w.camera.x = cameraX;
 }
 
 void Level::drawOverlays(core::gfx::Pixmap& screen) {

@@ -64,6 +64,9 @@ private:
     void connectServices();
     void runScreens(game::ScreenStack& stack);
     void present();
+    // Loads the string table of the language (fr.dat or uk.dat); English
+    // when the French table is missing (the 2002 data has none).
+    bool loadStrings(core::input::Language language);
     // An error or a warning, logged and shown in a message box.
     void error(const std::string& text);
     void warning(const std::string& text);
@@ -76,6 +79,10 @@ private:
     // the platform clock).
     std::uint64_t nextFrame_ = 0;
     bool fullscreenKey_ = false;  // F10 held at the last frame
+    // The options the display and the strings were last set up for.
+    bool integerScaling_ = false;
+    bool smoothFilter_ = false;
+    core::input::Language language_ = core::input::Language::English;
     // Presented frames and when the first was (for the log).
     std::uint64_t presented_ = 0;
     std::uint64_t firstPresent_ = 0;

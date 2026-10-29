@@ -25,8 +25,11 @@ public:
     // Back to the first column (level start).
     void rewind() noexcept;
 
+    // Keeps the camera inside the level (from 0 to its width less a
+    // screen), as the 2002 drawScrolling() did before drawing.
+    void clampCamera() noexcept;
     // Fills the ring up to the camera, then copies the screen into dst.
-    // Clamps the camera to the level first, as the 2002 drawScrolling().
+    // Clamps the camera to the level first.
     void draw(core::gfx::Pixmap& dst);
 
     // LevelEffects: engraves image into the ring at level position (x, y),

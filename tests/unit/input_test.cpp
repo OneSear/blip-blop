@@ -41,7 +41,10 @@ TEST_CASE("display names are the ones the 2002 game printed") {
     CHECK(in::displayName(in::kKeyLeftCtrl, in::Language::English) == "LEFT CONTROL");
     CHECK(in::displayName(in::kKeyUp, in::Language::English) == "UP ARROW");
     CHECK(in::displayName(in::kKeyA, in::Language::English) == "A");
-    CHECK(in::displayName(in::kKeyA, in::Language::French) == "Q");  // AZERTY position table
+    // The French table named AZERTY positions; SDL key codes follow the
+    // layout, so letters keep their names.
+    CHECK(in::displayName(in::kKeyA, in::Language::French) == "A");
+    CHECK(in::displayName(in::kKeyLeftCtrl, in::Language::French) == "CONTROLE GAUCHE");
     CHECK(in::displayName(in::padCode(0, 2), in::Language::English) == "JOY1 BUTTON2");
     CHECK(in::displayName(in::padCode(0, 2), in::Language::French) == "JOY1 BUTTON3");
     CHECK(in::displayName(in::padCode(1, in::kPadLeft), in::Language::English) == "JOY2 LEFT");
@@ -53,10 +56,13 @@ TEST_CASE("settings round-trip through their text form") {
     s.vsync = false;
     s.fullscreen = true;
     s.language = in::Language::French;
+    s.integerScaling = true;
+    s.smoothMotion = true;
     s.bindings.set(1, in::Action::Fire, in::padCode(0, 5));
     const std::string text = s.serialize();
-    CHECK(text.rfind("blipblop-settings 1\nvsync off\nfullscreen on\nlanguage french\np1.up key:up\n", 0) ==
-          0);
+    CHECK(text.rfind("blipblop-settings 1\nvsync off\nfullscreen on\nlanguage french\nscaling integer\n"
+                     "filter sharp\nsmooth-motion on\np1.up key:up\n",
+                     0) == 0);
 
     std::string error;
     std::vector<std::string> warnings;
@@ -65,12 +71,18 @@ TEST_CASE("settings round-trip through their text form") {
     CHECK(back->vsync == false);
     CHECK(back->fullscreen == true);
     CHECK(back->language == in::Language::French);
+    CHECK(back->integerScaling);
+    CHECK_FALSE(back->smoothFilter);
+    CHECK(back->smoothMotion);
     CHECK(back->bindings == s.bindings);
     CHECK(warnings.size() == 1);
 
     CHECK_FALSE(bb::core::Settings::parse("vsync on\n", error, warnings).has_value());
     CHECK_FALSE(
         bb::core::Settings::parse("blipblop-settings 1\np1.fire key:nope\n", error, warnings).has_value());
+    CHECK_FALSE(
+        bb::core::Settings::parse("blipblop-settings 1\nfilter blurry\n", error, warnings).has_value());
+    CHECK(error == "line 2: filter must be sharp or smooth");
 }
 
 TEST_CASE("the shipped bb.cfg imports with player 2 reset to the defaults") {

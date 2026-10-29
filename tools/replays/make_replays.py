@@ -121,7 +121,9 @@ def menus():
     """The menus the other replays do not reach: main menu wrap-around, exit
     confirmation, options, key redefinition, Blop selection, pause menu
     options and exit, the pause menu opened by a focus loss, dialogue skip,
-    the attract cycle interrupted by keys, and a normal quit."""
+    the attract cycle interrupted by keys, and a normal quit. The Phase 9
+    options are all switched on, so everything from the key pages on is in
+    French and the level is drawn with smooth motion."""
     s = Script()
     s.hold(30)
     tap(s, "ESCAPE", frames=10)       # skip the intro
@@ -133,12 +135,20 @@ def menus():
     tap(s, "RETURN")                  # NO: back to the main menu on EXIT
     tap(s, "DOWN")                    # wraps to START
     tap(s, "DOWN")                    # OPTIONS
-    tap(s, "RETURN")                  # options (VSYNC, P1 KEYS, P2 KEYS, RETURN)
-    for _ in range(3):
-        tap(s, "UP")                  # VSYNC
+    tap(s, "RETURN")                  # options (VSYNC, SCALING, FILTER, SMOOTH
+                                      # MOTION, LANGUAGE, P1 KEYS, P2 KEYS, RETURN)
+    tap(s, "DOWN")                    # wraps to VSYNC
     tap(s, "RIGHT")
     tap(s, "LEFT")
     tap(s, "RETURN")                  # vsync toggled three times
+    tap(s, "DOWN")
+    tap(s, "RIGHT")                   # integer scaling (headless: not shown)
+    tap(s, "DOWN")
+    tap(s, "LEFT")                    # smooth filter (headless: not shown)
+    tap(s, "DOWN")
+    tap(s, "RETURN")                  # smooth motion on
+    tap(s, "DOWN")
+    tap(s, "RIGHT")                   # French
     tap(s, "DOWN")
     tap(s, "RETURN")                  # player 1 keys, focus on RETURN
     tap(s, "UP")                      # special
@@ -176,9 +186,10 @@ def menus():
     tap(s, "RETURN", frames=10)       # Blop
     s.hold(260)                       # loading and the 2-second wait
     tap(s, "RETURN", frames=10)       # briefing: start
+    level = s.frame
     # First level as Blop: fire and walk until the first dialogue, which
     # Escape skips; then the pause menu.
-    while s.frame < 1780:             # the first dialogue starts at 1780
+    while s.frame < level + 420:      # the first dialogue starts 420 frames in
         s.hold(40, "RIGHT", "LCTRL")
         s.hold(6)
     s.hold(20)

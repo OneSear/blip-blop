@@ -37,9 +37,14 @@ protected:
     const Image* levelImage(int index) const { return world_.media.level->image(index); }
     bool solidWall(int px, int py) const { return world_.collision.solidWall(px, py); }
     int platformAt(int px, int py) const { return world_.collision.platformAt(px, py); }
-    // Draws an image with its hotspot at level position (px, py).
+    // Draws an image with its hotspot at level position (px, py), moved
+    // back towards where this entity was at the start of the tick when
+    // drawing between ticks (World::Motion).
     void drawAt(int px, int py, const Image* picture) const {
-        world_.media.canvas->draw(picture, px - world_.camera.x, py);
+        int backX = 0;
+        int backY = 0;
+        world_.motion.offsets(previousX, previousY, x, y, backX, backY);
+        world_.media.canvas->draw(picture, px + backX - world_.camera.x, py + backY);
     }
 
     // Falls with gravity, landing on platforms (tombe()).

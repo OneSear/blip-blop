@@ -106,6 +106,42 @@ struct Camera {
     bool stopped[2] = {false, false};
 };
 
+// Drawing between the last two ticks (the smooth motion option, Phase 9).
+// The simulation runs 84.7 ticks per second and the screen shows 60
+// frames, so a frame shows one or two ticks of movement: a 2-pixel-per-tick
+// walk moves 2 or 4 pixels per frame, unevenly. With the option on, a
+// frame shows positions part of the way from where they were at the start
+// of the last tick to where they are, by the fraction of a tick that the
+// clock has owed since; movement is then even, one tick late. Drawing
+// only: the simulation and its fingerprints do not see it.
+struct Motion {
+    // Larger moves in one tick are jumps (teleports, a new place): they
+    // are drawn where they end.
+    static constexpr int kMaxStep = 16;
+
+    bool on = false;
+    int fraction = 256;  // of a tick, in 256ths: 256 draws where things are
+    int previousCameraX = 0;
+
+    // The offset to draw at, from `to` towards `from`.
+    int offset(int from, int to) const noexcept {
+        const int back = (from - to) * (256 - fraction);
+        return back >= 0 ? (back + 128) / 256 : -((-back + 128) / 256);
+    }
+    // The offsets of an entity that moved from (fromX, fromY) to (x, y)
+    // (Entity::kNowhere: none).
+    void offsets(int fromX, int fromY, int x, int y, int& dx, int& dy) const noexcept {
+        dx = 0;
+        dy = 0;
+        if (!on || fromX == Entity::kNowhere || fromX - x > kMaxStep || x - fromX > kMaxStep ||
+            fromY - y > kMaxStep || y - fromY > kMaxStep) {
+            return;
+        }
+        dx = offset(fromX, x);
+        dy = offset(fromY, y);
+    }
+};
+
 // A scroll lock: the camera stays at x until a condition holds.
 struct ScrollLock {
     enum Condition { NoEnemies = 0, NoGenerators = 1, FlagEquals = 2, FlagAtLeast = 3 };
@@ -169,6 +205,7 @@ struct Media {
 // One World is reused from level to level; the level start resets it.
 struct World {
     Camera camera;
+    Motion motion;
     ScrollLock scrollLock;
     HoldFire holdFire;
     GameFlags flags;
@@ -259,6 +296,10 @@ struct World {
     // then, while the players can be hurt, enemies and enemy shots against
     // players.
     void resolveCollisions(bool playersVulnerable);
+
+    // Keeps the positions of the entities and of the camera at the start of
+    // a tick (Motion).
+    void rememberPositions();
 
     // Wakes the sleeping events the camera reached (in level order), then
     // runs and destroys the active events whose condition holds

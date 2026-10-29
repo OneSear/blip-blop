@@ -92,6 +92,13 @@ tools/replays/package-replay.sh build/release/packages/BlipBlop-0.1.0-Darwin.dmg
 
 It takes the `.dmg`, the Linux `.tar.gz` or the Windows `.zip`.
 
+Deterministic runs start from the default settings, so the smooth motion
+option (Phase 9) is off in every replay but `menus`, which switches it on.
+`--smooth-motion` turns it on from the start; `replay.smurf.smooth` plays
+the `smurf` replay so and compares only its `tick` lines: drawing between
+ticks must show other frames (the test fails if none differs) and change
+nothing of the simulation.
+
 A failing replay test does the first step itself: it dumps the frames of
 the build under test, one in six, from the frame checkpoint before the
 divergence to the one after, into `build/<preset>/tests/replays/out/<replay>-frames/`

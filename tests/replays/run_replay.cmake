@@ -1,6 +1,9 @@
 # Runs one regression replay and compares (or, with -DUPDATE=ON, stores) its
 # fingerprints. Invoked by ctest and by the update_replay_hashes target.
 # EMULATOR (optional) runs the game when it is cross-compiled (Wine).
+# With -DSMOOTH=ON the game runs with --smooth-motion and only the tick
+# (world state) fingerprints are compared: drawing between ticks must change
+# the frames and nothing of the simulation.
 
 foreach(var GAME REPLAY EXPECTED OUTPUT RUN_DIR)
     if(NOT DEFINED ${var})
@@ -15,6 +18,9 @@ get_filename_component(name "${REPLAY}" NAME_WE)
 set(asset_options "")
 if(DEFINED PACK)
     set(asset_options --pack "${PACK}")
+endif()
+if(SMOOTH)
+    list(APPEND asset_options --smooth-motion)
 endif()
 
 execute_process(
@@ -46,6 +52,17 @@ endif()
 
 file(STRINGS "${EXPECTED}" expected_lines)
 file(STRINGS "${OUTPUT}" actual_lines)
+if(SMOOTH)
+    set(expected_frames ${expected_lines})
+    set(actual_frames ${actual_lines})
+    list(FILTER expected_frames INCLUDE REGEX "^frame ")
+    list(FILTER actual_frames INCLUDE REGEX "^frame ")
+    if(expected_frames STREQUAL actual_frames)
+        message(FATAL_ERROR "${name}: smooth motion changed no frame")
+    endif()
+    list(FILTER expected_lines INCLUDE REGEX "^tick ")
+    list(FILTER actual_lines INCLUDE REGEX "^tick ")
+endif()
 list(LENGTH expected_lines n_expected)
 list(LENGTH actual_lines n_actual)
 set(i 0)

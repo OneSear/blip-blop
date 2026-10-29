@@ -6,6 +6,7 @@
 
 #include "bb/core/gfx/font.hpp"
 #include "bb/core/gfx/sprite.hpp"
+#include "bb/core/input/names.hpp"
 #include "bb/game/audio.hpp"
 #include "bb/game/input.hpp"
 
@@ -61,12 +62,16 @@ public:
     virtual unsigned long long frame() const = 0;
 };
 
-// The options the menus change (the 2002 vSyncOn; the language is forced
-// to English, D-25).
+// The options the menus change (the 2002 vSyncOn and language; the
+// display options are Phase 9 additions).
 struct Options {
     bool vsync = true;
     bool fullscreen = false;  // F10 (not a menu option)
     bool cheats = false;      // the /cheat switch: the F keys of CheatKeys
+    core::input::Language language = core::input::Language::English;
+    bool integerScaling = false;  // whole multiples of 640x480, with borders
+    bool smoothFilter = false;    // bilinear scaling instead of sharp pixels
+    bool smoothMotion = false;    // draws between the last two ticks (World::Motion)
 };
 
 // The banks and fonts of the game, owned by the application: some live as

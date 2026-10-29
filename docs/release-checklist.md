@@ -42,6 +42,16 @@ the release notes.
       (three runs each). The streaming texture (the game's path) should
       stay under 1 ms a frame; write the medians in docs/progress.md
       ("Present paths") with the GPU and the renderer it prints.
+- [ ] SCALING = INTEGER shows the picture at a whole scale with a black
+      border, in a window and in the full screen; FILTER = SMOOTH blurs
+      the pixels, SHARP keeps them square. Each change writes a "Display:"
+      line in the log, and the choices are back after a restart.
+- [ ] SMOOTH MOTION = ON: scrolling and walking look even (no 2-then-4
+      pixel stutter) and nothing tears or jumps; the game plays the same.
+- [ ] LANGUAGE = FRANCAIS: the menus, the controls, the dialogues, the
+      banners, the level summary and the credits are in French, with
+      their accents, and nothing runs out of its box; after a restart the
+      game starts in French.
 
 ## Audio
 

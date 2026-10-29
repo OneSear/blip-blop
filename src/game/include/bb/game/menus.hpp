@@ -49,12 +49,32 @@ protected:
     bool keyHeld(unsigned int key) const;
     bool aliasHeld(int alias) const;
     void setItem(int i, const char* text);
-    // The options page (vsync, the two key pages, return) and a key page.
+    // The items of the options page: the vsync of 2002, the display
+    // options and the language (Phase 9; 2002 had a commented-out language
+    // choice), the two key pages and return.
+    enum OptionItem {
+        kVsyncItem,
+        kScalingItem,
+        kFilterItem,
+        kMotionItem,
+        kLanguageItem,
+        kKeys1Item,
+        kKeys2Item,
+        kOptionsReturnItem,
+        kOptionItems
+    };
+
+    // The options page and a key page.
     void optionsItems();
     void keyItems(int firstAlias);
     // The key read for item `redefining_` of the current key page.
     void setRedefinedKey(unsigned int code);
-    void toggleVsync();
+    // Return on the options page: switches the focused option or opens its
+    // page (RETURN goes back to the first page, on its OPTIONS item).
+    void chooseOption();
+    // Right or left on the options page: switches the focused option, if
+    // it is one; false otherwise.
+    bool switchOption();
 
     Services& services_;
     const int optionsPage_;  // MENU_OPTS: 7 in the main menu, 1 in the pause menu

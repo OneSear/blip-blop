@@ -25,6 +25,16 @@ enum Text {
     kReturnText = 808,
     kOnText = 809,
     kOffText = 810,
+    kEnglishText = 811,  // each language in its own words
+    kFrenchText = 812,
+    kScalingText = 813,
+    kFitText = 814,
+    kIntegerText = 815,
+    kLanguageText = 816,
+    kFilterText = 817,
+    kSharpText = 818,
+    kSmoothText = 802,
+    kMotionText = 804,
     kPlayer1KeysText = 819,
     kPlayer2KeysText = 820,
     kUpText = 821,  // up, down, left, right, fire, jump, special
@@ -82,18 +92,66 @@ void Menu::setItem(int i, const char* text) {
     std::snprintf(text_[static_cast<std::size_t>(i)].data(), text_[0].size(), "%s", text);
 }
 
-void Menu::toggleVsync() {
-    services_.options->vsync = !services_.options->vsync;
+bool Menu::switchOption() {
+    Options& o = *services_.options;
+    switch (focus_) {
+        case kVsyncItem:
+            o.vsync = !o.vsync;
+            break;
+        case kScalingItem:
+            o.integerScaling = !o.integerScaling;
+            break;
+        case kFilterItem:
+            o.smoothFilter = !o.smoothFilter;
+            break;
+        case kMotionItem:
+            o.smoothMotion = !o.smoothMotion;
+            break;
+        case kLanguageItem:
+            // The application loads the other string table before the
+            // next frame is drawn.
+            o.language =
+                o.language == input::Language::English ? input::Language::French : input::Language::English;
+            break;
+        default:
+            return false;
+    }
     updateItems();
+    return true;
+}
+
+void Menu::chooseOption() {
+    switch (focus_) {
+        case kKeys1Item:
+            setPage(kKeys1Page, 8, 7);
+            break;
+        case kKeys2Item:
+            setPage(kKeys2Page, 8, 7);
+            break;
+        case kOptionsReturnItem:
+            setPage(kMainPage, 3, 1);
+            break;
+        default:
+            switchOption();
+            break;
+    }
 }
 
 void Menu::optionsItems() {
     const TextSource& t = *services_.texts;
-    std::snprintf(text_[0].data(), text_[0].size(), "%s %s", t.text(kVsyncText),
-                  t.text(services_.options->vsync ? kOnText : kOffText));
-    setItem(1, t.text(kPlayer1KeysText));
-    setItem(2, t.text(kPlayer2KeysText));
-    setItem(3, t.text(kReturnText));
+    const Options& o = *services_.options;
+    const auto option = [&](int item, int label, int value) {
+        std::snprintf(text_[static_cast<std::size_t>(item)].data(), text_[0].size(), "%s %s", t.text(label),
+                      t.text(value));
+    };
+    option(kVsyncItem, kVsyncText, o.vsync ? kOnText : kOffText);
+    option(kScalingItem, kScalingText, o.integerScaling ? kIntegerText : kFitText);
+    option(kFilterItem, kFilterText, o.smoothFilter ? kSmoothText : kSharpText);
+    option(kMotionItem, kMotionText, o.smoothMotion ? kOnText : kOffText);
+    option(kLanguageItem, kLanguageText, o.language == input::Language::French ? kFrenchText : kEnglishText);
+    setItem(kKeys1Item, t.text(kPlayer1KeysText));
+    setItem(kKeys2Item, t.text(kPlayer2KeysText));
+    setItem(kOptionsReturnItem, t.text(kReturnText));
 }
 
 void Menu::keyItems(int firstAlias) {
@@ -108,7 +166,7 @@ void Menu::keyItems(int firstAlias) {
                 ? std::string("...")
                 : input::displayName(
                       static_cast<input::Code>(services_.input->alias(firstAlias + kItemAlias[i])),
-                      input::Language::English);
+                      services_.options->language);
         std::snprintf(text_[static_cast<std::size_t>(i)].data(), text_[0].size(), "%s = %s",
                       t.text(kUpText + i), key.c_str());
     }
@@ -202,7 +260,7 @@ void MainMenu::updateItems() {
     switch (page_) {
         case kMainPage:
             setItem(0, t.text(kStartGameText));
-            setItem(1, "OPTIONS");
+            setItem(1, t.text(kOptionsText));
             setItem(2, t.text(kExitText));
             break;
         case kStartPage:
@@ -291,7 +349,7 @@ bool MainMenu::update(int& result) {
                                 setPage(kStartPage, 3, 0);
                                 return done(result, kContinue);
                             case 1:
-                                setPage(kOptionsPage, 4, 3);
+                                setPage(kOptionsPage, kOptionItems, kOptionsReturnItem);
                                 return done(result, kContinue);
                             case 2:
                                 setPage(kExitPage, 2, 0);
@@ -328,28 +386,14 @@ bool MainMenu::update(int& result) {
                         break;
 
                     case kOptionsPage:
-                        switch (focus_) {
-                            case 0:
-                                toggleVsync();
-                                return done(result, kContinue);
-                            case 1:
-                                setPage(kKeys1Page, 8, 7);
-                                return done(result, kContinue);
-                            case 2:
-                                setPage(kKeys2Page, 8, 7);
-                                return done(result, kContinue);
-                            case 3:
-                                setPage(kMainPage, 3, 1);
-                                return done(result, kContinue);
-                            default:
-                                break;
-                        }
-                        break;
+                        chooseOption();
+                        return done(result, kContinue);
 
                     case kKeys1Page:
                     case kKeys2Page:
                         if (focus_ == 7) {
-                            setPage(kOptionsPage, 4, page_ == kKeys1Page ? 1 : 2);
+                            setPage(kOptionsPage, kOptionItems,
+                                    page_ == kKeys1Page ? kKeys1Item : kKeys2Item);
                         } else {
                             redefining_ = focus_;
                             updateItems();
@@ -370,9 +414,9 @@ bool MainMenu::update(int& result) {
                 return done(result, kContinue);
 
             case kSideAction:
-                // Right and left do the same: they toggle the vsync option.
-                if (page_ == kOptionsPage && focus_ == 0) {
-                    toggleVsync();
+                // Right and left do the same: they switch the option.
+                if (page_ == kOptionsPage) {
+                    switchOption();
                 }
                 return done(result, kContinue);
 
@@ -514,7 +558,7 @@ bool PauseMenu::update(int& result) {
                         case 0:
                             return done(result, kResume);
                         case 1:
-                            setPage(optionsPage_, 4, 3);
+                            setPage(optionsPage_, kOptionItems, kOptionsReturnItem);
                             return done(result, kStay);
                         case 2:
                             return done(result, kLeaveLevel);
@@ -522,25 +566,11 @@ bool PauseMenu::update(int& result) {
                             break;
                     }
                 } else if (page_ == optionsPage_) {
-                    switch (focus_) {
-                        case 0:
-                            toggleVsync();
-                            return done(result, kStay);
-                        case 1:
-                            setPage(kKeys1Page, 8, 7);
-                            return done(result, kStay);
-                        case 2:
-                            setPage(kKeys2Page, 8, 7);
-                            return done(result, kStay);
-                        case 3:
-                            setPage(kMainPage, 3, 1);
-                            return done(result, kStay);
-                        default:
-                            break;
-                    }
+                    chooseOption();
+                    return done(result, kStay);
                 } else if (page_ == kKeys1Page || page_ == kKeys2Page) {
                     if (focus_ == 7) {
-                        setPage(optionsPage_, 4, 3);
+                        setPage(optionsPage_, kOptionItems, kOptionsReturnItem);
                     } else {
                         redefining_ = focus_;
                         updateItems();
@@ -559,9 +589,7 @@ bool PauseMenu::update(int& result) {
 
             case kPauseRightAction:
                 stage_ = kPauseLeftKey;
-                // (The language choice of 2002 is commented out.)
-                if (page_ == optionsPage_ && focus_ == 0) {
-                    toggleVsync();
+                if (page_ == optionsPage_ && switchOption()) {
                     return done(result, kStay);
                 }
                 break;
@@ -576,8 +604,7 @@ bool PauseMenu::update(int& result) {
 
             case kPauseLeftAction:
                 stage_ = kPauseEscapeKey;
-                if (page_ == optionsPage_ && focus_ == 0) {
-                    toggleVsync();
+                if (page_ == optionsPage_ && switchOption()) {
                     return done(result, kStay);
                 }
                 break;

@@ -3,6 +3,91 @@
 Status of the phases of [migration.md](../migration.md), with the facts
 learnt while implementing them. Newest phase first.
 
+## Phase 9 — Optional improvements (in progress)
+
+The maintainer chose (28 October 2026) the French text, the scaling
+options, render interpolation and the in-house mixer; not the restored cut
+content nor achievements. Remappable controller buttons already existed:
+the 2002 controls menu takes any input, pad buttons and directions
+included, for each player (`DeviceInput::firstHeld()`).
+
+### The options page
+
+Eight items in both menus (`Menu::optionsItems()`, `switchOption()`,
+`chooseOption()`, which replace the two copies of 2002): VSYNC, SCALING,
+FILTER, SMOOTH MOTION, LANGUAGE, the two players' controls, RETURN. Right,
+left and return switch an option. The settings file gains `scaling
+fit|integer`, `filter sharp|smooth` and `smooth-motion on|off`; `language`
+was read and written already, now it is used. The main menu's OPTIONS item
+comes from the string table (it was a literal).
+
+### French text (D-25)
+
+* `assets/source/strings/fr.json`: a new translation of the 253 strings
+  (the 2002 `fr.dat` was never in the repository). Names, places and the
+  empty ids are kept. The app loads `data/fr.dat` or `data/uk.dat` for the
+  language (`App::loadStrings()`), again when the menu switches it, and
+  falls back to English when the data has no French.
+* Fact: the fonts decide the characters. The menu, banner and HUD fonts
+  (`menu`, `menus`, `cool`) have capitals, digits and
+  ``!'*+,-./;=[\]` `` only; the dialogue font `rpg` adds lowercase and
+  exactly à è é ê ô (no ç, â, î, û, ù, no capital accents, no colon); a
+  missing character is skipped silently. The 2002 font was evidently made
+  for the lost French text, so the translation keeps to it: capitals
+  without accents, and wording without the other accented letters.
+* `tools/data/check_strings.py` (ctest `strings.fonts`) checks every
+  table but English: each character exists in the font the English
+  string is drawn with, and each dialogue fits its box when word-wrapped
+  as `printWordWrapped()` does (4 lines of 515 pixels, or as many as the
+  English: string 606 takes 5 lines in English, its last one a few pixels
+  below the box). Checked to catch a ç and a capital É.
+* The pack holds `fr.dat` (every `strings/*.json` becomes a table). The
+  2002 data must hold it too (`assets.verify`; the replays run on both):
+  `tools/data/fix_legacy_data.py` adds `data/fr.dat` to `data.zip`, written
+  from `fr.json` as `bbassets` writes it (verified byte for byte by
+  `assets.verify`), and fills the new option labels of `uk.dat` (ids 802,
+  804, 811–815, 817, 818, empty until now).
+* D-96 (fixed): the French key names of 2002 named AZERTY key positions;
+  letters now show the key's character (SDL key codes follow the layout).
+* Not translated: words drawn in pictures (the character choice's
+  "SELECT YOUR CHARACTER", the briefing pictures).
+* Checked in frames: the options and key pages, the pause menu and a
+  dialogue ("Oh non! Le pauvre vieux a été tué!") in French.
+* To proofread: change `fr.json`, run `fix_legacy_data.py` on `data.zip`
+  (it writes `fr.dat` again) and the tests.
+
+### Scaling and filter
+
+`Display::setScaling(integer, smooth)`: `SDL_RenderSetIntegerScale()` and
+`SDL_SetTextureScaleMode()` (SDL 2.0.12). The defaults (fit, sharp) are
+what the game did. The log's Display line names both, and is written again
+when they change. Conformance test: in a 960×720 window, fit places the
+frame at 0,0 scaled to 960×720, integer at 160,120 at scale 1. Fact:
+`SDL_RenderReadPixels()` reads the viewport only, so a border cannot be
+read back; the test reads the viewport and scale instead. Shaders: not
+possible with SDL 2's renderer and software-drawn frames (DEC-01).
+
+### Smooth motion (render interpolation)
+
+* `World::Motion`: each tick starts with `World::rememberPositions()` (the
+  camera and every entity of the 16 lists); `Actor::drawAt()` draws an
+  entity back towards its previous place by the fraction of a tick the
+  clock owes (`FixedClock::owed()`, in 256ths), and `Level::drawWorld()`
+  draws the camera so too when it moved 1 or 2 pixels (the decor ring
+  holds the 2 columns before the camera), then puts it back. Moves of more
+  than 16 pixels in a tick are jumps, drawn where they end. Entities that
+  draw without `drawAt()` (Lara's spikes) are drawn where they are.
+* Off by default: the replays keep their fingerprints (24 of the 26
+  replay runs, data and pack, passed unchanged; only `menus` was
+  re-recorded, for its new options page). `--smooth-motion` turns it on
+  from the start; `replay.smurf.smooth` checks that the ticks are the
+  same and the frames differ. Mutation check: without the camera put back
+  after drawing, the test fails at line 10.
+* Measured on 160 consecutive frames of the `smurf` replay (the decor's
+  scroll between frames, from the dumped frames): off, steps of 2 and 4
+  pixels (2,4,2,2,4...), mean 2.46, mean change between frames 1.37
+  pixels; on, steps of 3 (3,3,3,2,3...), mean 2.50, mean change 0.48.
+
 ## Plan change (16 October 2026)
 
 Supported targets are now Windows, macOS and Linux only; the consoles and

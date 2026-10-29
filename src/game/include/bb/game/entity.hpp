@@ -1,5 +1,6 @@
 #pragma once
 
+#include <climits>
 #include <memory>
 
 #include "bb/game/components.hpp"
@@ -125,6 +126,12 @@ public:
     // image; y grows downwards.
     int x = 0;
     int y = 0;
+    // Where it was at the start of the tick (World::rememberPositions()),
+    // to draw it between two ticks (World::Motion); kNowhere for an entity
+    // created since. Not simulation state: nothing reads it but drawing.
+    static constexpr int kNowhere = INT_MIN;
+    int previousX = kNowhere;
+    int previousY = kNowhere;
 
     // What it hits and is hit with.
     Hitbox hitbox;

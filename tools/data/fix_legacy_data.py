@@ -30,6 +30,15 @@ boss of snuf2's ending, migration.md Phase 5a):
         activation 4430), a copy of the strongman record at 4419 placed
         just before it to keep the descending activation order.
 
+And the Phase 9 change (the new options and the French text, migration.md
+Phase 9):
+  uk.dat gains the labels of the scaling, filter, smooth motion and
+        language options, in ids that were empty (802, 804, 811-815, 817,
+        818);
+  fr.dat is added, written from assets/source/strings/fr.json as bbassets
+        writes it (the 2002 fr.dat was never in the repository, D-25); it
+        is written again whenever fr.json changes.
+
 The script is idempotent: running it on a fixed archive changes nothing.
 Every other entry keeps its content, compression method and timestamp.
 
@@ -176,6 +185,32 @@ PHASE3_STRINGS = [
     (857, 'Stage'),
 ]
 
+# The labels of the Phase 9 options, in ids that were empty.
+PHASE9_STRINGS = [
+    (802, 'SMOOTH'),
+    (804, 'SMOOTH MOTION = '),
+    (811, 'ENGLISH'),
+    (812, 'FRANCAIS'),
+    (813, 'SCALING = '),
+    (814, 'FIT'),
+    (815, 'INTEGER'),
+    (817, 'FILTER = '),
+    (818, 'SHARP'),
+]
+FRENCH_SOURCE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "assets", "source",
+                             "strings", "fr.json")
+
+
+def french_dat():
+    """fr.dat as bbassets writes fr.json (writeDat): id^text lines in id
+    order, Windows-1252, no final newline; None without fr.json."""
+    import json
+    if not os.path.exists(FRENCH_SOURCE):
+        return None
+    with open(FRENCH_SOURCE, encoding="utf-8") as f:
+        strings = sorted((s["id"], s["text"]) for s in json.load(f)["strings"])
+    return "\n".join("%d^%s" % (i, text) for i, text in strings).encode("cp1252")
+
 
 def add_big_smurf_images(data):
     count = struct.unpack_from("<i", data, 0)[0]
@@ -232,6 +267,12 @@ def fix_entry(name, data):
         added = "".join("\n%d^%s" % (i, text) for i, text in PHASE3_STRINGS)
         at = data.index(b"\n1000^")
         return data[:at] + added.encode("cp1252") + data[at:], "added %d strings" % len(PHASE3_STRINGS)
+    if name == "data/uk.dat" and b"\n811^\n" in data:
+        for i, text in PHASE9_STRINGS:
+            empty = b"\n%d^\n" % i
+            assert data.count(empty) == 1, i
+            data = data.replace(empty, b"\n%d^%s\n" % (i, text.encode("cp1252")))
+        return data, "filled %d option labels" % len(PHASE9_STRINGS)
     if name in PADDED_MP3 and data[:1] == b"\0":
         start = next(i for i, c in enumerate(data) if c != 0)
         if data[start:start + 2] in (b"\xff\xfb", b"\xff\xfa", b"\xff\xf3", b"\xff\xf2"):
@@ -261,6 +302,21 @@ def main():
         if what:
             changes.append(f"{info.filename}: {what}")
         out_entries.append((info, new_data, what is not None))
+
+    french = french_dat()
+    if french is not None:
+        names = [info.filename for info, _, _ in out_entries]
+        if "data/fr.dat" not in names:
+            info = zipfile.ZipInfo("data/fr.dat", date_time=(2026, 10, 29, 0, 0, 0))
+            info.external_attr = out_entries[names.index("data/uk.dat")][0].external_attr
+            out_entries.insert(names.index("data/uk.dat") + 1, (info, french, True))
+            changes.append("data/fr.dat: added")
+        else:
+            k = names.index("data/fr.dat")
+            info, data, _ = out_entries[k]
+            if data != french:
+                out_entries[k] = (info, french, True)
+                changes.append("data/fr.dat: written again from fr.json")
 
     if not changes:
         print("nothing to fix")

@@ -12,6 +12,8 @@ struct DisplayOptions {
     int height = 480;
     bool fullscreen = false;
     bool vsync = true;
+    bool integerScaling = false;  // see Display::setScaling()
+    bool smoothFilter = false;
     bool headless = false;  // never opens a window, present() does nothing
 };
 
@@ -24,14 +26,19 @@ public:
     // Shows the frame, scaled to the window with its aspect ratio kept.
     virtual void present(const core::gfx::Pixmap& frame) = 0;
 
+    // How frames are scaled: by the largest whole factor that fits (the
+    // rest of the window is a black border) or to fill the window; with
+    // sharp pixels (nearest) or smoothed (bilinear).
+    virtual void setScaling(bool integer, bool smooth) = 0;
+
     virtual void setFullscreen(bool fullscreen) = 0;
     virtual bool fullscreen() const = 0;
 
     // Refresh rate of the screen in Hz, 0 when unknown.
     virtual int refreshRate() const = 0;
 
-    // For the log: the window's size, the size it is drawn at in pixels
-    // and the renderer ("" for a headless display).
+    // For the log: the window's size, the size it is drawn at in pixels,
+    // the renderer and the scaling ("" for a headless display).
     virtual std::string describe() const = 0;
 
     // Whether present() waits for the screen's refresh. setVsync() asks for

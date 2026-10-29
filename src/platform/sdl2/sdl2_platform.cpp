@@ -627,6 +627,14 @@ public:
         SDL_RenderPresent(renderer_);
     }
 
+    void setScaling(bool integer, bool smooth) override {
+        if (renderer_ == nullptr) {
+            return;
+        }
+        SDL_RenderSetIntegerScale(renderer_, integer ? SDL_TRUE : SDL_FALSE);
+        SDL_SetTextureScaleMode(texture_, smooth ? SDL_ScaleModeLinear : SDL_ScaleModeNearest);
+    }
+
     void setFullscreen(bool fullscreen) override {
         if (window_ != nullptr) {
             SDL_SetWindowFullscreen(window_, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
@@ -657,8 +665,12 @@ public:
         SDL_GetRendererOutputSize(renderer_, &pw, &ph);
         SDL_RendererInfo info;
         const char* name = SDL_GetRendererInfo(renderer_, &info) == 0 ? info.name : "?";
+        SDL_ScaleMode mode = SDL_ScaleModeNearest;
+        SDL_GetTextureScaleMode(texture_, &mode);
         return "window " + std::to_string(w) + "x" + std::to_string(h) + ", drawn at " + std::to_string(pw) +
-               "x" + std::to_string(ph) + " pixels, renderer " + name;
+               "x" + std::to_string(ph) + " pixels, renderer " + name + ", scaling " +
+               (SDL_RenderGetIntegerScale(renderer_) == SDL_TRUE ? "integer" : "fit") + ", filter " +
+               (mode == SDL_ScaleModeNearest ? "sharp" : "smooth");
     }
 
     bool vsync() const override { return vsync_; }
@@ -742,6 +754,7 @@ public:
         SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE);
         auto display =
             std::make_unique<Sdl2Display>(window, renderer, texture, options.width, options.height);
+        display->setScaling(options.integerScaling, options.smoothFilter);
         if (options.fullscreen) {
             display->setFullscreen(true);
         }

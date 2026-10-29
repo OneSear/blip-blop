@@ -17,6 +17,9 @@ namespace bb::core {
 //   vsync on
 //   fullscreen off
 //   language english
+//   scaling fit                 (fit | integer)
+//   filter sharp                (sharp | smooth)
+//   smooth-motion off
 //   p1.fire key:left_ctrl
 //   p2.jump pad1:button3
 //   ...
@@ -26,6 +29,9 @@ struct Settings {
     bool vsync = true;
     bool fullscreen = false;
     input::Language language = input::Language::English;
+    bool integerScaling = false;
+    bool smoothFilter = false;
+    bool smoothMotion = false;
     input::Bindings bindings = input::Bindings::defaults();
 
     std::string serialize() const;

@@ -98,6 +98,13 @@ pad in the controls menu gets only the bindings chosen there. The layout is
 by button position (A is the bottom button, cross on a PlayStation pad) for
 the pads SDL recognises; other pads keep their own button numbers.
 
+The options menu (in the main menu and the pause menu) sets the vsync, the
+scaling (FIT fills the window; INTEGER scales by whole factors, with a black
+border), the filter (SHARP pixels or SMOOTH), SMOOTH MOTION (draws between
+the game's 84.7 simulation ticks a second, so that movement is even on a
+60 Hz screen, one tick late) and the language (English or French), and
+opens the two players' controls; F10 switches the full screen.
+
 The game keeps its settings (`settings.cfg`) and its log (`BlipBlop.log`) in
 the user's preferences directory, for example
 `~/Library/Application Support/LOADED Studio/Blip and Blop/` on macOS or

@@ -41,6 +41,19 @@ foreach(replay IN LISTS BB_REPLAYS)
             -P "${CMAKE_CURRENT_SOURCE_DIR}/run_replay.cmake")
 endforeach()
 
+# Smooth motion draws between ticks: the smurf level (scrolling, enemies,
+# shots) must run the same ticks with it, and show other frames.
+add_test(NAME replay.smurf.smooth
+    COMMAND "${CMAKE_COMMAND}"
+        -DGAME=$<TARGET_FILE:blipblop> "-DEMULATOR=${CMAKE_CROSSCOMPILING_EMULATOR}"
+        -DREPLAY=${CMAKE_CURRENT_SOURCE_DIR}/smurf.bbreplay
+        -DEXPECTED=${CMAKE_CURRENT_SOURCE_DIR}/expected/smurf.bbhash
+        -DOUTPUT=${BB_REPLAY_OUT}/smurf.smooth.bbhash
+        -DRUN_DIR=${BB_RUN_DIR}
+        -DSMOOTH=ON
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/run_replay.cmake")
+set_tests_properties(replay.smurf.smooth PROPERTIES LABELS replay TIMEOUT 3600)
+
 add_custom_target(update_replay_hashes
     ${BB_UPDATE_COMMANDS}
     DEPENDS blipblop

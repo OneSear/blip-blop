@@ -550,6 +550,8 @@ Per class: rename; `enum class` states; animation tables as `constexpr`; named s
 
 Render interpolation for 60 Hz displays, French text restoration, configurable scaling filters/shaders, remappable controller buttons for both players (a third player is out of scope: the game is built for two, Blip and Blop), restored cut content, achievements. Listed so they do not creep into Phases 0–8.
 
+**Status (29 October 2026).** Chosen by the maintainer: French text, scaling options, render interpolation and the in-house mixer (DEC-06). Done: French text (a new translation in the characters of the 2002 fonts, language in the options; pictures with English words, such as the character choice, stay English), integer or fit scaling and a sharp or smooth filter (shaders are not possible: SDL 2's renderer has none, and the frames are drawn in software, DEC-01), smooth motion (drawing between the last two ticks; it changes no tick, a replay test checks it). Remappable controller buttons already existed (the 2002 controls menu takes pad buttons). Not chosen: restored cut content, achievements. Details in docs/progress.md, Phase 9.
+
 ---
 
 ## 6. Testing and verification
@@ -1134,6 +1136,14 @@ Fixed deliberately; the replays were re-recorded (docs/progress.md, "Completing 
 | D-19 | Closed: the alpha fade was commented out in the original `cine_player.cpp` (commit d48c5bd) too, and no shipped cutscene uses `setalpha` or `setdeltaalpha`. The colours are D-95. |
 | D-95 (new) | Found and fixed: the 2002 player cleared the cutscene screen with layer 0's `setbackcolor` colour and filled the bars with its `setclipcolor` colour; the 2014 SDL port always used black, so the two white flashes ("Flash blanc", 2 renders each) of `intro.cin` and of `end.cin` were lost. Restored; the `attract`, `menus`, `finalboss` and `campaign` replays (the ones showing a cutscene past a flash) were re-recorded for it. |
 | Still open | None of the defects. |
+
+### D.M Found and fixed in Phase 9 (29 October 2026)
+
+| ID | Status |
+|----|--------|
+| D-25 | Fixed: French text exists again (`assets/source/strings/fr.json`, a new translation: the 2002 `fr.dat` was never in the repository) and the options choose the language. |
+| D-96 (new) | Found and fixed: the French key names of `key_translator.cpp` named the places of DirectInput scan codes on an AZERTY keyboard ("Q" for the key at A's place). The game reads SDL key codes, which follow the keyboard's layout, so letters and signs now show the character of the key in both languages; the French words (RETOUR, CONTROLE GAUCHE...) stay. |
+| D-97 (new) | Found by CI (UBSan, Linux) and fixed: before its first mouse event Dear ImGui puts the mouse at -FLT_MAX, and the level editor converted that to an `int` (`editor_app.cpp`, undefined behaviour); the level coordinates are clamped first. |
 ---
 
 ## Appendix E — Content catalogue

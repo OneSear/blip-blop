@@ -43,6 +43,9 @@ std::string Settings::serialize() const {
     out << "vsync " << (vsync ? "on" : "off") << "\n";
     out << "fullscreen " << (fullscreen ? "on" : "off") << "\n";
     out << "language " << (language == input::Language::French ? "french" : "english") << "\n";
+    out << "scaling " << (integerScaling ? "integer" : "fit") << "\n";
+    out << "filter " << (smoothFilter ? "smooth" : "sharp") << "\n";
+    out << "smooth-motion " << (smoothMotion ? "on" : "off") << "\n";
     for (int p = 0; p < kPlayerCount; ++p) {
         for (const Action a : kActions) {
             out << 'p' << (p + 1) << '.' << input::actionName(a) << ' ' << input::codeName(bindings.get(p, a))
@@ -111,6 +114,18 @@ std::optional<Settings> Settings::parse(std::string_view text, std::string& erro
                 error = where + "language must be english or french";
                 return std::nullopt;
             }
+            continue;
+        }
+        if (w[0] == "scaling" || w[0] == "filter" || w[0] == "smooth-motion") {
+            // Each takes one of two values; the second sets the option.
+            const char* values[3][2] = {{"fit", "integer"}, {"sharp", "smooth"}, {"off", "on"}};
+            bool* options[3] = {&s.integerScaling, &s.smoothFilter, &s.smoothMotion};
+            const int i = w[0] == "scaling" ? 0 : w[0] == "filter" ? 1 : 2;
+            if (w[1] != values[i][0] && w[1] != values[i][1]) {
+                error = where + std::string(w[0]) + " must be " + values[i][0] + " or " + values[i][1];
+                return std::nullopt;
+            }
+            *options[i] = w[1] == values[i][1];
             continue;
         }
         bool bound = false;

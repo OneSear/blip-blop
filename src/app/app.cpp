@@ -251,6 +251,9 @@ bool App::init() {
     } else {
         loadSettings(settingsPath_, platform_.files(), files_.dataFiles(), kLegacySettingsFile, options_, input_);
     }
+    if (session_.smoothMotion()) {
+        options_.smoothMotion = true;
+    }
 
     hiScores_.reset();
     if (session_.deterministic()) {
@@ -259,8 +262,7 @@ bool App::init() {
         loadHiScores(hiScoresPath_, platform_.files(), files_.dataFiles(), hiScores_);
     }
 
-    // Only English text exists (D-25).
-    if (!strings_.load(source, "data/uk.dat")) {
+    if (!loadStrings(options_.language)) {
         error("Cannot open the file 'data/uk.dat'");
         return false;
     }
@@ -276,6 +278,8 @@ bool App::init() {
     display.headless = session_.headless();
     display.vsync = options_.vsync;
     display.fullscreen = options_.fullscreen;
+    display.integerScaling = integerScaling_ = options_.integerScaling;
+    display.smoothFilter = smoothFilter_ = options_.smoothFilter;
     std::string reason;
     display_ = platform_.createDisplay(display, reason);
     if (!display_) {
@@ -323,8 +327,28 @@ void App::release() {
     attractMusic_.clear();
 }
 
+bool App::loadStrings(core::input::Language language) {
+    const core::assets::AssetSource& source = files_.assets();
+    language_ = language;
+    // The French text was lost with the 2002 fr.dat (D-25); Phase 9 wrote
+    // it again, in the pack only.
+    if (language == core::input::Language::French) {
+        if (strings_.load(source, "data/fr.dat")) {
+            return true;
+        }
+        core::Log::info("No French text in this data: English used");
+    }
+    return strings_.load(source, "data/uk.dat");
+}
+
 void App::present() {
     session_.onFramePresented(screen_);
+
+    // The menus switched the language: the next frame is drawn with it.
+    if (options_.language != language_) {
+        loadStrings(options_.language);
+    }
+
     if (!display_) {
         return;
     }
@@ -338,6 +362,12 @@ void App::present() {
     // pacing never waits. (Deterministic runs are paced by the session.)
     if (display_->vsync() != options_.vsync) {
         display_->setVsync(options_.vsync);
+    }
+    if (integerScaling_ != options_.integerScaling || smoothFilter_ != options_.smoothFilter) {
+        integerScaling_ = options_.integerScaling;
+        smoothFilter_ = options_.smoothFilter;
+        display_->setScaling(integerScaling_, smoothFilter_);
+        core::Log::info("Display: " + display_->describe());
     }
     display_->present(screen_);
 

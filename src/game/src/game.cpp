@@ -576,6 +576,10 @@ void Game::drawAll(bool flip) {
         secondStart_ = now;
     }
 
+    // Smooth motion: the fraction of a tick owed since the last one.
+    world_.motion.on = services_.options->smoothMotion;
+    world_.motion.fraction = static_cast<int>(frameClock_.owed() * 256 / frameClock_.tickMicroseconds());
+
     core::gfx::Pixmap& screen = *services_.screen;
     level_.drawWorld(screen, *services_.decor);
     Hud::draw(world_, players_[0], players_[1], level_.bonusLevel, world_.blink);
