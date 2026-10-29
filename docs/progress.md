@@ -7,9 +7,10 @@ learnt while implementing them. Newest phase first.
 
 The maintainer chose (28 October 2026) the French text, the scaling
 options, render interpolation and the in-house mixer; not the restored cut
-content nor achievements. Remappable controller buttons already existed:
-the 2002 controls menu takes any input, pad buttons and directions
-included, for each player (`DeviceInput::firstHeld()`).
+content (achievements, also offered, were then removed from the plan).
+Remappable controller buttons already existed: the 2002 controls menu
+takes any input, pad buttons and directions included, for each player
+(`DeviceInput::firstHeld()`).
 
 ### The options page
 
