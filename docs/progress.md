@@ -649,6 +649,19 @@ The plan's optional editor (§5 Phase 8): `tools/editor`, user guide
   pack in `Contents/Resources`. The `campaign` replay plays every level
   briefly and wins it with the F9 cheat, then the ending and the credits;
   a full playthrough by a player stays on the release checklist.
+* **The macOS disk image did not open on an Intel Mac (29 October 2026).**
+  The v1.0.0 release's disk image, built on GitHub's Apple silicon runner
+  with Homebrew's SDL 2, held an arm64-only app; on the maintainer's Intel
+  Mac (macOS 14.8) Finder said it is "not supported by this Mac". Homebrew's
+  libraries also require the runner's macOS version. The workflows now
+  build SDL 2.32.10 from its source release (checksum checked) for arm64
+  and x86_64 and macOS 11 (`tools/macos/sdl2-universal.sh`) and the game
+  likewise (`CMAKE_OSX_ARCHITECTURES`, `MACOSX_DEPLOYMENT_TARGET`). Checked
+  on the Intel Mac: the app and its `libSDL2` are `x86_64 arm64`, `minos
+  11.0`, the signature verifies, and the campaign and smoke replays played
+  from the disk image keep their fingerprints. CI also plays the smoke
+  replay with the Intel half under Rosetta when the runner has it
+  (`BB_RUN_WITH` of `package-replay.sh`).
 * **The Windows packages did not start (found 28 October 2026 by the step
   above, run 40784663938).** The installed game exited with 0xc0000135
   (a DLL not found): the packages held SDL2 and SDL2_mixer
