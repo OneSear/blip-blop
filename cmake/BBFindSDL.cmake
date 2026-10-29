@@ -1,5 +1,5 @@
-# Locates SDL2 and SDL2_mixer and exposes the imported targets
-#   SDL2::SDL2  and  SDL2_mixer::SDL2_mixer
+# Locates SDL2 and exposes the imported target SDL2::SDL2 (SDL2_mixer is
+# no longer used: the game mixes its sound itself, Phase 9).
 # CMake package configs are tried first (vcpkg, Homebrew, recent distros);
 # pkg-config is the fallback for distributions that do not ship them.
 
@@ -24,15 +24,4 @@ if(TARGET SDL2::SDL2main)
     endif()
 else()
     set(BB_SDL2MAIN "")
-endif()
-
-find_package(SDL2_mixer CONFIG QUIET)
-if(NOT TARGET SDL2_mixer::SDL2_mixer)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(BB_PC_SDL2_MIXER REQUIRED IMPORTED_TARGET SDL2_mixer)
-    add_library(SDL2_mixer::SDL2_mixer INTERFACE IMPORTED)
-    target_link_libraries(SDL2_mixer::SDL2_mixer INTERFACE PkgConfig::BB_PC_SDL2_MIXER)
-    message(STATUS "SDL2_mixer found through pkg-config: ${BB_PC_SDL2_MIXER_VERSION}")
-else()
-    message(STATUS "SDL2_mixer found through its CMake package: ${SDL2_mixer_VERSION}")
 endif()

@@ -14,7 +14,7 @@ All in `src/platform/include/bb/platform/`:
 | `Platform` | Creates the `Display` and gives the other services. |
 | `Display` | Shows a finished 640x480 frame (`present(const core::gfx::Pixmap&)`), scaled to the window or the screen; fullscreen; the refresh rate. A headless display (tests) presents nothing. |
 | `InputSource` | The keyboard, pad and window events (`poll()`), with key codes of `bb::core::input` (`codes.hpp`); the pads' slots and names. |
-| `Audio` | Sounds from complete WAV files (32 voices, looping or not) and one streamed music at a time (Ogg Vorbis or MP3); `available()` false when there is no device. |
+| `Audio` | Sounds from complete WAV files (32 voices, looping or not) and one streamed music at a time (Ogg Vorbis or MP3); `available()` false when there is no device. The SDL backend opens a plain SDL audio device and fills it from the platform-free `bb::core::audio::Mixer` (Phase 9), locking the device around every other call. |
 | `Clock` | Microseconds since start, and sleeping. |
 | `FileSystem` | Files by UTF-8 path: opening for reading at any offset, a file's kind, a directory's entries (`core::FileReader`, what `Vfs` and the pack read through), writing whole files (settings, hi-scores, recordings); the game's directory and the user's preferences directory. The SDL backend uses `SDL_RWops`, so Windows paths are UTF-8 too. The log and the debugging outputs (`--hash`, `--trace-ticks`) are still written with `fopen`. |
 | `System` | Message boxes for errors and warnings; the process's peak memory (the headless benchmark line). |

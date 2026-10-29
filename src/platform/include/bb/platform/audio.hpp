@@ -7,9 +7,8 @@
 
 namespace bb::platform {
 
-// Sound effects and streamed music. The first implementation sits on
-// SDL2_mixer (migration.md 3.8); the consoles get an in-house mixer behind
-// the same interface (Phase 7).
+// Sound effects and streamed music, on the in-house mixer
+// (bb::core::audio::Mixer, Phase 9; SDL2_mixer until then).
 class Audio {
 public:
     using Sample = int;  // -1 = invalid

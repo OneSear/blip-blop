@@ -1,13 +1,14 @@
 // The SDL 2 audio backend on SDL's dummy driver (no sound card needed):
 // voice count, looping and stopping, and that every sound and music the
-// shipped game data lists decodes through SDL_mixer.
+// shipped game data lists decodes through the in-house mixer (Phase 9).
 
 #include <doctest.h>
 
 #include <SDL.h>
-#include <SDL_mixer.h>
 
+#include <algorithm>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -16,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "bb/core/audio/mixer.hpp"
 #include "bb/platform/audio.hpp"
 #include "bb/platform/sdl2/sdl2_platform.hpp"
 
@@ -105,8 +107,8 @@ TEST_CASE("audio voices: one-shot, looping, 32 voices, stop") {
     const auto sample = audio.loadSample(wav.data(), wav.size());
     REQUIRE(sample >= 0);
 
-    // The game mixed 32 FMOD channels; the backend allocates as many voices.
-    CHECK(Mix_AllocateChannels(-1) == 32);
+    // The game mixed 32 FMOD channels; the mixer has as many voices.
+    CHECK(bb::core::audio::Mixer::kVoices == 32);
 
     std::vector<int> voices;
     for (int i = 0; i < 32; ++i) {
@@ -115,15 +117,19 @@ TEST_CASE("audio voices: one-shot, looping, 32 voices, stop") {
         voices.push_back(voice);
     }
     CHECK(audio.play(sample, false) == -1);  // all voices busy
-    CHECK(Mix_Playing(-1) == 32);
+    for (const int voice : voices) {
+        CHECK(bb::platform::sdl2::voicePlaying(audio, voice));
+    }
 
     audio.stop(voices[0]);
-    CHECK(Mix_Playing(voices[0]) == 0);
+    CHECK_FALSE(bb::platform::sdl2::voicePlaying(audio, voices[0]));
     CHECK(audio.play(sample, false) == voices[0]);  // the freed voice is reused
 
     // Freeing a sample halts the voices that play it.
     audio.freeSample(sample);
-    CHECK(Mix_Playing(-1) == 0);
+    for (const int voice : voices) {
+        CHECK_FALSE(bb::platform::sdl2::voicePlaying(audio, voice));
+    }
     CHECK(audio.play(sample, false) == -1);  // invalid handle
 }
 
@@ -194,8 +200,27 @@ TEST_CASE("every shipped sound effect and music decodes") {
             CHECK_MESSAGE(type == 1, bank);
             REQUIRE(path.rfind("data/", 0) == 0);
             std::ifstream file(dataDir + "/" + path.substr(5), std::ios::binary);
-            const auto music = audio.openMusic(std::vector<std::uint8_t>(std::istreambuf_iterator<char>(file), {}));
+            const std::vector<std::uint8_t> bytes(std::istreambuf_iterator<char>(file), {});
+            const auto music = audio.openMusic(bytes);
             CHECK_MESSAGE(music >= 0, bank << " " << path);
+
+            // Decoded to the end: at least a second (the shortest, the drum
+            // roll, is about 1.3 s), and nothing silent throughout.
+            auto stream = bb::core::audio::openMusicStream(bytes);
+            REQUIRE_MESSAGE(stream != nullptr, path);
+            std::vector<std::int16_t> frames(std::size_t{4096} * 2);
+            long long total = 0;
+            int loudest = 0;
+            for (int got = 0; (got = stream->read(frames.data(), 4096)) > 0;) {
+                total += got;
+                for (int s = 0; s < got * 2; ++s) {
+                    loudest =
+                        std::max(loudest, std::abs(static_cast<int>(frames[static_cast<std::size_t>(s)])));
+                }
+            }
+            CHECK_MESSAGE(total >= stream->rate(),
+                          path << ": " << total << " frames at " << stream->rate() << " Hz");
+            CHECK_MESSAGE(loudest > 1000, path);
             audio.playMusic(music, true);
             audio.stopMusic();
             audio.freeMusic(music);

@@ -19,9 +19,20 @@ add_library(bb_core STATIC
     src/assets_level_markers.cpp
     src/assets_asset_source.cpp
     src/assets_pack.cpp
+    src/audio_mixer.cpp
 )
 add_library(bb::core ALIAS bb_core)
 
 target_include_directories(bb_core PUBLIC include)
 target_compile_features(bb_core PUBLIC cxx_std_17)
 bb_set_strict_warnings(bb_core)
+
+# The mixer's music decoders (codecs/audio_codecs.cpp): stb_vorbis and
+# dr_mp3 (third_party, DEC-11), built without the strict warnings.
+add_library(bb_core_codecs STATIC codecs/audio_codecs.cpp)
+target_include_directories(bb_core_codecs PRIVATE include)
+target_include_directories(bb_core_codecs SYSTEM PRIVATE
+    "${CMAKE_SOURCE_DIR}/third_party/stb"
+    "${CMAKE_SOURCE_DIR}/third_party/dr_libs")
+target_compile_features(bb_core_codecs PRIVATE cxx_std_17)
+target_link_libraries(bb_core PRIVATE bb_core_codecs)

@@ -13,14 +13,15 @@ in [docs/progress.md](docs/progress.md).
 
 ## Building
 
-Requirements: CMake 3.21 or later (presets), a C++17 compiler, SDL2 and
-SDL2_mixer with Ogg Vorbis and MP3 support.
+Requirements: CMake 3.21 or later (presets), a C++17 compiler and SDL2. The
+game mixes its sound itself (Ogg Vorbis and MP3 music through the vendored
+stb_vorbis and dr_mp3), so SDL2_mixer is not needed.
 
 | Platform | Dependencies |
 |----------|--------------|
-| macOS (Homebrew) | `brew install cmake sdl2 sdl2_mixer` |
-| Debian / Ubuntu | `sudo apt install cmake g++ libsdl2-dev libsdl2-mixer-dev` |
-| Windows (vcpkg) | `vcpkg install sdl2 sdl2-mixer[libvorbis,mpg123]`, then pass `-DCMAKE_TOOLCHAIN_FILE=<vcpkg>/scripts/buildsystems/vcpkg.cmake` |
+| macOS (Homebrew) | `brew install cmake sdl2` |
+| Debian / Ubuntu | `sudo apt install cmake g++ libsdl2-dev` |
+| Windows (vcpkg) | `vcpkg install sdl2`, then pass `-DCMAKE_TOOLCHAIN_FILE=<vcpkg>/scripts/buildsystems/vcpkg.cmake` |
 
 ```sh
 cmake --preset default          # Debug build in build/default

@@ -23,19 +23,17 @@ jobs:
 
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libsdl2-mixer-dev
+        run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
 
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
-        run: brew install sdl2 sdl2_mixer
+        run: brew install sdl2
 
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          # Ogg Vorbis is always built into vcpkg's sdl2-mixer (it is a
-          # dependency, not a feature: "[libvorbis]" made vcpkg fail).
-          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg" install sdl2 "sdl2-mixer[mpg123]" --triplet x64-windows
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg" install sdl2 --triplet x64-windows
           "CMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" >> $env:GITHUB_ENV
 
       - name: Configure
@@ -103,7 +101,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y clang libsdl2-dev libsdl2-mixer-dev
+        run: sudo apt-get update && sudo apt-get install -y clang libsdl2-dev
       - name: Configure
         run: cmake --preset asan -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
       - name: Build
@@ -121,12 +119,13 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y clang-tidy cppcheck libsdl2-dev libsdl2-mixer-dev
+        run: sudo apt-get update && sudo apt-get install -y clang-tidy cppcheck libsdl2-dev
       - name: Configure
         run: cmake --preset default
       - name: clang-tidy
         run: |
-          find src tests tools -name '*.cpp' -not -path 'tests/bench/*' -print0 |
+          # src/core/codecs builds the third-party decoders (stb_vorbis, dr_mp3).
+          find src tests tools -name '*.cpp' -not -path 'tests/bench/*' -not -path 'src/core/codecs/*' -print0 |
             xargs -0 clang-tidy -p build/default --quiet 2>&1 | tee clang-tidy.txt || true
           grep -c 'warning:' clang-tidy.txt || true
       - name: cppcheck

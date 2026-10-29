@@ -3,7 +3,7 @@
 Status of the phases of [migration.md](../migration.md), with the facts
 learnt while implementing them. Newest phase first.
 
-## Phase 9 — Optional improvements (in progress)
+## Phase 9 — Optional improvements (the chosen items done)
 
 The maintainer chose (28 October 2026) the French text, the scaling
 options, render interpolation and the in-house mixer; not the restored cut
@@ -87,6 +87,37 @@ possible with SDL 2's renderer and software-drawn frames (DEC-01).
   scroll between frames, from the dumped frames): off, steps of 2 and 4
   pixels (2,4,2,2,4...), mean 2.46, mean change between frames 1.37
   pixels; on, steps of 3 (3,3,3,2,3...), mean 2.50, mean change 0.48.
+
+### The in-house mixer (DEC-06)
+
+* `bb::core::audio::Mixer` (`src/core/src/audio_mixer.cpp`): 32 voices
+  (the 2002 FMOD channel count), sounds read from their WAV files
+  (`decodeWav()`: PCM 8 or 16 bits, mono or stereo) and converted at load
+  to mono 16-bit at 44.1 kHz, one music decoded as it plays and converted
+  to 44.1 kHz stereo; everything summed at full volume and clipped, as
+  SDL_mixer mixed it for the game (no volume was ever set). A voice is the
+  first free one, as `Mix_PlayChannel(-1)` chose. Rate conversion is
+  linear, in 16.16 fixed point.
+* The decoders (`src/core/codecs/audio_codecs.cpp`, library
+  `bb_core_codecs`, built without the strict warnings and left out of
+  clang-tidy): stb_vorbis 1.22 for Ogg Vorbis and, by the maintainer's
+  choice (29 October 2026, DEC-11), dr_mp3 0.7.4 for the two MP3 jingles
+  (`tambour`, `gameover`). Both vendored in `third_party`, pinned.
+* The SDL backend opens a plain audio device (44.1 kHz, stereo, 16-bit,
+  1024 frames, as the 2014 port asked SDL_mixer for) whose callback calls
+  `Mixer::mix()`; every other call locks the device. Sounds and musics are
+  decoded outside the lock. SDL2_mixer is gone from the build, CI, the
+  Docker images and the packages (with it libvorbis, libogg, mpg123 and
+  wavpack).
+* Checked: unit tests (WAV forms, rate conversion, voices, looping,
+  clipping, a music played once, looped and at half the rate); the
+  conformance test decodes every shipped sound (175) and music to its end.
+  Every Ogg file decodes to exactly the sample count its last page
+  declares (granule position; the 14 match), and the two MP3s to exactly
+  their frames × 1152 (tambour 61,056 = 53 frames, gameover 268,416 = 233
+  frames). The game opens the real device on macOS (no warning) and the
+  replays are unchanged (they do not hear the sound). Not checked: how it
+  sounds; that is on the release checklist ("Audio").
 
 ## Plan change (16 October 2026)
 

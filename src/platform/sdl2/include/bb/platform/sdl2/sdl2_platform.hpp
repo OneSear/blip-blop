@@ -20,4 +20,8 @@ std::unique_ptr<Platform> createPlatform(const Options& options, std::string& er
 // this backend and must not be headless. Returns false on failure.
 bool readBack(Display& display, core::gfx::Pixmap& out);
 
+// Whether a voice of the audio plays (tests). The audio must come from this
+// backend.
+bool voicePlaying(Audio& audio, int voice);
+
 }  // namespace bb::platform::sdl2

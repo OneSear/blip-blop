@@ -7,8 +7,7 @@
 #   macOS:   "Blip and Blop.app" (the pack in Contents/Resources, the SDL
 #            libraries and their dependencies in Contents/Frameworks) on a disk
 #            image, with the licence and the README beside it.
-#   Linux:   a .tar.gz of the folder; SDL 2 and SDL2_mixer come from the
-#            system.
+#   Linux:   a .tar.gz of the folder; SDL 2 comes from the system.
 #
 # The game finds its data next to the executable (bb::app::locateGameData);
 # in an app bundle SDL reports Contents/Resources as that directory.

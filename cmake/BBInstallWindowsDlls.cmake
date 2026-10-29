@@ -4,8 +4,9 @@
 # ones (SDL2, SDL2_mixer); SDL2_mixer's codecs (ogg, vorbis, vorbisfile,
 # mpg123, wavpack from vcpkg) were missing from the packages, and the
 # installed game did not start (0xc0000135, found by the package replays in
-# CI, 28 October 2026). Expects BB_GAME, the built executable; the DLLs are
-# looked for next to it, where the build puts them.
+# CI, 28 October 2026). SDL2_mixer is no longer used since Phase 9; the rule
+# stays for whatever the DLLs load. Expects BB_GAME, the built executable;
+# the DLLs are looked for next to it, where the build puts them.
 
 get_filename_component(bb_game_dir "${BB_GAME}" DIRECTORY)
 file(GET_RUNTIME_DEPENDENCIES

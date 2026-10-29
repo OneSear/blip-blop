@@ -22,6 +22,7 @@ add_executable(bb_unit_tests
     unit/sprite_font_test.cpp
     unit/audio_test.cpp
     unit/hi_scores_test.cpp
+    unit/mixer_test.cpp
 )
 target_link_libraries(bb_unit_tests PRIVATE bb::core bb::game bb_doctest)
 bb_set_strict_warnings(bb_unit_tests)
@@ -36,7 +37,7 @@ add_executable(bb_conformance_tests
     conformance/sdl2_input_test.cpp
     conformance/sdl2_files_test.cpp
 )
-target_link_libraries(bb_conformance_tests PRIVATE bb::core bb::platform_sdl2 bb_doctest SDL2::SDL2 SDL2_mixer::SDL2_mixer)
+target_link_libraries(bb_conformance_tests PRIVATE bb::core bb::platform_sdl2 bb_doctest SDL2::SDL2)
 # The audio test decodes every shipped sound and music.
 target_compile_definitions(bb_conformance_tests PRIVATE BB_TEST_DATA_DIR="${BB_RUN_DIR}/data")
 add_dependencies(bb_conformance_tests legacy_data)

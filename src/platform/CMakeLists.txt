@@ -12,7 +12,7 @@ add_library(bb_platform_sdl2 STATIC
 )
 add_library(bb::platform_sdl2 ALIAS bb_platform_sdl2)
 target_include_directories(bb_platform_sdl2 PUBLIC sdl2/include)
-target_link_libraries(bb_platform_sdl2 PUBLIC bb::platform PRIVATE SDL2::SDL2 SDL2_mixer::SDL2_mixer)
+target_link_libraries(bb_platform_sdl2 PUBLIC bb::platform PRIVATE SDL2::SDL2)
 if(WIN32)
     target_link_libraries(bb_platform_sdl2 PRIVATE psapi)  # GetProcessMemoryInfo
 endif()

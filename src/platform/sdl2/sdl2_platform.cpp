@@ -1,7 +1,8 @@
 #include "bb/platform/sdl2/sdl2_platform.hpp"
 
 #include <SDL.h>
-#include <SDL_mixer.h>
+
+#include "bb/core/audio/mixer.hpp"
 
 #if defined(_WIN32)
 // clang-format off
@@ -434,165 +435,128 @@ private:
 
 class Sdl2Audio final : public Audio {
 public:
-    // The 2002 game asked FMOD for 32 software channels (CHANNEL_NUMBER).
-    // The 2014 port never called Mix_AllocateChannels, so it had SDL_mixer's
-    // default of 8 voices.
-    static constexpr int kVoices = 32;
+    // The output the 2014 port asked SDL_mixer for: 44.1 kHz stereo 16-bit,
+    // 1024 frames per callback. SDL converts it when the device differs.
+    static constexpr int kRate = 44100;
 
     Sdl2Audio() {
-        // The music is Ogg Vorbis, plus two MP3 jingles (tambour, gameover).
-        const int wanted = MIX_INIT_OGG | MIX_INIT_MP3;
-        if ((Mix_Init(wanted) & wanted) != wanted) {
-            SDL_Log("Mix_Init: Ogg Vorbis or MP3 support missing, some music will be silent: %s",
-                    Mix_GetError());
-        }
-        if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024) != 0) {
-            SDL_Log("Mix_OpenAudio: %s", Mix_GetError());
+        SDL_AudioSpec wanted{};
+        wanted.freq = kRate;
+        wanted.format = AUDIO_S16SYS;
+        wanted.channels = 2;
+        wanted.samples = 1024;
+        wanted.callback = &Sdl2Audio::callback;
+        wanted.userdata = this;
+        SDL_AudioSpec obtained{};
+        device_ = SDL_OpenAudioDevice(nullptr, 0, &wanted, &obtained, 0);
+        if (device_ == 0) {
+            SDL_Log("SDL_OpenAudioDevice: %s", SDL_GetError());
             return;
         }
-        Mix_AllocateChannels(kVoices);
-        open_ = true;
+        SDL_PauseAudioDevice(device_, 0);
     }
 
     ~Sdl2Audio() override {
-        if (open_) {
-            Mix_HaltChannel(-1);
-            Mix_HaltMusic();
-        }
-        for (Mix_Chunk* chunk : samples_) {
-            if (chunk != nullptr) {
-                Mix_FreeChunk(chunk);
-            }
-        }
-        for (MusicSlot& slot : musics_) {
-            if (slot.music != nullptr) {
-                Mix_FreeMusic(slot.music);
-            }
-        }
-        if (open_) {
-            Mix_CloseAudio();
-        }
-        while (Mix_Init(0) != 0) {
-            Mix_Quit();
+        if (device_ != 0) {
+            SDL_CloseAudioDevice(device_);  // no callback runs after this
         }
     }
 
-    bool available() const override { return open_; }
+    Sdl2Audio(const Sdl2Audio&) = delete;
+    Sdl2Audio& operator=(const Sdl2Audio&) = delete;
+
+    bool available() const override { return device_ != 0; }
 
     Sample loadSample(const std::uint8_t* data, std::size_t size) override {
-        if (!open_ || data == nullptr || size == 0 || size > 0x7FFFFFFFu) {
+        if (device_ == 0) {
             return -1;
         }
-        Mix_Chunk* chunk = Mix_LoadWAV_RW(SDL_RWFromConstMem(data, static_cast<int>(size)), 1);
-        if (chunk == nullptr) {
-            SDL_Log("Mix_LoadWAV_RW: %s", Mix_GetError());
+        // Converted outside the lock: the callback goes on meanwhile.
+        std::vector<std::int16_t> samples;
+        if (!core::audio::decodeWav(data, size, kRate, samples)) {
+            SDL_Log("loadSample: not a PCM WAV file");
             return -1;
         }
-        return store(samples_, chunk);
+        const Lock lock(device_);
+        return mixer_.addSound(std::move(samples));
     }
 
     void freeSample(Sample sample) override {
-        if (Mix_Chunk* chunk = get(samples_, sample)) {
-            // A chunk must not be freed while a voice plays it.
-            for (int v = 0; v < kVoices; ++v) {
-                if (Mix_GetChunk(v) == chunk && Mix_Playing(v) != 0) {
-                    Mix_HaltChannel(v);
-                }
-            }
-            Mix_FreeChunk(chunk);
-            samples_[static_cast<std::size_t>(sample)] = nullptr;
-        }
+        const Lock lock(device_);
+        mixer_.freeSound(sample);
     }
 
     int play(Sample sample, bool loop) override {
-        Mix_Chunk* chunk = get(samples_, sample);
-        return chunk == nullptr ? -1 : Mix_PlayChannel(-1, chunk, loop ? -1 : 0);
+        const Lock lock(device_);
+        return mixer_.play(sample, loop);
     }
 
     void stop(int voice) override {
-        if (open_ && voice >= 0) {
-            Mix_HaltChannel(voice);
-        }
+        const Lock lock(device_);
+        mixer_.stop(voice);
     }
 
     Music openMusic(std::vector<std::uint8_t> file) override {
-        if (!open_ || file.empty() || file.size() > 0x7FFFFFFFu) {
+        if (device_ == 0) {
             return -1;
         }
-        // SDL_mixer streams from the bytes, so they live as long as the music.
-        MusicSlot slot;
-        slot.file = std::make_unique<std::vector<std::uint8_t>>(std::move(file));
-        slot.music =
-            Mix_LoadMUS_RW(SDL_RWFromConstMem(slot.file->data(), static_cast<int>(slot.file->size())), 1);
-        if (slot.music == nullptr) {
-            SDL_Log("Mix_LoadMUS_RW: %s", Mix_GetError());
+        auto bytes = std::make_unique<std::vector<std::uint8_t>>(std::move(file));
+        auto stream = core::audio::openMusicStream(*bytes);
+        if (!stream) {
+            SDL_Log("openMusic: neither Ogg Vorbis nor MP3");
             return -1;
         }
-        for (std::size_t i = 0; i < musics_.size(); ++i) {
-            if (musics_[i].music == nullptr) {
-                musics_[i] = std::move(slot);
-                return static_cast<int>(i);
-            }
-        }
-        musics_.push_back(std::move(slot));
-        return static_cast<int>(musics_.size() - 1);
+        const Lock lock(device_);
+        return mixer_.addMusic(std::move(bytes), std::move(stream));
     }
 
     void freeMusic(Music music) override {
-        if (MusicSlot* slot = musicSlot(music)) {
-            Mix_FreeMusic(slot->music);  // halts it if it is playing
-            *slot = MusicSlot();
-        }
+        const Lock lock(device_);
+        mixer_.freeMusic(music);
     }
 
     void playMusic(Music music, bool loop) override {
-        if (MusicSlot* slot = musicSlot(music)) {
-            Mix_PlayMusic(slot->music, loop ? -1 : 0);
-        }
+        const Lock lock(device_);
+        mixer_.playMusic(music, loop);
     }
 
     void stopMusic() override {
-        if (open_) {
-            Mix_HaltMusic();
-        }
+        const Lock lock(device_);
+        mixer_.stopMusic();
+    }
+
+    bool voicePlaying(int voice) {
+        const Lock lock(device_);
+        return mixer_.playing(voice);
     }
 
 private:
-    template <typename T>
-    static int store(std::vector<T*>& slots, T* item) {
-        for (std::size_t i = 0; i < slots.size(); ++i) {
-            if (slots[i] == nullptr) {
-                slots[i] = item;
-                return static_cast<int>(i);
+    // The audio callback and these calls never run at the same time.
+    class Lock {
+    public:
+        explicit Lock(SDL_AudioDeviceID device) : device_(device) {
+            if (device_ != 0) {
+                SDL_LockAudioDevice(device_);
             }
         }
-        slots.push_back(item);
-        return static_cast<int>(slots.size() - 1);
-    }
+        ~Lock() {
+            if (device_ != 0) {
+                SDL_UnlockAudioDevice(device_);
+            }
+        }
+        Lock(const Lock&) = delete;
+        Lock& operator=(const Lock&) = delete;
 
-    template <typename T>
-    static T* get(const std::vector<T*>& slots, int handle) {
-        return handle >= 0 && static_cast<std::size_t>(handle) < slots.size()
-                   ? slots[static_cast<std::size_t>(handle)]
-                   : nullptr;
-    }
-
-    struct MusicSlot {
-        Mix_Music* music = nullptr;
-        std::unique_ptr<std::vector<std::uint8_t>> file;
+    private:
+        SDL_AudioDeviceID device_;
     };
 
-    MusicSlot* musicSlot(Music music) {
-        if (music < 0 || static_cast<std::size_t>(music) >= musics_.size()) {
-            return nullptr;
-        }
-        MusicSlot& slot = musics_[static_cast<std::size_t>(music)];
-        return slot.music != nullptr ? &slot : nullptr;
+    static void SDLCALL callback(void* self, Uint8* stream, int bytes) {
+        static_cast<Sdl2Audio*>(self)->mixer_.mix(reinterpret_cast<std::int16_t*>(stream), bytes / 4);
     }
 
-    bool open_ = false;
-    std::vector<Mix_Chunk*> samples_;
-    std::vector<MusicSlot> musics_;
+    SDL_AudioDeviceID device_ = 0;
+    core::audio::Mixer mixer_{kRate};
 };
 
 class Sdl2Display final : public Display {
@@ -781,6 +745,11 @@ private:
 bool readBack(Display& display, core::gfx::Pixmap& out) {
     // Every Display this backend creates is an Sdl2Display.
     return static_cast<const Sdl2Display&>(display).readBack(out);
+}
+
+bool voicePlaying(Audio& audio, int voice) {
+    // Every Audio this backend creates is an Sdl2Audio.
+    return static_cast<Sdl2Audio&>(audio).voicePlaying(voice);
 }
 
 std::unique_ptr<Platform> createPlatform(const Options& options, std::string& error) {
