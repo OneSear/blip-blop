@@ -20,6 +20,7 @@ constexpr int kStageText = 857;  // "Stage"
 
 struct Layout {
     bool rightSide;
+    int top;     // added to every y: 0 for the first row, kSecondRow below
     int lifeX;   // life points, at y = 20
     int scoreX;  // score, aligned towards the centre
     int edgeX;   // lives or "Bonus Stage", aligned to the edge
@@ -30,8 +31,14 @@ struct Layout {
     int cowBombStep;  // towards the centre
 };
 
-constexpr Layout kPlayer1 = {false, 20, 190, 4, 5, 135, 135, 90, 23};
-constexpr Layout kPlayer2 = {true, 560, 450, 635, 635, 510, 505, 520, -23};
+// Players 3 and 4 under players 1 and 2: a corner is 88 pixels high. (The
+// bottom corners hid the ground the heroes walk on.)
+constexpr int kSecondRow = 88;
+
+constexpr Layout kPlayer1 = {false, 0, 20, 190, 4, 5, 135, 135, 90, 23};
+constexpr Layout kPlayer2 = {true, 0, 560, 450, 635, 635, 510, 505, 520, -23};
+constexpr Layout kPlayer3 = {false, kSecondRow, 20, 190, 4, 5, 135, 135, 90, 23};
+constexpr Layout kPlayer4 = {true, kSecondRow, 560, 450, 635, 635, 510, 505, 520, -23};
 
 // Text from x, or ending at x on the right side.
 void printFromEdge(const core::gfx::BitmapFont& font, core::gfx::Pixmap& screen, bool rightSide, int x, int y,
@@ -80,45 +87,47 @@ void drawPlayer(const World& world, const Player& player, const Layout& layout, 
     core::gfx::Pixmap& screen = media.canvas->screen();
     char buffer[20];
 
-    drawLifePoints(world, screen, layout.lifeX, 20, player.health.points);
+    const int top = layout.top;
+    drawLifePoints(world, screen, layout.lifeX, top + 20, player.health.points);
 
     // The score towards the centre: right-aligned on the left side.
     std::snprintf(buffer, sizeof(buffer), "%07d", player.score);
-    const core::gfx::BitmapFont& scoreFont = player.hero == Hero::Blip ? *fonts.scoreBlip : *fonts.scoreBlop;
-    printFromEdge(scoreFont, screen, !layout.rightSide, layout.scoreX, 20, buffer);
+    const core::gfx::BitmapFont& scoreFont = *fonts.score(static_cast<int>(player.hero));
+    printFromEdge(scoreFont, screen, !layout.rightSide, layout.scoreX, top + 20, buffer);
 
     if (bonusLevel) {
-        printFromEdge(*fonts.rpg, screen, layout.rightSide, layout.edgeX, 5, media.texts->text(kBonusText));
-        printFromEdge(*fonts.rpg, screen, layout.rightSide, layout.edgeX, 20, media.texts->text(kStageText));
+        printFromEdge(*fonts.rpg, screen, layout.rightSide, layout.edgeX, top + 5,
+                      media.texts->text(kBonusText));
+        printFromEdge(*fonts.rpg, screen, layout.rightSide, layout.edgeX, top + 20,
+                      media.texts->text(kStageText));
     } else {
         std::snprintf(buffer, sizeof(buffer), "%d", player.lives);
-        printFromEdge(*fonts.cool, screen, layout.rightSide, layout.livesX, 5, buffer);
+        printFromEdge(*fonts.cool, screen, layout.rightSide, layout.livesX, top + 5, buffer);
     }
 
-    core::gfx::draw(screen, *(*media.misc)[weaponImage(player.weapon)], layout.weaponX, 50);
+    core::gfx::draw(screen, *(*media.misc)[weaponImage(player.weapon)], layout.weaponX, top + 50);
 
     if (player.weapon == Weapon::Rifle) {
-        fonts.ammo->printCentred(screen, layout.ammoX, 43, "*");
+        fonts.ammo->printCentred(screen, layout.ammoX, top + 43, "*");
     } else {
         std::snprintf(buffer, sizeof(buffer), "%d", player.ammo);
         const core::gfx::BitmapFont& ammoFont = player.firing && blink ? *fonts.ammoUsed : *fonts.ammo;
-        ammoFont.printCentred(screen, layout.ammoX, 43, buffer);
+        ammoFont.printCentred(screen, layout.ammoX, top + 43, buffer);
     }
 
     for (int i = 0, x = layout.cowBombX; i < player.cowBombs; ++i, x += layout.cowBombStep) {
-        core::gfx::draw(screen, *(*media.misc)[img::kHudCowBomb], x, 65);
+        core::gfx::draw(screen, *(*media.misc)[img::kHudCowBomb], x, top + 65);
     }
 }
 
 }  // namespace
 
-void Hud::draw(const World& world, const Player* player1, const Player* player2, bool bonusLevel,
-               bool blink) {
-    if (player1 != nullptr && player1->lives > 0) {
-        drawPlayer(world, *player1, kPlayer1, bonusLevel, blink);
-    }
-    if (player2 != nullptr && player2->lives > 0) {
-        drawPlayer(world, *player2, kPlayer2, bonusLevel, blink);
+void Hud::draw(const World& world, const Player* const* players, bool bonusLevel, bool blink) {
+    const Layout* layouts[kMaxPlayers] = {&kPlayer1, &kPlayer2, &kPlayer3, &kPlayer4};
+    for (int i = 0; i < kMaxPlayers; ++i) {
+        if (players[i] != nullptr && players[i]->lives > 0) {
+            drawPlayer(world, *players[i], *layouts[i], bonusLevel, blink);
+        }
     }
 
     const int timer = world.flags[Flag::Timer];

@@ -169,6 +169,8 @@ void App::connectServices() {
     m.players = &heroes_;
     m.blip = &blip_;
     m.blop = &blop_;
+    m.bleach = &bleach_;
+    m.blitz = &blitz_;
     m.dialogueFaces = &dialogueFaces_;
     m.heroFaces = &heroFaces_;
     m.levelSounds = &levelSounds_;
@@ -182,6 +184,8 @@ void App::connectServices() {
     fonts_.menus = &menus_;
     fonts_.scoreBlip = &scoreBlip_;
     fonts_.scoreBlop = &scoreBlop_;
+    fonts_.scoreBleach = &scoreBleach_;
+    fonts_.scoreBlitz = &scoreBlitz_;
     fonts_.ammo = &ammo_;
     fonts_.ammoUsed = &ammoUsed_;
 
@@ -216,11 +220,15 @@ void App::connectServices() {
     b.dialogueFaces = &dialogueFaces_;
     b.blip = &blip_;
     b.blop = &blop_;
+    b.bleach = &bleach_;
+    b.blitz = &blitz_;
     b.heroes = &heroes_;
     b.misc = &misc_;
     b.heroFaces = &heroFaces_;
     b.scoreBlip = &scoreBlip_;
     b.scoreBlop = &scoreBlop_;
+    b.scoreBleach = &scoreBleach_;
+    b.scoreBlitz = &scoreBlitz_;
     b.ammo = &ammo_;
     b.ammoUsed = &ammoUsed_;
     b.levelSounds = &levelSounds_;

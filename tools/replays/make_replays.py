@@ -136,7 +136,7 @@ def menus():
     tap(s, "DOWN")                    # wraps to START
     tap(s, "DOWN")                    # OPTIONS
     tap(s, "RETURN")                  # options (VSYNC, SCALING, FILTER, SMOOTH
-                                      # MOTION, LANGUAGE, P1 KEYS, P2 KEYS, RETURN)
+                                      # MOTION, LANGUAGE, P1 to P4 KEYS, RETURN)
     tap(s, "DOWN")                    # wraps to VSYNC
     tap(s, "RIGHT")
     tap(s, "LEFT")
@@ -167,12 +167,13 @@ def menus():
     for _ in range(6):
         tap(s, "DOWN")
     tap(s, "RETURN")                  # back to the options
-    tap(s, "DOWN")
+    for _ in range(3):
+        tap(s, "DOWN")
     tap(s, "RETURN")                  # RETURN: main menu on OPTIONS
     tap(s, "UP")
-    tap(s, "RETURN")                  # START (1 PLAYER, 2 PLAYERS, RETURN)
-    tap(s, "DOWN")
-    tap(s, "DOWN")
+    tap(s, "RETURN")                  # START (1 to 4 PLAYERS, RETURN)
+    for _ in range(4):
+        tap(s, "DOWN")
     tap(s, "RETURN")                  # back to the main menu
     tap(s, "RETURN")                  # START
     tap(s, "RETURN")                  # 1 PLAYER: character select
@@ -198,8 +199,8 @@ def menus():
     tap(s, "ESCAPE", frames=10)       # pause menu (RESUME, OPTIONS, EXIT)
     tap(s, "DOWN")
     tap(s, "RETURN")                  # options, focus on RETURN
-    tap(s, "UP")
-    tap(s, "UP")
+    for _ in range(4):
+        tap(s, "UP")
     tap(s, "RETURN")                  # player 1 keys
     tap(s, "RETURN")                  # RETURN: back to the options
     tap(s, "RETURN")                  # RETURN: back to the pause menu
@@ -227,6 +228,62 @@ def menus():
     s.hold(60)
     # Quit: EXIT, YES.
     tap(s, "UP")
+    tap(s, "RETURN")
+    tap(s, "RETURN")
+    return s.end(300)
+
+
+def four_players():
+    """A four-player game: Blip and Blop on the keyboard, Bleach and Blitz on
+    pads 3 and 4 (their default layout: d-pad, X fires, A jumps). All four
+    run, jump and fire through the first level and its dialogue; F9 wins it
+    and the second one (whose level summary is the table of four); then part
+    of the third level, the pause menu's EXIT and a quit."""
+    s = Script(options=("/cheat", "/quiet"))
+    s.hold(30)
+    s.hold(10, "ESCAPE")              # skip the intro cutscene
+    s.hold(60)
+    s.hold(10, "RETURN")              # main menu: START
+    s.hold(40)
+    for _ in range(3):
+        tap(s, "DOWN")                # start menu: 4 PLAYERS
+    s.hold(10, "RETURN")
+    s.hold(140)                       # character select: Blip slides in
+    s.hold(10, "RETURN")              # player 1 is Blip
+    s.hold(60)
+    run = ("RIGHT", "LCTRL", "F", "TAB", "JOY3_RIGHT", "JOY3_B2", "JOY4_RIGHT", "JOY4_B2")
+    jump = ("LALT", "G", "JOY3_B0", "JOY4_B0")
+    back = ("LEFT", "D", "JOY3_LEFT", "JOY4_LEFT")
+
+    def cycle():
+        s.hold(15, *run[:4])          # 1 and 2 ahead: the four spread out
+        s.hold(30, *run)
+        s.hold(8, *run, *jump)        # all jump while running
+        s.hold(40, *run)
+        s.hold(10, *back)
+        s.hold(6)                     # release all: lets dialogues finish
+        s.hold(4, "RETURN")           # briefing prompts, summaries
+        s.hold(6)
+        s.hold(3, "F1", "F3")         # ammo and a life for player 1
+        s.hold(3)
+
+    for level, frames in enumerate((2000, 900, 600)):
+        start = s.frame
+        while s.frame - start < frames:
+            cycle()
+        if level < 2:
+            s.hold(30)
+            s.hold(4, "F9")           # win the level
+            s.hold(10)
+            for _ in range(12):
+                s.hold(4, "RETURN")
+                s.hold(30)
+    tap(s, "ESCAPE", frames=10)       # pause menu (RESUME, OPTIONS, EXIT)
+    tap(s, "DOWN")
+    tap(s, "DOWN")
+    tap(s, "RETURN")                  # EXIT: back to the main menu
+    s.hold(60)
+    tap(s, "UP")                      # EXIT, YES: quit
     tap(s, "RETURN")
     tap(s, "RETURN")
     return s.end(300)
@@ -624,6 +681,7 @@ def main():
         "smoke.bbreplay": smoke(),
         "menus.bbreplay": menus(),
         "gameover.bbreplay": gameover(),
+        "fourplayers.bbreplay": four_players(),
         "smurf.bbreplay": smurf(),
         "dork.bbreplay": dork(),
         "carebears.bbreplay": carebears(),

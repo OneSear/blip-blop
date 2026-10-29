@@ -85,11 +85,15 @@ struct Banks {
     core::gfx::SpriteBank* dialogueFaces = nullptr;  // the level's dialogue faces (pbk_rpg)
     core::gfx::SpriteBank* blip = nullptr;           // the campaign's: the heroes,
     core::gfx::SpriteBank* blop = nullptr;
+    core::gfx::SpriteBank* bleach = nullptr;  // (the four-player mode)
+    core::gfx::SpriteBank* blitz = nullptr;
     core::gfx::SpriteBank* heroes = nullptr;     // what they share (bb.gfx),
     core::gfx::SpriteBank* misc = nullptr;       // pickups and effects,
     core::gfx::SpriteBank* heroFaces = nullptr;  // their dialogue faces (rpg_bb.gfx)
     core::gfx::BitmapFont* scoreBlip = nullptr;  // and the HUD fonts
     core::gfx::BitmapFont* scoreBlop = nullptr;
+    core::gfx::BitmapFont* scoreBleach = nullptr;
+    core::gfx::BitmapFont* scoreBlitz = nullptr;
     core::gfx::BitmapFont* ammo = nullptr;
     core::gfx::BitmapFont* ammoUsed = nullptr;
     SoundBank* levelSounds = nullptr;

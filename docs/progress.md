@@ -89,6 +89,62 @@ possible with SDL 2's renderer and software-drawn frames (DEC-01).
   pixels (2,4,2,2,4...), mean 2.46, mean change between frames 1.37
   pixels; on, steps of 3 (3,3,3,2,3...), mean 2.50, mean change 0.48.
 
+### The four-player mode (29 October 2026)
+
+Asked by the maintainer: a third and a fourth player, Bleach ("a pink
+girly player") and Blitz ("a green boy player").
+
+* The art: the 2002 sprite banks are made per hero with one layout, and
+  the hero classes differ (Blip: SMG and laser; Blop: shotgun and
+  flamethrower), so Bleach is a recoloured Blip and Blitz a recoloured
+  Blop (`blipKind()`), with their weapons. `tools/art/new_heroes.py`
+  recolours the 2002 files themselves: blue body and hands to pink and
+  the red bandana to purple (Bleach), red body and hands to green and the
+  green helmet to khaki (Blitz), the score digits pink and green. In the
+  muzzle-flash images (74–103), which hold the hand too, only the colours
+  of the hero's other images change, never a pure red (the flames' reds,
+  shared with Blip's bandana). Its LGX decoder and encoder give the 2002
+  bytes back unchanged (checked on the four source files).
+  `fix_legacy_data.py` adds `bleach.gfx`, `blitz.gfx`, `scorep.lft` and
+  `scoreg.lft` to `data.zip` (written again when the script changes
+  them); `bbassets extract` made their sources (`sprites/bleach`,
+  `sprites/blitz`, `fonts/scorep`, `fonts/scoreg`, without sprite names:
+  the code reaches every hero bank through Blip's names).
+* Players: `kPlayerCount` (controls) and `kMaxPlayers` (game) are 4.
+  Players 3 and 4 have no default keys and play with pads 3 and 4 (the
+  default layout, `defaultPadCode()`); the settings file and the controls
+  menu have `p3.`/`p4.` and PLAYER 3/4 CONTROL. The 2002 `bb.cfg` import
+  still reads two players. START has 3 and 4 PLAYERS; player 1 chooses
+  Blip or Blop, 2 is the other, 3 Bleach, 4 Blitz.
+* Game: players 3 and 4 start on the starting points of 1 and 2 (the
+  levels have two; another place could be in a wall or over a hole) and
+  separate once they move. The camera, the targeting of enemies, the
+  screen edges and the vehicles already worked on the player list. The
+  scrolling stops for any of the four dying (`Camera::scrolls()`).
+  Dialogues are written for one or two heroes: the first two players in
+  the list speak, with Blip's faces for Blip and Bleach and Blop's for
+  Blop and Blitz (the 2002 code wrote the faces of every listed player
+  into an array of two). The hi-score entry asks each of the four.
+* HUD: players 3 and 4 in a second row under 1 and 2 (88 pixels lower).
+  The bottom corners were tried first: they hid the ground the heroes
+  walk on (seen in the frames). The level summary is a table with three
+  or four players: the labels once, a 120-pixel column per player still
+  in the level, over the whole width.
+* Not changed: the balance (bosses lose their life four times as fast
+  with four players), the cheat keys (players 1 and 2 only).
+* Checked: with one or two players nothing changed but the START page:
+  every replay keeps its tick fingerprints, and frames dumped from the
+  previous commit's build and this one are byte for byte the same (the
+  `smurf` level at frames 1000–1004 and 15000–15002; one frame in 100 of
+  the two-player `gameover` replay, 127 frames with its HUD and both
+  summaries). The frame fingerprints changed from the START page on
+  (they are chained) and were recorded again. New replay `fourplayers`:
+  four players (two on the keyboard, two on pads 3 and 4) through the
+  first level and its dialogue, the second level won (the table of
+  four), the bonus level left from the pause menu (its summary), then a
+  quit; looked at in frames (the four heroes, the second HUD row, the
+  table in four colours).
+
 ### The in-house mixer (DEC-06)
 
 * `bb::core::audio::Mixer` (`src/core/src/audio_mixer.cpp`): 32 voices

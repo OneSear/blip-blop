@@ -71,6 +71,11 @@ the release notes.
       Start pauses) without any setting; the log names them "(game
       controller)".
 - [ ] A second controller plays the second player.
+- [ ] START 4 PLAYERS GAME with four controllers (or two players on the
+      keyboard and controllers 3 and 4): Bleach (pink) and Blitz (green)
+      play with controllers 3 and 4, their scores show in the second row
+      at the top, the level summary is a table of four, and nobody is
+      pushed off the screen for long. Also with three players.
 - [ ] A controller can be assigned in the controls menu, and then plays
       with the chosen buttons only; unplugging one during a level does not
       crash.

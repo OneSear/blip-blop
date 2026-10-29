@@ -113,13 +113,16 @@ class Player;
 // The bonuses of a finished level, counted up on a darkened band over the
 // last frame: perfect (not hurt), objective, casualties (the % of the
 // enemies killed) and time left, for each player; a key speeds the
-// counting up; a life for every 500,000 points.
+// counting up; a life for every 500,000 points. With three or four players
+// (the four-player mode) the bonuses are a table: the labels once, then a
+// column per player.
 class LevelSummaryScreen : public Screen {
 public:
-    // bonusLevel: a bonus level; bonusFailed: a bonus level that was lost
-    // (no bonus points at all).
-    LevelSummaryScreen(Services& services, Player* player1, Player* player2, bool playersDead,
-                       bool bonusLevel, bool bonusFailed) noexcept;
+    // players: kMaxPlayers of them, null when absent. bonusLevel: a bonus
+    // level; bonusFailed: a bonus level that was lost (no bonus points at
+    // all).
+    LevelSummaryScreen(Services& services, Player* const* players, bool playersDead, bool bonusLevel,
+                       bool bonusFailed) noexcept;
     Frame update(ScreenStack& stack) override;
     const char* name() const override { return "level summary"; }
 
@@ -146,6 +149,9 @@ private:
     void start();
     void count(Tally& t);
     void draw(Tally& t);
+    // The table of the four-player mode: its labels, and a player's column.
+    void drawLabels();
+    void drawColumn(Tally& t);
 
     enum class Step { Start, Counting, Waited };
 
@@ -155,7 +161,8 @@ private:
     bool playersDead_;
     bool bonusLevel_;
     bool bonusFailed_;
-    Tally tally_[2];
+    Tally tally_[kMaxPlayers];
+    bool table_ = false;  // three or four players
     int delay_ = 0;
 };
 

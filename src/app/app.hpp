@@ -106,8 +106,9 @@ private:
 
     // The banks and fonts (the pbk_*, fnt_*, sbk_*, mbk_* of 2002).
     core::gfx::SpriteBank interface_, decorScreens_, props_, enemies_, dialogueFaces_;
-    core::gfx::SpriteBank blip_, blop_, heroes_, misc_, heroFaces_;
-    core::gfx::BitmapFont cool_, rpg_, menu_, menus_, scoreBlip_, scoreBlop_, ammo_, ammoUsed_;
+    core::gfx::SpriteBank blip_, blop_, bleach_, blitz_, heroes_, misc_, heroFaces_;
+    core::gfx::BitmapFont cool_, rpg_, menu_, menus_, scoreBlip_, scoreBlop_, scoreBleach_, scoreBlitz_,
+        ammo_, ammoUsed_;
     game::SoundBank levelSounds_{audio_}, miscSounds_{audio_}, heroSounds_{audio_};
     game::MusicBank levelMusic_{audio_}, jingles_{audio_}, attractMusic_{audio_};
 

@@ -43,10 +43,18 @@ struct Fonts {
     const core::gfx::BitmapFont* rpg = nullptr;   // dialogues, prompts
     const core::gfx::BitmapFont* menu = nullptr;
     const core::gfx::BitmapFont* menus = nullptr;
-    const core::gfx::BitmapFont* scoreBlip = nullptr;  // scorei
-    const core::gfx::BitmapFont* scoreBlop = nullptr;  // scoreo
+    const core::gfx::BitmapFont* scoreBlip = nullptr;    // scorei
+    const core::gfx::BitmapFont* scoreBlop = nullptr;    // scoreo
+    const core::gfx::BitmapFont* scoreBleach = nullptr;  // scorep (four-player mode)
+    const core::gfx::BitmapFont* scoreBlitz = nullptr;   // scoreg
     const core::gfx::BitmapFont* ammo = nullptr;
     const core::gfx::BitmapFont* ammoUsed = nullptr;  // while firing
+
+    // The score font of hero `hero` (a Hero value: 0 Blip to 3 Blitz).
+    const core::gfx::BitmapFont* score(int hero) const noexcept {
+        const core::gfx::BitmapFont* fonts[] = {scoreBlip, scoreBlop, scoreBleach, scoreBlitz};
+        return hero >= 0 && hero < 4 ? fonts[hero] : scoreBlip;
+    }
 };
 
 // Where the game draws: the back buffer, in screen coordinates.

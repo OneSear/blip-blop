@@ -37,10 +37,14 @@ enum Text {
     kMotionText = 804,
     kPlayer1KeysText = 819,
     kPlayer2KeysText = 820,
+    kPlayer3KeysText = 860,  // the four-player mode
+    kPlayer4KeysText = 861,
     kUpText = 821,  // up, down, left, right, fire, jump, special
     kStartGameText = 830,
     kOnePlayerText = 831,
     kTwoPlayersText = 832,
+    kThreePlayersText = 858,
+    kFourPlayersText = 859,
     kExitText = 833,
     kCancelText = 834,
 };
@@ -120,13 +124,27 @@ bool Menu::switchOption() {
     return true;
 }
 
+int Menu::keysPage(int player) noexcept {
+    const int pages[] = {kKeys1Page, kKeys2Page, kKeys3Page, kKeys4Page};
+    return pages[player];
+}
+
+int Menu::keysPlayer(int page) noexcept {
+    for (int player = 0; player < kMaxPlayers; ++player) {
+        if (keysPage(player) == page) {
+            return player;
+        }
+    }
+    return -1;
+}
+
 void Menu::chooseOption() {
     switch (focus_) {
         case kKeys1Item:
-            setPage(kKeys1Page, 8, 7);
-            break;
         case kKeys2Item:
-            setPage(kKeys2Page, 8, 7);
+        case kKeys3Item:
+        case kKeys4Item:
+            setPage(keysPage(focus_ - kKeys1Item), 8, 7);
             break;
         case kOptionsReturnItem:
             setPage(kMainPage, 3, 1);
@@ -151,6 +169,8 @@ void Menu::optionsItems() {
     option(kLanguageItem, kLanguageText, o.language == input::Language::French ? kFrenchText : kEnglishText);
     setItem(kKeys1Item, t.text(kPlayer1KeysText));
     setItem(kKeys2Item, t.text(kPlayer2KeysText));
+    setItem(kKeys3Item, t.text(kPlayer3KeysText));
+    setItem(kKeys4Item, t.text(kPlayer4KeysText));
     setItem(kOptionsReturnItem, t.text(kReturnText));
 }
 
@@ -180,8 +200,11 @@ void Menu::setRedefinedKey(unsigned int code) {
     if (redefining_ < 0 || redefining_ > 6) {
         return;
     }
-    const int first = page_ == kKeys1Page ? AliasControls::kFirstPlayer : AliasControls::kSecondPlayer;
-    services_.input->setAlias(first + kItemAlias[redefining_], code);
+    const int player = keysPlayer(page_);
+    if (player < 0) {
+        return;
+    }
+    services_.input->setAlias(AliasControls::firstOf(player) + kItemAlias[redefining_], code);
 }
 
 void Menu::draw() {
@@ -266,7 +289,9 @@ void MainMenu::updateItems() {
         case kStartPage:
             setItem(0, t.text(kOnePlayerText));
             setItem(1, t.text(kTwoPlayersText));
-            setItem(2, t.text(kReturnText));
+            setItem(2, t.text(kThreePlayersText));
+            setItem(3, t.text(kFourPlayersText));
+            setItem(4, t.text(kReturnText));
             break;
         case kExitPage:
             setItem(0, t.text(kExitText));
@@ -275,13 +300,10 @@ void MainMenu::updateItems() {
         case kOptionsPage:
             optionsItems();
             break;
-        case kKeys1Page:
-            keyItems(AliasControls::kFirstPlayer);
-            break;
-        case kKeys2Page:
-            keyItems(AliasControls::kSecondPlayer);
-            break;
         default:
+            if (keysPlayer(page_) >= 0) {
+                keyItems(AliasControls::firstOf(keysPlayer(page_)));
+            }
             break;
     }
 }
@@ -346,7 +368,7 @@ bool MainMenu::update(int& result) {
                     case kMainPage:
                         switch (focus_) {
                             case 0:
-                                setPage(kStartPage, 3, 0);
+                                setPage(kStartPage, 5, 0);
                                 return done(result, kContinue);
                             case 1:
                                 setPage(kOptionsPage, kOptionItems, kOptionsReturnItem);
@@ -366,6 +388,10 @@ bool MainMenu::update(int& result) {
                             case 1:
                                 return done(result, kStartTwoPlayers);
                             case 2:
+                                return done(result, kStartThreePlayers);
+                            case 3:
+                                return done(result, kStartFourPlayers);
+                            case 4:
                                 setPage(kMainPage, 3, 0);  // and on to the side keys
                                 break;
                             default:
@@ -391,9 +417,10 @@ bool MainMenu::update(int& result) {
 
                     case kKeys1Page:
                     case kKeys2Page:
+                    case kKeys3Page:
+                    case kKeys4Page:
                         if (focus_ == 7) {
-                            setPage(kOptionsPage, kOptionItems,
-                                    page_ == kKeys1Page ? kKeys1Item : kKeys2Item);
+                            setPage(kOptionsPage, kOptionItems, kKeys1Item + keysPlayer(page_));
                         } else {
                             redefining_ = focus_;
                             updateItems();
@@ -493,10 +520,8 @@ void PauseMenu::updateItems() {
         setItem(2, t.text(kExitGameText));
     } else if (page_ == optionsPage_) {
         optionsItems();
-    } else if (page_ == kKeys1Page) {
-        keyItems(AliasControls::kFirstPlayer);
-    } else if (page_ == kKeys2Page) {
-        keyItems(AliasControls::kSecondPlayer);
+    } else if (keysPlayer(page_) >= 0) {
+        keyItems(AliasControls::firstOf(keysPlayer(page_)));
     }
 }
 
@@ -568,7 +593,7 @@ bool PauseMenu::update(int& result) {
                 } else if (page_ == optionsPage_) {
                     chooseOption();
                     return done(result, kStay);
-                } else if (page_ == kKeys1Page || page_ == kKeys2Page) {
+                } else if (keysPlayer(page_) >= 0) {
                     if (focus_ == 7) {
                         setPage(optionsPage_, kOptionItems, kOptionsReturnItem);
                     } else {

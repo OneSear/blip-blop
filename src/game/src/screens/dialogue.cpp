@@ -2,6 +2,7 @@
 
 #include "bb/game/dialogue.hpp"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -50,16 +51,19 @@ bool DialoguePlayer::begin(int scene) {
     textId_[kTop] = textId_[kBottom] = -1;
 
     World& w = *services_.world;
-    playerCount_ = w.players.count();
+    // The scripts are written for one or two heroes (ifnbj=2): with three
+    // or four players, the first two in the list speak, with Blip's faces
+    // for Blip and Bleach and Blop's for Blop and Blitz.
+    playerCount_ = std::min(w.players.count(), 2);
     keyReleased_ = false;
     box_ = kTop;
     player_ = 0;
     waitUntil_ = 0;
 
     int i = 0;
-    for (w.players.rewind(); !w.players.atEnd(); w.players.next()) {
+    for (w.players.rewind(); !w.players.atEnd() && i < 2; w.players.next()) {
         const auto* p = static_cast<const Player*>(w.players.current());
-        heroFirstImage_[i] = p->hero == Hero::Blip ? 0 : 6;
+        heroFirstImage_[i] = blipKind(p->hero) ? 0 : 6;
         i += 1;
     }
     return true;

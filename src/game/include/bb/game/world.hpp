@@ -102,8 +102,11 @@ struct Camera {
     int x = 0;      // left edge of the screen in level pixels
     int speed = 0;  // scroll speed (scroll events)
     // Scrolling stops while a player dies or comes back (one flag per
-    // player).
-    bool stopped[2] = {false, false};
+    // player, four in the four-player mode).
+    bool stopped[4] = {false, false, false, false};
+
+    // Whether no player stops the scrolling.
+    bool scrolls() const noexcept { return !stopped[0] && !stopped[1] && !stopped[2] && !stopped[3]; }
 };
 
 // Drawing between the last two ticks (the smooth motion option, Phase 9).
@@ -189,6 +192,8 @@ struct Media {
     const ImageBank* players = nullptr;  // shared by Blip and Blop
     const ImageBank* blip = nullptr;     // each hero's own images
     const ImageBank* blop = nullptr;
+    const ImageBank* bleach = nullptr;  // (the four-player mode)
+    const ImageBank* blitz = nullptr;
     const ImageBank* dialogueFaces = nullptr;  // the level's (rpg bank)
     const ImageBank* heroFaces = nullptr;      // Blip's and Blop's (rpg_bb.gfx)
     SoundPlayer* levelSounds = nullptr;

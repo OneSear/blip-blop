@@ -20,12 +20,15 @@ public:
 };
 
 // The seven aliases of a player, from first + 0 (up) to first + 6 (special):
-// 0 for the first player, 10 for the second (ALIAS_P1_*, ALIAS_P2_*).
+// 0 for the first player, 10 for the second (ALIAS_P1_*, ALIAS_P2_*), 20
+// and 30 for the third and fourth (the four-player mode).
 class AliasControls : public PlayerControls {
 public:
     enum Offset { kUp = 0, kDown = 1, kLeft = 2, kRight = 3, kFire = 4, kJump = 5, kSpecial = 6 };
     static constexpr int kFirstPlayer = 0;
     static constexpr int kSecondPlayer = 10;
+    // The first alias of player `player` (0 to 3).
+    static constexpr int firstOf(int player) noexcept { return player * 10; }
 
     AliasControls(const InputState& input, int first) noexcept : input_(input), first_(first) {}
 

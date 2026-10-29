@@ -125,8 +125,9 @@ void Level::reset() {
 
     w.scrollLock.on = false;
     w.camera.speed = 0;
-    w.camera.stopped[0] = false;
-    w.camera.stopped[1] = false;
+    for (bool& stopped : w.camera.stopped) {
+        stopped = false;
+    }
     w.holdFire.on = false;
     w.weather.intensity = 0;
     w.shake.dy = 0;
@@ -162,12 +163,12 @@ void Level::tick(const CheatKeys& cheats) {
 
     // The camera follows the players, then again after the events, which
     // may lock it.
-    const bool scrolling = !w.camera.stopped[0] && !w.camera.stopped[1];
+    const bool scrolling = w.camera.scrolls();
     if (scrolling) {
         updateCamera(false);
     }
     w.updateEvents();
-    if (!w.camera.stopped[0] && !w.camera.stopped[1]) {
+    if (w.camera.scrolls()) {
         updateCamera(true);
     }
 
@@ -262,7 +263,7 @@ void Level::updateCheats(const CheatKeys& cheats) {
     // The per-player cheats, then the global ones; a one-shot cheat waits
     // 20 ticks after the previous one (and the waiting stops the checks of
     // what follows, as in 2002).
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < kMaxPlayers; ++i) {
         Player* player = players[i];
         if (player == nullptr) {
             continue;

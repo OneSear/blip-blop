@@ -130,7 +130,10 @@ Player::Player(World& world, Hero which, const PlayerControls& controls, int ind
       hero(which),
       slot(index),
       controls_(controls),
-      own_(which == Hero::Blip ? world.media.blip : world.media.blop) {
+      own_(which == Hero::Blip     ? world.media.blip
+           : which == Hero::Blop   ? world.media.blop
+           : which == Hero::Bleach ? world.media.bleach
+                                   : world.media.blitz) {
     direction = aim::kRight;
     hitbox.active = true;
     health.points = kFullHealth;
@@ -175,7 +178,7 @@ void Player::equip(Weapon w, int rounds) {
 }
 
 void Player::rearm() {
-    if (hero == Hero::Blip) {
+    if (blipKind(hero)) {
         equip(Weapon::Smg, 100);
     } else {
         equip(Weapon::Shotgun, 10);
@@ -183,7 +186,7 @@ void Player::rearm() {
 }
 
 void Player::equipSuperWeapon() {
-    if (hero == Hero::Blip || !world().flamethrowerAllowed) {
+    if (blipKind(hero) || !world().flamethrowerAllowed) {
         equip(Weapon::Laser, 750);
     } else {
         equip(Weapon::Flamethrower, 1000);
@@ -1117,7 +1120,7 @@ void Player::drawWeapon(int px, int py) {
 
     switch (weapon) {
         case Weapon::Rifle: {
-            const bool blip = hero == Hero::Blip;
+            const bool blip = blipKind(hero);
             drawAt(px + (blip ? kRifleFlashDx : kBlopRifleFlashDx)[gun] + kRecoilX[gun][recoilStep_],
                    py + (blip ? kRifleFlashDy : kBlopRifleFlashDy)[gun] + kRecoilY[gun][recoilStep_],
                    shared(common::kRifleFlash + gun * 3 + kFlashFrames[flashStep_]));

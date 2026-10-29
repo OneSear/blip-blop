@@ -39,6 +39,15 @@ Phase 9):
         writes it (the 2002 fr.dat was never in the repository, D-25); it
         is written again whenever fr.json changes.
 
+And the four-player mode (players 3 and 4, Bleach and Blitz, 29 October
+2026):
+  bleach.gfx, blitz.gfx, scorep.lft and scoreg.lft are added, recoloured
+        from blip.gfx, blop.gfx, scorei.lft and scoreo.lft by
+        tools/art/new_heroes.py, and written again whenever it changes
+        them;
+  uk.dat gains the start and controls items of players 3 and 4 (ids
+        858-861), before id 1000.
+
 The script is idempotent: running it on a fixed archive changes nothing.
 Every other entry keeps its content, compression method and timestamp.
 
@@ -197,6 +206,13 @@ PHASE9_STRINGS = [
     (817, 'FILTER = '),
     (818, 'SHARP'),
 ]
+# The menu items of the four-player mode.
+FOUR_PLAYER_STRINGS = [
+    (858, 'START 3 PLAYERS GAME'),
+    (859, 'START 4 PLAYERS GAME'),
+    (860, 'PLAYER 3 CONTROL'),
+    (861, 'PLAYER 4 CONTROL'),
+]
 FRENCH_SOURCE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "assets", "source",
                              "strings", "fr.json")
 
@@ -267,6 +283,12 @@ def fix_entry(name, data):
         added = "".join("\n%d^%s" % (i, text) for i, text in PHASE3_STRINGS)
         at = data.index(b"\n1000^")
         return data[:at] + added.encode("cp1252") + data[at:], "added %d strings" % len(PHASE3_STRINGS)
+    if name == "data/uk.dat" and b"\n858^" not in data and b"\n857^" in data:
+        added = "".join("\n%d^%s" % (i, text) for i, text in FOUR_PLAYER_STRINGS)
+        at = data.index(b"\n1000^")
+        data = data[:at] + added.encode("cp1252") + data[at:]
+        more, _ = fix_entry(name, data)
+        return more, "added %d four-player strings" % len(FOUR_PLAYER_STRINGS)
     if name == "data/uk.dat" and b"\n811^\n" in data:
         for i, text in PHASE9_STRINGS:
             empty = b"\n%d^\n" % i
@@ -303,6 +325,23 @@ def main():
             changes.append(f"{info.filename}: {what}")
         out_entries.append((info, new_data, what is not None))
 
+    # The art of players 3 and 4, from the (fixed) 2002 files.
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "art"))
+    import new_heroes  # noqa: E402
+    names = [info.filename for info, _, _ in out_entries]
+    by_name = {info.filename: data for info, data, _ in out_entries}
+    template = out_entries[names.index("data/blip.gfx")][0]
+    for new_name, data in sorted(new_heroes.new_files(lambda n: by_name[n]).items()):
+        if new_name not in names:
+            info = zipfile.ZipInfo(new_name, date_time=(2026, 10, 29, 0, 0, 0))
+            info.external_attr = template.external_attr
+            out_entries.append((info, data, True))
+            changes.append(f"{new_name}: added")
+        elif by_name[new_name] != data:
+            k = names.index(new_name)
+            out_entries[k] = (out_entries[k][0], data, True)
+            changes.append(f"{new_name}: written again by new_heroes.py")
+
     french = french_dat()
     if french is not None:
         names = [info.filename for info, _, _ in out_entries]
@@ -334,7 +373,6 @@ def main():
                 # Same content, compression method and timestamp.
                 with src.open(info) as f:
                     dst.writestr(info, f.read())
-    import os
     os.replace(tmp, path)
     for c in changes:
         print(c)

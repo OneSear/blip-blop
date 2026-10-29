@@ -104,7 +104,15 @@ scaling (FIT fills the window; INTEGER scales by whole factors, with a black
 border), the filter (SHARP pixels or SMOOTH), SMOOTH MOTION (draws between
 the game's 84.7 simulation ticks a second, so that movement is even on a
 60 Hz screen, one tick late) and the language (English or French), and
-opens the two players' controls; F10 switches the full screen.
+opens the players' controls; F10 switches the full screen.
+
+START offers games of 1 to 4 players. Player 1 chooses Blip or Blop and
+player 2 is the other; players 3 and 4 are Bleach (a pink Blip: SMG and
+laser) and Blitz (a green Blop: shotgun and flamethrower). Players 3 and 4
+have no keys by default and play with game controllers 3 and 4 (the same
+layout as the others); the controls menu can bind them to anything. Their
+scores show in a second row under players 1 and 2; the level summary
+becomes a table; only Blip and Blop speak in the dialogues.
 
 The game keeps its settings (`settings.cfg`) and its log (`BlipBlop.log`) in
 the user's preferences directory, for example

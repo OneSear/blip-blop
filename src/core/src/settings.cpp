@@ -165,7 +165,7 @@ std::optional<Settings> Settings::importLegacyCfg(const std::vector<std::uint8_t
     s.vsync = bytes[0] != 0;
     s.language = input::Language::English;
     std::size_t offset = 5;
-    for (int p = 0; p < kPlayerCount; ++p) {
+    for (int p = 0; p < 2; ++p) {  // the 2002 file holds two players
         input::Bindings imported = s.bindings;
         bool valid = true;
         for (const Action a : kActions) {

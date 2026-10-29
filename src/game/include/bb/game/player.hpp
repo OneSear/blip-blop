@@ -9,7 +9,17 @@ namespace bb::game {
 
 // Blip and Blop (ID_BLIP, ID_BLOP): the same player with its own images
 // and starting weapon.
-enum class Hero { Blip = 0, Blop = 1 };
+// Bleach and Blitz are the third and fourth players of the four-player mode.
+enum class Hero { Blip = 0, Blop = 1, Bleach = 2, Blitz = 3 };
+
+// Players in a game: 1 or 2 as in 2002, 3 or 4 in the four-player mode.
+constexpr int kMaxPlayers = 4;
+
+// Bleach is a pink Blip and Blitz a green Blop: the same weapons, poses and
+// dialogue faces as the hero they are made from.
+constexpr bool blipKind(Hero hero) noexcept {
+    return hero == Hero::Blip || hero == Hero::Bleach;
+}
 
 // The weapons, numbered as in 2002 (ID_M16 ...): the level summary and
 // the HUD show them.

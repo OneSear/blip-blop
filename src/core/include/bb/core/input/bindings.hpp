@@ -11,7 +11,9 @@ namespace bb::core::input {
 enum class Action { Up, Down, Left, Right, Fire, Jump, Special };
 
 constexpr int kActionCount = 7;
-constexpr int kPlayerCount = 2;
+// Blip, Blop and, in the four-player mode, Bleach and Blitz. Players 3 and
+// 4 have no keys by default: they play with pads 3 and 4.
+constexpr int kPlayerCount = 4;
 
 constexpr std::array<Action, kActionCount> kActions = {
     Action::Up, Action::Down, Action::Left, Action::Right, Action::Fire, Action::Jump, Action::Special};

@@ -52,7 +52,8 @@ public:
     void levelPlayed();
     void finishCampaign();
     bool campaignLeft() const noexcept { return skipped_; }
-    Player* player(int n) const noexcept { return n == 1 ? players_[0] : players_[1]; }
+    // Player n, from 1; null when absent.
+    Player* player(int n) const noexcept { return n >= 1 && n <= kMaxPlayers ? players_[n - 1] : nullptr; }
     void deletePlayers();
 
     // A level, as LevelScreen plays it (joueNiveau, gameLoop, updateAll):
@@ -114,7 +115,7 @@ private:
         bool bringBack = false;
     };
 
-    bool loadCampaign();  // chargePartie()
+    bool loadCampaign(int players);  // chargePartie()
     void releaseCampaign();
     bool loadParts(const char* name);
     bool loadLevel(const char* name);  // chargeNiveau()
@@ -123,13 +124,16 @@ private:
     World& world_;
     Level level_;
     DialoguePlayer dialogue_;
-    AliasControls controls_[2];  // NOLINT(modernize-use-default-member-init): built from the services
+    AliasControls
+        controls_[kMaxPlayers];  // NOLINT(modernize-use-default-member-init): built from the services
 
     std::array<Part, kMaxParts> parts_{};
     int partCount_ = 0;
 
-    Player* players_[2] = {nullptr, nullptr};
-    bool lastPerfect_[2] = {false, false};
+    Player* players_[kMaxPlayers] = {};
+    bool lastPerfect_[kMaxPlayers] = {};
+    // The level's two starting points (players 3 and 4 start on those of 1
+    // and 2).
     int startX_[2] = {0, 0};
     int startY_[2] = {0, 0};
 
@@ -137,7 +141,7 @@ private:
     bool briefing_ = false;
     bool skipped_ = false;
     int levelKind_ = 0;
-    BonusLives bonus_[2];
+    BonusLives bonus_[kMaxPlayers];
 
     core::FixedClock frameClock_;
     int frameTicks_ = 0;

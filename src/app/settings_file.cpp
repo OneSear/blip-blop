@@ -17,10 +17,10 @@ namespace {
 
 namespace input = core::input;
 
-// The alias of a player's action: from 0 for the first player, from 10 for
-// the second, in the order of input::kActions.
+// The alias of a player's action: from 0 for the first player, 10 for the
+// second, and so on, in the order of input::kActions.
 int aliasOf(int player, int action) {
-    return (player == 0 ? game::AliasControls::kFirstPlayer : game::AliasControls::kSecondPlayer) + action;
+    return game::AliasControls::firstOf(player) + action;
 }
 
 void apply(const core::Settings& settings, game::Options& options, game::Input& in) {

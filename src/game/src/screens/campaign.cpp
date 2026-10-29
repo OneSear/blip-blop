@@ -154,7 +154,8 @@ Frame AttractScreen::update(ScreenStack& stack) {
                 if (result_ == MainMenu::kExit) {
                     session.note("main menu: exit");
                 }
-                if (result_ == MainMenu::kStartOnePlayer || result_ == MainMenu::kStartTwoPlayers) {
+                if (result_ == MainMenu::kStartOnePlayer || result_ == MainMenu::kStartTwoPlayers ||
+                    result_ == MainMenu::kStartThreePlayers || result_ == MainMenu::kStartFourPlayers) {
                     step_ = Step::StartGame;
                     stack.push(std::make_unique<CharacterSelectScreen>(services_, character_));
                     return Frame::Continue;
@@ -164,8 +165,12 @@ Frame AttractScreen::update(ScreenStack& stack) {
 
             case Step::StartGame:
                 step_ = Step::AfterGame;
-                stack.push(std::make_unique<CampaignScreen>(
-                    services_, game_, result_ == MainMenu::kStartOnePlayer ? 1 : 2, character_));
+                stack.push(std::make_unique<CampaignScreen>(services_, game_,
+                                                            result_ == MainMenu::kStartOnePlayer      ? 1
+                                                            : result_ == MainMenu::kStartTwoPlayers   ? 2
+                                                            : result_ == MainMenu::kStartThreePlayers ? 3
+                                                                                                      : 4,
+                                                            character_));
                 return Frame::Continue;
 
             case Step::AfterGame:
@@ -350,17 +355,19 @@ Frame CampaignScreen::update(ScreenStack& stack) {
                 break;
 
             case Step::GameOver:
-                step_ = Step::HiScore1;
+                step_ = Step::HiScore;
+                hiScorePlayer_ = 1;
                 if (!won_) {
                     stack.push(std::make_unique<GameOverScreen>(services_));
                     return Frame::Continue;
                 }
                 break;
 
-            case Step::HiScore1:
-            case Step::HiScore2: {
-                const int number = step_ == Step::HiScore1 ? 1 : 2;
-                step_ = step_ == Step::HiScore1 ? Step::HiScore2 : Step::Table;
+            case Step::HiScore: {
+                const int number = hiScorePlayer_++;
+                if (hiScorePlayer_ > kMaxPlayers) {
+                    step_ = Step::Table;
+                }
                 const Player* p = game_.player(number);
                 if (p != nullptr && services_.hiScores->qualifies(p->score)) {
                     stack.push(std::make_unique<HiScoreEntryScreen>(services_, p->score, number));

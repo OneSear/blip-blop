@@ -34,6 +34,8 @@ protected:
         kOptionsPage = 7,
         kKeys1Page = 5,
         kKeys2Page = 6,
+        kKeys3Page = 10,  // the four-player mode
+        kKeys4Page = 11,
         kExitPage = 8,
         kStartPage = 9
     };
@@ -60,9 +62,16 @@ protected:
         kLanguageItem,
         kKeys1Item,
         kKeys2Item,
+        kKeys3Item,  // the four-player mode
+        kKeys4Item,
         kOptionsReturnItem,
         kOptionItems
     };
+
+    // The key page of player `player` (0 to 3), and the player of a key page
+    // (-1 for another page).
+    static int keysPage(int player) noexcept;
+    static int keysPlayer(int page) noexcept;
 
     // The options page and a key page.
     void optionsItems();
@@ -99,7 +108,14 @@ protected:
 class MainMenu : public Menu {
 public:
     // What update() returns in its result (RET_*).
-    enum Result { kContinue = 0, kStartOnePlayer = 1, kExit = 3, kStartTwoPlayers = 5 };
+    enum Result {
+        kContinue = 0,
+        kStartOnePlayer = 1,
+        kExit = 3,
+        kStartTwoPlayers = 5,
+        kStartThreePlayers = 6,  // the four-player mode
+        kStartFourPlayers = 7
+    };
 
     explicit MainMenu(Services& services) noexcept : Menu(services, kOptionsPage, 30) {}
 

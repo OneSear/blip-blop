@@ -211,3 +211,27 @@ TEST_CASE("aliases accept the bound key and the default pad layout") {
     // Aliases outside the players' never use the pads.
     CHECK_FALSE(input.aliasHeld(7));
 }
+
+TEST_CASE("players 3 and 4 play with pads 3 and 4 and keep their bindings") {
+    // No keys by default: the default pad layout of their slots.
+    const auto defaults = bb::core::Settings().bindings;
+    CHECK(defaults.get(2, in::Action::Fire) == 0);
+    CHECK_FALSE(defaults.usesPad(3));
+    CHECK(in::Bindings::defaultPadCode(2, in::Action::Fire) == in::padCode(2, in::kPadButtonX));
+    CHECK(in::Bindings::defaultPadCode(3, in::Action::Jump) == in::padCode(3, in::kPadButtonA));
+
+    bb::core::Settings s;
+    s.bindings.set(3, in::Action::Left, in::kKeyJ);
+    std::string error;
+    std::vector<std::string> warnings;
+    const auto back = bb::core::Settings::parse(s.serialize(), error, warnings);
+    REQUIRE_MESSAGE(back.has_value(), error);
+    CHECK(back->bindings.get(3, in::Action::Left) == in::kKeyJ);
+    CHECK(back->bindings.get(2, in::Action::Up) == 0);
+    CHECK(warnings.empty());
+
+    // A file from before the four-player mode leaves them as they were.
+    const auto old = bb::core::Settings::parse("blipblop-settings 1\np1.fire key:tab\n", error, warnings);
+    REQUIRE(old.has_value());
+    CHECK(old->bindings.get(2, in::Action::Fire) == 0);
+}

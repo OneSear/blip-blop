@@ -10,7 +10,10 @@
     {"id": 11, "text": "Il a compris qu'il n'avait aucune chance contre nous."},
     {"id": 12, "text": "Quittons ce trou puant. J'en ai ras le bol!"},
     {"id": 13, "text": "Qui sont ces types?"},
-    {"id": 14, "text": "Nous sommes l'Escouade d'Elite Snuff. Vous ne sortirez pas d'ici vivants, à moins de nous vaincre!"},
+    {
+      "id": 14,
+      "text": "Nous sommes l'Escouade d'Elite Snuff. Vous ne sortirez pas d'ici vivants, à moins de nous vaincre!"
+    },
     {"id": 15, "text": "Escouade d'élite, mon cul! "},
     {"id": 16, "text": "Enfin... Voilà leur base."},
     {"id": 17, "text": "Enfin! Je suis prêt pour un peu d'action!"},
@@ -26,13 +29,19 @@
     {"id": 107, "text": "BIEN JOUE!"},
     {"id": 108, "text": "MAINTENANT, TUEZ TOUS LES AUTRES!"},
     {"id": 200, "text": "Tu sais pas lire? Les boules sont interdites dans ce club!"},
-    {"id": 201, "text": "Désolé nounours, mais on doit entrer, même s'il faut te botter ton joli petit cul pour y arriver."},
+    {
+      "id": 201,
+      "text": "Désolé nounours, mais on doit entrer, même s'il faut te botter ton joli petit cul pour y arriver."
+    },
     {"id": 202, "text": "Imbécile! Je suis un chevalier Jedi! La force est de mon côté!"},
     {"id": 203, "text": "Ouais. Et le flingue est du mien!"},
     {"id": 204, "text": "Hé toi! Lève tes putains de mains au-dessus de ta tête."},
     {"id": 205, "text": "Attrapons ce salopard!"},
     {"id": 206, "text": "ATTRAPEZ-LE VITE!"},
-    {"id": 207, "text": "Je suis le grand souverain mort-vivant des Bisounours de la Terreur! Toute créature vivante est condamnée ici!"},
+    {
+      "id": 207,
+      "text": "Je suis le grand souverain mort-vivant des Bisounours de la Terreur! Toute créature vivante est condamnée ici!"
+    },
     {"id": 208, "text": "Ah ouais? J'en mettrais pas ma main à couper."},
     {"id": 209, "text": "Toi! Tu as donc survécu à l'attaque de l'avion!"},
     {"id": 210, "text": "Quoi! C'était toi, le responsable!"},
@@ -108,12 +117,18 @@
     {"id": 615, "text": "Les hérissons finissent toujours sous les roues d'une voiture."},
     {"id": 700, "text": "Cette fois, tu ne t'échapperas pas!"},
     {"id": 701, "text": "Qu'espérais-tu en te cachant ici?"},
-    {"id": 702, "text": "Tu n'as rien compris. Je n'essaie ni de fuir ni de me cacher. Je suis sur le point d'atteindre mon but."},
+    {
+      "id": 702,
+      "text": "Tu n'as rien compris. Je n'essaie ni de fuir ni de me cacher. Je suis sur le point d'atteindre mon but."
+    },
     {
       "id": 703,
       "text": "Tu es fou. Tes armées sont détruites, le haut conseil n'est plus. Que peux-tu faire sur un caillou inutile qui dérive dans l'espace?"
     },
-    {"id": 704, "text": "Qui dérive? Plus pour longtemps. Je vais changer sa trajectoire pour qu'il s'écrase sur la Terre elle-même!"},
+    {
+      "id": 704,
+      "text": "Qui dérive? Plus pour longtemps. Je vais changer sa trajectoire pour qu'il s'écrase sur la Terre elle-même!"
+    },
     {"id": 705, "text": "Tu veux dire... que tu vas détruire la planète entière?"},
     {"id": 706, "text": "Ouais! Puisque je ne serai jamais le souverain de ce monde, je vais le détruire."},
     {"id": 707, "text": "Tu es complètement fou!"},
@@ -171,6 +186,10 @@
     {"id": 855, "text": "ENTREZ VOTRE NOM :"},
     {"id": 856, "text": "Niveau"},
     {"id": 857, "text": "Bonus"},
+    {"id": 858, "text": "PARTIE 3 JOUEURS"},
+    {"id": 859, "text": "PARTIE 4 JOUEURS"},
+    {"id": 860, "text": "CONTROLES JOUEUR 3"},
+    {"id": 861, "text": "CONTROLES JOUEUR 4"},
     {"id": 1000, "text": "Crédits"},
     {"id": 1001, "text": "PROGRAMMATION"},
     {"id": 1002, "text": "Benjamin Karaban"},

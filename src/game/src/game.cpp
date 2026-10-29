@@ -36,8 +36,10 @@ Game::Game(Services& services)
       world_(*services.world),
       level_(*services.world),
       dialogue_(services),
-      controls_{AliasControls(*services.input, AliasControls::kFirstPlayer),
-                AliasControls(*services.input, AliasControls::kSecondPlayer)} {}
+      controls_{AliasControls(*services.input, AliasControls::firstOf(0)),
+                AliasControls(*services.input, AliasControls::firstOf(1)),
+                AliasControls(*services.input, AliasControls::firstOf(2)),
+                AliasControls(*services.input, AliasControls::firstOf(3))} {}
 
 //-----------------------------------------------------------------------------
 // The campaign
@@ -50,7 +52,7 @@ bool Game::startCampaign(int players, int character) {
     banks.interface->clear();
     banks.attractMusic->stopAll();
 
-    if (!loadCampaign()) {
+    if (!loadCampaign(players)) {
         releaseCampaign();
         return false;
     }
@@ -65,10 +67,13 @@ bool Game::startCampaign(int players, int character) {
     world_.players.add(players_[0]);
     level_.players[0] = players_[0];
 
-    if (players == 2) {
-        players_[1] = new Player(world_, second, controls_[1], 1);
-        world_.players.add(players_[1]);
-        level_.players[1] = players_[1];
+    // The others in order: the other of Blip and Blop, then Bleach and
+    // Blitz (the four-player mode).
+    const Hero others[] = {second, Hero::Bleach, Hero::Blitz};
+    for (int i = 1; i < players && i < kMaxPlayers; ++i) {
+        players_[i] = new Player(world_, others[i - 1], controls_[i], i);
+        world_.players.add(players_[i]);
+        level_.players[i] = players_[i];
     }
 
     char note[64];
@@ -76,7 +81,9 @@ bool Game::startCampaign(int players, int character) {
     services_.session->note(note);
 
     world_.cowBombUnlocked = false;
-    lastPerfect_[0] = lastPerfect_[1] = false;
+    for (bool& perfect : lastPerfect_) {
+        perfect = false;
+    }
     return true;
 }
 
@@ -98,14 +105,14 @@ void Game::finishCampaign() {
 }
 
 void Game::deletePlayers() {
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < kMaxPlayers; ++i) {
         delete players_[i];
         players_[i] = nullptr;
         level_.players[i] = nullptr;
     }
 }
 
-bool Game::loadCampaign() {
+bool Game::loadCampaign(int players) {
     const core::assets::AssetSource& assets = *services_.assets;
     Banks& banks = services_.banks;
 
@@ -124,6 +131,14 @@ bool Game::loadCampaign() {
         if (!loadSprites(assets, f.name, *f.bank)) {
             return false;
         }
+    }
+    // Bleach and Blitz, recoloured Blip and Blop (tools/art/new_heroes.py),
+    // only for the four-player mode.
+    if (players > 2 && (!loadSprites(assets, "data/bleach.gfx", *banks.bleach) ||
+                        !loadSprites(assets, "data/blitz.gfx", *banks.blitz) ||
+                        !loadFont(assets, "data/scorep.lft", *banks.scoreBleach) ||
+                        !loadFont(assets, "data/scoreg.lft", *banks.scoreBlitz))) {
+        return false;
     }
 
     struct FontFile {
@@ -154,6 +169,10 @@ void Game::releaseCampaign() {
 
     banks.blip->clear();
     banks.blop->clear();
+    banks.bleach->clear();
+    banks.blitz->clear();
+    banks.scoreBleach->clear();
+    banks.scoreBlitz->clear();
     banks.heroes->clear();
     banks.misc->clear();
     banks.heroFaces->clear();
@@ -199,7 +218,9 @@ bool Game::loadParts(const char* name) {
 
 bool Game::startLevel(const char* name, int kind) {
     // (The locals of the 2002 joueNiveau, zero at each call.)
-    bonus_[0] = bonus_[1] = BonusLives{};
+    for (BonusLives& b : bonus_) {
+        b = BonusLives{};
+    }
     levelKind_ = kind;
 
     skipped_ = false;
@@ -218,15 +239,16 @@ bool Game::startLevel(const char* name, int kind) {
     world_.flamethrowerAllowed = world_.marker("level.flamethrower", 0, 1) != 0;
 
     // The players at their starting points (D-89 fixed: 2002 reset the
-    // first player's animation while placing the second).
-    for (int i = 0; i < 2; ++i) {
+    // first player's animation while placing the second); players 3 and 4
+    // on those of 1 and 2.
+    for (int i = 0; i < kMaxPlayers; ++i) {
         Player* p = players_[i];
         if (p == nullptr || p->lives <= 0) {
             bonus_[i].bringBack = false;
             continue;
         }
-        p->x = startX_[i];
-        p->y = startY_[i];
+        p->x = startX_[i % 2];
+        p->y = startY_[i % 2];
         p->mode = kNormal;
         p->animation.frame = 0;
         p->animation.subFrame = 0;
@@ -248,7 +270,7 @@ bool Game::startLevel(const char* name, int kind) {
     if (kind == kBonusLevel || kind == kCompleteLevel || kind == kFirstLevel || kind == kEndLevel) {
         world_.enemiesCreated = 0;
 
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < kMaxPlayers; ++i) {
             Player* p = players_[i];
             if (p == nullptr) {
                 continue;
@@ -257,7 +279,7 @@ bool Game::startLevel(const char* name, int kind) {
             if (kind != kEndLevel) {
                 p->mode = Player::kComingBack;
                 p->y = -50;
-                p->landingY = startY_[i];
+                p->landingY = startY_[i % 2];
             }
             p->setWeapon(Weapon::Rifle);
             p->perfect = true;
@@ -268,7 +290,9 @@ bool Game::startLevel(const char* name, int kind) {
         }
     }
 
-    lastPerfect_[0] = lastPerfect_[1] = false;
+    for (bool& perfect : lastPerfect_) {
+        perfect = false;
+    }
 
     // A bonus level is timed.
     level_.bonusLevel = kind == kBonusLevel;
@@ -463,7 +487,7 @@ void Game::finishLevelLoop() {
     // After a bonus level the players get their lives back, and cannot
     // have lost.
     if (levelKind_ == kBonusLevel && !skipped_ && !quitting) {
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < kMaxPlayers; ++i) {
             Player* p = players_[i];
             if (p == nullptr || !bonus_[i].bringBack) {
                 continue;
@@ -485,14 +509,13 @@ bool Game::levelEndsWithPicture() const {
 std::unique_ptr<Screen> Game::levelSummary() {
     const int kind = levelKind_;
     const auto summary = [&](bool bonus, bool failed) {
-        return std::make_unique<LevelSummaryScreen>(services_, players_[0], players_[1], level_.playersDead,
-                                                    bonus, failed);
+        return std::make_unique<LevelSummaryScreen>(services_, players_, level_.playersDead, bonus, failed);
     };
 
     if (level_.won && !level_.playersDead && kind != kEndLevel) {
         if ((kind == kBonusLevel && !skipped_ && world_.flags[Flag::Timer] > 0) || kind == kCompleteLevel ||
             kind == kLastLevel) {
-            for (int i = 0; i < 2; ++i) {
+            for (int i = 0; i < kMaxPlayers; ++i) {
                 if (players_[i] != nullptr) {
                     lastPerfect_[i] = players_[i]->perfect;
                 }
@@ -509,8 +532,7 @@ std::unique_ptr<Screen> Game::levelSummary() {
 }
 
 std::unique_ptr<Screen> Game::summaryScreen() {
-    return std::make_unique<LevelSummaryScreen>(services_, players_[0], players_[1], level_.playersDead,
-                                                false, false);
+    return std::make_unique<LevelSummaryScreen>(services_, players_, level_.playersDead, false, false);
 }
 
 //-----------------------------------------------------------------------------
@@ -582,7 +604,7 @@ void Game::drawAll(bool flip) {
 
     core::gfx::Pixmap& screen = *services_.screen;
     level_.drawWorld(screen, *services_.decor);
-    Hud::draw(world_, players_[0], players_[1], level_.bonusLevel, world_.blink);
+    Hud::draw(world_, players_, level_.bonusLevel, world_.blink);
     level_.drawOverlays(screen);
 
     if (level_.showFps) {

@@ -92,8 +92,7 @@ private:
         EndingDone,
         Release,
         GameOver,
-        HiScore1,
-        HiScore2,
+        HiScore,  // for each player in turn (hiScorePlayer_)
         Table,
         Done,
         OnlyLevel,
@@ -118,6 +117,7 @@ private:
     int part_ = 0;
     std::unique_ptr<Ending> ending_;
     unsigned int key_ = 0;
+    int hiScorePlayer_ = 1;  // the next player whose score may enter the table
     std::string onlyFile_;
     int onlyKind_ = 0;
 };

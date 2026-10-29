@@ -11,7 +11,7 @@ bool InputState::aliasHeld(int a) const {
         return true;
     }
     for (int player = 0; player < input::kPlayerCount; ++player) {
-        const int first = player == 0 ? AliasControls::kFirstPlayer : AliasControls::kSecondPlayer;
+        const int first = AliasControls::firstOf(player);
         if (a < first || a >= first + input::kActionCount) {
             continue;
         }

@@ -14,12 +14,13 @@ namespace bb::game {
 // The cheat keys of a tick (F1 to F12 with the cheat switch on).
 struct CheatKeys {
     bool enabled = false;
-    bool ammo[2] = {false, false};     // F1, F5
-    bool cowBomb[2] = {false, false};  // F2, F6
-    bool life[2] = {false, false};     // F3, F7
-    bool win = false;                  // F9
-    bool listsDisplay = false;         // F11
-    bool fpsDisplay = false;           // F12
+    // Players 1 and 2 only (players 3 and 4 have no cheat keys).
+    bool ammo[kMaxPlayers] = {};     // F1, F5
+    bool cowBomb[kMaxPlayers] = {};  // F2, F6
+    bool life[kMaxPlayers] = {};     // F3, F7
+    bool win = false;                // F9
+    bool listsDisplay = false;       // F11
+    bool fpsDisplay = false;         // F12
 };
 
 // How a level is won: the camera at x or beyond, and two flags at their
@@ -62,7 +63,7 @@ public:
     std::uint64_t fingerprint(std::FILE* trace, unsigned long long frame) const;
 
     // The players (null when absent); the campaign owns them.
-    Player* players[2] = {nullptr, nullptr};
+    Player* players[kMaxPlayers] = {};
 
     VictoryCondition victory;
     bool bonusLevel = false;   // timed: ends when the timer runs out
