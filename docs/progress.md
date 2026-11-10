@@ -145,6 +145,89 @@ girly player") and Blitz ("a green boy player").
   quit; looked at in frames (the four heroes, the second HUD row, the
   table in four colours).
 
+### The hero choice (10 November 2026)
+
+Asked by the maintainer: the hero choice of the Switch fork
+(`blip-blop-nx`, 1 November 2026, its commits ec3e2d8 and e323bc8) in the
+desktop versions. Instead of the 1 to 4 PLAYERS page and the Blip-or-Blop
+screen, a screen where each player joins and takes a hero.
+
+* START GAME opens it (`CharacterSelectScreen`, which replaces the 2002
+  Blip-or-Blop screen; the main menu's start page is gone). The four
+  heroes side by side, each on a card under a row of tags; a panel per
+  player under them. A hero taken is no one else's: the tags skip it, and
+  those on it move on. 40 frames after everyone who joined took a hero
+  (`kStartDelay`), the game starts; a join or a hero given back calls it
+  off. The title follows the language (`select_title_fr`). The rules are
+  `HeroChoice`, apart from input and drawing (`tests/unit/
+  hero_choice_test.cpp`); the rules, the drawing and the art are the
+  fork's.
+* The controls differ from the fork's. Each player uses its own: on the
+  keyboard, its fire joins and takes the hero under its tag (Return too
+  for player 1), its jump gives it back, then leaves, left and right move
+  the tag; on its pad (the pad its controls are bound to, else pad *n*
+  for player *n*), A or Start joins and takes, B or Back gives back, the
+  D-pad or the stick moves, and its fire (X in the default layout) takes
+  too. Escape (the keyboard's), or a back before anyone joined, goes back
+  to the main menu. Why not the fork's rule (fire takes, jump gives back,
+  for pads too): the desktop pad layout has jump on A, the menus'
+  confirm, so the A that chose START GAME would have sent a pad player
+  straight back to the main menu. On the Switch, A is fire and B jump,
+  so the two rules are the same there. A button that takes never gives
+  back (fire bound to B). The fork's X, the console's controller applet,
+  has no desktop equivalent and is left out.
+* Any hero for any player: `Game::startCampaign()` takes a `Lineup`, the
+  players in the order of their controls with their heroes, so the
+  controls of players 1 and 3 make players 1 and 2 (the HUD, the hi-score
+  entry), each playing with its own controls. Bleach's and Blitz's banks
+  load when one of them plays (they loaded for 3 or 4 players).
+* Art: `tools/art/hero_portraits.py` (the fork's, unchanged) makes the
+  four portraits from `select_blip` and `select_blop`;
+  `fix_legacy_data.py` appends them to `inter.gfx` (12 to 16 images; the
+  new `inter.gfx` is byte for byte the fork's) and adds strings 863 to
+  866 after 861 (862 is the fork's CRISP filter, left free). The texts
+  name the desktop controls: "Press FIRE", "READY!", "FIRE or A = choose
+  JUMP or B = back", "%dP" ("J%d" in French). Measured in the `rpg` font:
+  the line of buttons is 465 pixels wide (485 in French) of 640; with
+  "ESCAPE = menu" it would be 681, so Escape is in the README only.
+  `bbassets extract` of the fixed data gave the four PNG files (the same
+  bytes as the fork's), without names; the names are the fork's.
+* Return and Escape count there only from the keyboard (the new
+  `Input::keyHeld()`): `Input::held()` also reads any pad's A as Return
+  and its Start and Back as Escape (the menus' confirm and back), which
+  would make player 1 join on anyone's A and send everyone back to the
+  main menu on a Start.
+* Checked: all 14 replays keep every tick fingerprint, their final tick
+  count and their final world-state hash. The replay scripts take the
+  heroes so that the game starts at the frame the 2002 menus started it
+  (`take_heroes()` in `make_replays.py`), so every frame the scripts
+  measured after it holds. `menus` now goes through the hero choice in
+  French (Escape and pad 1's B back to the main menu; pad 3 joins with
+  Start, takes Bleach with A, gives it back with Back and leaves with B;
+  two keyboard players join, a hero taken from under the other's tag,
+  given back, a player leaving; then Blop), and `fourplayers` joins with
+  Start on pads 3 and 4 and takes with X on pad 3 and A on pad 4. The
+  frame fingerprints changed from the main menu on (they are chained) and
+  were recorded again. The presented frames grew (10 with one player, 20
+  with two, 28 with four, 24 in `menus`): `WaitReleaseScreen` draws
+  nothing while a menu key is held (`Frame::Wait`), and the old START
+  page took those presses where the hero choice, which draws every frame,
+  takes them now. Looked at in dumped frames: four players choosing, then
+  READY; one player with the others' "Press FIRE"; French, "Appuyez sur
+  TIR" on two lines; the loading frame.
+* Fact: the 2002 screen blinked its arrows with the world's `blink`
+  (toggled every 10 frames there), so the phase of `blink` when the first
+  level started depended on how long player 1 took to choose; the hero
+  choice leaves it alone. `blink` is not in the tick fingerprint; it
+  chooses the HUD's ammo font while a player fires (drawing only) and
+  times three animations that act on each change of it (the `video`
+  decor, the walkers, the Care Bears shaman); `slowBlink` is read
+  nowhere. The tick fingerprints of `video`, `videoboss` and `carebears`
+  held too.
+* Not checked: with real game controllers. The replays run with no pad
+  connected (`DeviceInput::pads_` is 0), so they press pad buttons but
+  never see `held()` read a pad's A as Return.
+
 ### The in-house mixer (DEC-06)
 
 * `bb::core::audio::Mixer` (`src/core/src/audio_mixer.cpp`): 32 voices

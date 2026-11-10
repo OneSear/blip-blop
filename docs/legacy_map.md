@@ -54,7 +54,7 @@ Appendix B of [migration.md](../migration.md).
 | `Game::go()`, `showMainScreen()`, `MenuMain` loop | `AttractScreen` (`screens/attract_screen.*`), the root of the screen stack | 3 | One loop: `runScreens()` (`screens/screen_runner.*`) on `bb::game::ScreenStack` (`src/game/`) |
 | `showHighScores()`, `showGameOver()`, `getName()`, title picture | `HiScoreTableScreen`, `GameOverScreen`, `HiScoreEntryScreen`, `TitleScreen` (`screens/attract_screens.*`) | 3 | |
 | `showCredits()` | `CreditsScreen` (`screens/credits_screen.*`) | 3 | Own `FixedClock` |
-| `selectPlayer()` | `CharacterSelectScreen` (`screens/character_select_screen.*`) | 3 | |
+| `selectPlayer()` | `CharacterSelectScreen` (`screens/character_select_screen.*`) | 3 | Since 10 November 2026 the hero choice, where the players join (rules: `HeroChoice`); Blip or Blop for player 1 before |
 | `jouePartie()` | `CampaignScreen` (`screens/campaign_screen.*`); `Game::startCampaign()`, `finishCampaign()` | 3 | |
 | `joueNiveau()`, `gameLoop()`, `updateAll()` | `LevelScreen` (`screens/level_screen.*`); `Game::startLevel()` … `finishLevelLoop()` | 3 | |
 | `showPE()` | `LevelSummaryScreen` (`screens/level_summary_screen.*`) | 3 | Body kept verbatim; members still have the 2002 local names |

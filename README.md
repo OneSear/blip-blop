@@ -106,10 +106,12 @@ F10 switches between the window and the full screen.
 Game controllers: the first pad plays the first player, the second pad the
 second, with the D-pad or the left stick to move, A to jump, X to fire and
 B for the cow bomb; A also confirms in the menus, Start or Back pauses and
-goes back, Start ends the name entry. A player who binds any action to a
-pad in the controls menu gets only the bindings chosen there. The layout is
-by button position (A is the bottom button, cross on a PlayStation pad) for
-the pads SDL recognises; other pads keep their own button numbers.
+goes back, Start ends the name entry (on the hero choice, below, A or
+Start takes a hero and B or Back gives it back). A player who binds any
+action to a pad in the controls menu gets only the bindings chosen there.
+The layout is by button position (A is the bottom button, cross on a
+PlayStation pad) for the pads SDL recognises; other pads keep their own
+button numbers.
 
 The options menu (in the main menu and the pause menu) sets the vsync, the
 scaling (FIT fills the window; INTEGER scales by whole factors, with a black
@@ -118,13 +120,21 @@ the game's 84.7 simulation ticks a second, so that movement is even on a
 60 Hz screen, one tick late) and the language (English or French), and
 opens the players' controls; F10 switches the full screen.
 
-START offers games of 1 to 4 players. Player 1 chooses Blip or Blop and
-player 2 is the other; players 3 and 4 are Bleach (a pink Blip: SMG and
-laser) and Blitz (a green Blop: shotgun and flamethrower). Players 3 and 4
-have no keys by default and play with game controllers 3 and 4 (the same
-layout as the others); the controls menu can bind them to anything. Their
-scores show in a second row under players 1 and 2; the level summary
-becomes a table; only Blip and Blop speak in the dialogues.
+START GAME opens the hero choice: Blip, Blop, Bleach (a pink Blip: SMG and
+laser) and Blitz (a green Blop: shotgun and flamethrower) side by side. Up
+to four players join, each with their own controls. On the keyboard, a
+player's fire joins and takes the hero under their tag (player 1 also has
+Return), left and right move the tag, and jump gives the hero back, then
+leaves; on a controller, A or Start joins and takes, the D-pad or the
+stick moves, B or Back gives back. A hero taken is no one else's. The game
+starts a moment after everyone who joined has taken a hero; Escape, or a
+back before anyone joined, returns to the main menu. The players are
+numbered in the order of their controls (the controls of players 1 and 3
+make players 1 and 2). Players 3 and 4 have no keys by default and play
+with game controllers 3 and 4 (the same layout as the others); the
+controls menu can bind them to anything. Their scores show in a second
+row under players 1 and 2; the level summary becomes a table; only Blip
+and Blop speak in the dialogues.
 
 The game keeps its settings (`settings.cfg`) and its log (`BlipBlop.log`) in
 the user's preferences directory, for example

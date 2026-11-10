@@ -29,6 +29,10 @@ public:
     virtual void update() = 0;
     // Whether a key, pad button or pad direction is held.
     virtual bool anyHeld() const = 0;
+    // Whether a key (a key code, not a pad's) is held on the keyboard
+    // itself: held() also reads any pad's A as Return and its Start and
+    // Back as Escape, the menus' confirm and back.
+    virtual bool keyHeld(unsigned int code) const = 0;
     // The first input held, in the order of the 2014 waitKey(): keys,
     // special keys, pad buttons, pad directions; false if nothing is held.
     virtual bool firstHeld(unsigned int& code) const = 0;
