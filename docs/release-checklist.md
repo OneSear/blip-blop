@@ -35,7 +35,7 @@ the release notes.
       was left.
 - [ ] The VSYNC menu option switches; either way the game runs at its
       normal speed (the log's exit line: about 60 frames presented per
-      second) and the character choice does not scroll faster on a 120 Hz
+      second) and the hero choice does not scroll faster on a 120 Hz
       or 144 Hz screen.
 - [ ] On an idle machine, from a build of the release tree:
       `tests/bb_present_bench 600` and `tests/bb_present_bench 600 reverse`
@@ -71,11 +71,18 @@ the release notes.
       Start pauses) without any setting; the log names them "(game
       controller)".
 - [ ] A second controller plays the second player.
-- [ ] START 4 PLAYERS GAME with four controllers (or two players on the
-      keyboard and controllers 3 and 4): Bleach (pink) and Blitz (green)
-      play with controllers 3 and 4, their scores show in the second row
-      at the top, the level summary is a table of four, and nobody is
-      pushed off the screen for long. Also with three players.
+- [ ] The hero choice (START GAME) on the keyboard: fire (Return for
+      player 1) joins and takes, jump gives back and leaves, Escape goes
+      back to the main menu; with a controller: A or Start joins and
+      takes, B or Back gives back and leaves, the D-pad and the stick
+      move the tag, and A does not leave the screen. A hero taken cannot
+      be taken twice; the game starts once everyone who joined is READY,
+      each player with the hero it took.
+- [ ] Four players with four controllers (or two players on the keyboard
+      and controllers 3 and 4): Bleach (pink) and Blitz (green) play with
+      controllers 3 and 4, their scores show in the second row at the
+      top, the level summary is a table of four, and nobody is pushed off
+      the screen for long. Also with three players.
 - [ ] A controller can be assigned in the controls menu, and then plays
       with the chosen buttons only; unplugging one during a level does not
       crash.

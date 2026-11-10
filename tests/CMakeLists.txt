@@ -22,6 +22,7 @@ add_executable(bb_unit_tests
     unit/sprite_font_test.cpp
     unit/audio_test.cpp
     unit/hi_scores_test.cpp
+    unit/hero_choice_test.cpp
     unit/mixer_test.cpp
 )
 target_link_libraries(bb_unit_tests PRIVATE bb::core bb::game bb_doctest)
